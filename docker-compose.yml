@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crewassist-portal
+    restart: unless-stopped
+    ports:
+      - "${PORTAL_PORT:-8080}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_URL=${APP_URL:-http://localhost:8080}
+      - APP_KEY=${APP_KEY:-change-me-in-production-32chars}
+      - APP_MODE=${APP_MODE:-multi_tenant}
+      - DB_DRIVER=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE:-crewassist}
+      - DB_USERNAME=${DB_USERNAME:-crewassist}
+      - DB_PASSWORD=${DB_PASSWORD:-crewassist_pass}
+      - SESSION_LIFETIME=120
+      - SESSION_SECURE=${SESSION_SECURE:-false}
+      - API_TOKEN_EXPIRY_HOURS=168
+      - UPLOAD_MAX_SIZE=52428800
+    volumes:
+      - uploads_data:/var/www/html/storage/uploads
+      - logs_data:/var/www/html/storage/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - crewassist
+
+  db:
+    image: mysql:8.0
+    container_name: crewassist-db
+    restart: unless-stopped
+    ports:
+      - "${DB_EXTERNAL_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      MYSQL_DATABASE: ${DB_DATABASE:-crewassist}
+      MYSQL_USER: ${DB_USERNAME:-crewassist}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-crewassist_pass}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/migrations/001_create_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-authentication-plugin=mysql_native_password
+    networks:
+      - crewassist
+
+volumes:
+  db_data:
+    driver: local
+  uploads_data:
+    driver: local
+  logs_data:
+    driver: local
+
+networks:
+  crewassist:
+    driver: bridge

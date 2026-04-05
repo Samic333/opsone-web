@@ -1,0 +1,34 @@
+# OpsOne Web Portal — .gitignore
+
+# Environment
+.env
+
+# Database
+database/*.sqlite
+database/*.sqlite-journal
+database/*.sqlite-wal
+database/*.sqlite-shm
+
+# Storage (uploaded content & builds)
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/builds/*
+!storage/builds/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Composer (if used)
+vendor/
+
+# Docker
+docker/mysql_data/

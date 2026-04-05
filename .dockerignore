@@ -1,0 +1,22 @@
+# Development files
+database/crewassist.sqlite
+storage/uploads/*
+!storage/uploads/.gitkeep
+storage/logs/*
+!storage/logs/.gitkeep
+
+# IDE/OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# Docker dev stuff
+docker-compose.override.yml
+
+# Test files
+test_manual.pdf
