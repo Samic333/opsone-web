@@ -16,7 +16,7 @@ class RbacMiddleware {
                 jsonResponse(['error' => 'Insufficient permissions'], 403);
             }
             flash('error', 'You do not have permission to access this resource.');
-            redirect('/');
+            redirect('/dashboard');
         }
     }
 

@@ -24,7 +24,8 @@ return [
     'GET /logout'     => ['AuthController', 'logout'],
 
     // ─── Dashboard ─────────────────────
-    'GET /'           => ['DashboardController', 'index'],
+    'GET /'           => ['PublicController', 'home'],
+    'GET /dashboard'  => ['DashboardController', 'index'],
 
     // ─── Tenants (Super Admin) ─────────
     'GET /tenants'              => ['TenantController', 'index'],

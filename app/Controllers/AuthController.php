@@ -6,7 +6,7 @@ class AuthController {
     public function showLogin(): void {
         // If already logged in, redirect to dashboard
         if (!empty($_SESSION['user'])) {
-            redirect('/');
+            redirect('/dashboard');
         }
         $error = flash('error');
         require VIEWS_PATH . '/auth/login.php';
@@ -81,7 +81,7 @@ class AuthController {
         AuditLog::logLogin($user['id'], $user['tenant_id'], $email, true, 'web');
         AuditLog::log('Web Login', 'user', $user['id'], "User logged in from web portal");
 
-        redirect('/');
+        redirect('/dashboard');
     }
 
     public function logout(): void {

@@ -7,7 +7,7 @@ class TenantController {
         RbacMiddleware::requireRole('super_admin');
         if (isSingleTenant()) {
             flash('error', 'Tenant management is not available in single-tenant mode.');
-            redirect('/');
+            redirect('/dashboard');
         }
     }
 
