@@ -131,4 +131,12 @@ class Device {
             [$deviceId]
         );
     }
+
+    public static function getLatestSync(int $userId): ?string {
+        $result = Database::fetch(
+            "SELECT last_sync_at FROM devices WHERE user_id = ? AND approval_status = 'approved' ORDER BY last_sync_at DESC LIMIT 1",
+            [$userId]
+        );
+        return $result['last_sync_at'] ?? null;
+    }
 }

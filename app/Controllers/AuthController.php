@@ -87,7 +87,11 @@ class AuthController {
     public function logout(): void {
         $user = currentUser();
         if ($user) {
-            AuditLog::log('Web Logout', 'user', $user['id'], "User logged out");
+            try {
+                AuditLog::log('Web Logout', 'user', $user['id'], "User logged out");
+            } catch (\Exception $e) {
+                // Ignore logging errors to ensure successful logout redirect
+            }
         }
         session_destroy();
         redirect('/login');

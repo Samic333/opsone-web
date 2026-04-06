@@ -167,6 +167,13 @@ foreach ($cats as [$catName, $catSlug]) {
     Database::insert("INSERT INTO file_categories (tenant_id, name, slug) VALUES (?, ?, ?)", [$tenantId, $catName, $catSlug]);
 }
 
+echo "<li>Creating demo app build...</li>";
+Database::insert(
+    "INSERT INTO app_builds (version, build_number, platform, release_notes, file_path, is_active, uploaded_by) 
+     VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ['1.0.0', '100', 'ios', 'Initial production release for CrewAssist.', 'OpsOne_v1.0.0.ipa', 1, $userId]
+);
+
 echo "</ul>";
 echo "<h2>✅ Setup Complete! Tables created and data seeded.</h2>";
 echo "<p>Please <strong>delete this file (seed-db.php)</strong> from the server for security.</p>";

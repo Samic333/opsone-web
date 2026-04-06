@@ -12,6 +12,8 @@ class DashboardController {
             $this->airlineAdminDashboard($tenantId);
         } elseif (hasRole('scheduler')) {
             $this->schedulerDashboard($tenantId);
+        } elseif (hasAnyRole(['pilot', 'cabin_crew'])) {
+            $this->pilotDashboard($tenantId);
         } else {
             $this->airlineAdminDashboard($tenantId);
         }
@@ -56,5 +58,15 @@ class DashboardController {
             'active_staff' => UserModel::countByTenant($tenantId, 'active'),
         ];
         require VIEWS_PATH . '/dashboard/scheduler.php';
+    }
+
+    private function pilotDashboard(int $tenantId): void {
+        $user = currentUser();
+        $data = [
+            'recent_notices' => NoticeModel::recent($tenantId, 5),
+            'sync_status' => Device::getLatestSync($user['id']),
+            'last_login' => $user['last_login'] ?? 'Never',
+        ];
+        require VIEWS_PATH . '/dashboard/pilot.php';
     }
 }
