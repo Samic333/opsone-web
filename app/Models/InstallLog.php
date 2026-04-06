@@ -4,16 +4,20 @@
  */
 class InstallLog {
     public static function log(string $action, ?int $userId = null, ?int $tenantId = null, ?int $buildId = null): void {
-        Database::insert(
-            "INSERT INTO install_logs (user_id, tenant_id, action, build_id, ip_address, user_agent)
-             VALUES (?, ?, ?, ?, ?, ?)",
-            [
-                $userId, $tenantId, $action,
-                $buildId,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                $_SERVER['HTTP_USER_AGENT'] ?? null,
-            ]
-        );
+        try {
+            Database::insert(
+                "INSERT INTO install_logs (user_id, tenant_id, action, build_id, ip_address, user_agent)
+                 VALUES (?, ?, ?, ?, ?, ?)",
+                [
+                    $userId, $tenantId, $action,
+                    $buildId,
+                    substr($_SERVER['REMOTE_ADDR'] ?? '', 0, 45) ?: null,
+                    substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255) ?: null,
+                ]
+            );
+        } catch (\Exception $e) {
+            // Silently fail logging rather than breaking the user page
+        }
     }
 
     public static function recent(int $limit = 50): array {

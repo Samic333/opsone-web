@@ -4,11 +4,15 @@
  */
 class AppBuild {
     public static function all(): array {
-        return Database::fetchAll(
-            "SELECT b.*, u.name as uploaded_by_name FROM app_builds b
-             LEFT JOIN users u ON b.uploaded_by = u.id
-             ORDER BY b.created_at DESC"
-        );
+        try {
+            return Database::fetchAll(
+                "SELECT b.*, u.name as uploaded_by_name FROM app_builds b
+                 LEFT JOIN users u ON b.uploaded_by = u.id
+                 ORDER BY b.created_at DESC"
+            );
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     public static function find(int $id): ?array {
@@ -16,9 +20,13 @@ class AppBuild {
     }
 
     public static function latest(): ?array {
-        return Database::fetch(
-            "SELECT * FROM app_builds WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1"
-        );
+        try {
+            return Database::fetch(
+                "SELECT * FROM app_builds WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1"
+            );
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 
     public static function create(array $data): int {
