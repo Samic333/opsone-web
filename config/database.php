@@ -25,6 +25,7 @@ class Database {
                 self::$instance->exec("PRAGMA foreign_keys=ON");
             } else {
                 $host = env('DB_HOST', '127.0.0.1');
+                if ($host === 'db') $host = '127.0.0.1'; // Failsafe for Namecheap
                 $port = env('DB_PORT', '3306');
                 $database = env('DB_DATABASE', 'fruinxrj_opsone');
                 $username = env('DB_USERNAME', 'fruinxrj_opsone_user');
