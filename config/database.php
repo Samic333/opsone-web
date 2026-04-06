@@ -28,8 +28,13 @@ class Database {
                 if ($host === 'db') $host = '127.0.0.1'; // Failsafe for Namecheap
                 $port = env('DB_PORT', '3306');
                 $database = env('DB_DATABASE', 'fruinxrj_opsone');
+                if ($database === 'crewassist') $database = 'fruinxrj_opsone';
+
                 $username = env('DB_USERNAME', 'fruinxrj_opsone_user');
+                if ($username === 'crewassist' || $username === 'root') $username = 'fruinxrj_opsone_user';
+
                 $password = env('DB_PASSWORD', 'N682LygNp1=I');
+                if ($password === 'secret' || $password === '') $password = 'N682LygNp1=I';
 
                 $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password, [
