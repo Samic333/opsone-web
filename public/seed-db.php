@@ -16,11 +16,17 @@ require BASE_PATH . '/config/database.php';
 echo "<h1>OpsOne Database Seeder</h1>";
 echo "<p>Connecting to database...</p>";
 
+// Ensure we have correct defaults for Namecheap if .env is missing
+if (!env('DB_DATABASE')) {
+    echo "<p><em>Note: No .env found. Using hardcoded production defaults.</em></p>";
+}
+
 try {
     $db = Database::getInstance();
-    echo "<p>Connected successfully to " . e(env('DB_DATABASE')) . ".</p>";
+    echo "<p>Connected successfully.</p>";
 } catch (\Exception $e) {
     echo "<p><strong>Connection Error:</strong> " . e($e->getMessage()) . "</p>";
+    echo "<p>Please ensure you have renamed .env.production to .env on the server or that the database credentials in config/database.php are correct.</p>";
     exit;
 }
 
@@ -109,11 +115,9 @@ foreach ($users as [$name, $email, $empId, $deptId, $bId, $roleSlug]) {
     if (isset($roleMap[$roleSlug])) {
         Database::insert("INSERT INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)", [$userId, $roleMap[$roleSlug], $tenantId]);
     }
-    // Give admin additional airline_admin role
     if ($roleSlug === 'super_admin' && isset($roleMap['airline_admin'])) {
         Database::insert("INSERT INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)", [$userId, $roleMap['airline_admin'], $tenantId]);
     }
-    // Give CEO / Director additional airline_admin role
     if ($roleSlug === 'director' && isset($roleMap['airline_admin'])) {
         Database::insert("INSERT INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)", [$userId, $roleMap['airline_admin'], $tenantId]);
     }
@@ -126,6 +130,6 @@ foreach ($cats as [$catName, $catSlug]) {
 }
 
 echo "</ul>";
-echo "<h2>✅ Setup Complete! All 11 users available.</h2>";
-echo "<p>Database seeded successfully. Please <strong>delete this file (seed-db.php)</strong> from the server immediately after use for security.</p>";
+echo "<h2>✅ Setup Complete! All users live at acentoza.com</h2>";
+echo "<p>Please <strong>delete this file (seed-db.php)</strong> from the server for security.</p>";
 echo "<p><a href='/login'>Go to Login</a></p>";
