@@ -1,15 +1,16 @@
 <?php
 /**
- * Login Page
+ * OpsOne — Login Page
  */
+$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsOne'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sign in to the CrewAssist airline operations portal">
-    <title>Sign In — CrewAssist Portal</title>
+    <meta name="description" content="Sign in to the <?= e($brand['product_name']) ?> airline operations portal">
+    <title>Sign In — <?= e($brand['product_name']) ?></title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -18,7 +19,7 @@
     <div class="login-card">
         <div class="login-logo">
             <div class="login-logo-icon">✈</div>
-            <h1>CrewAssist</h1>
+            <h1><?= e($brand['product_name']) ?></h1>
             <p>Airline Operations Portal</p>
         </div>
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * CrewAssist Portal — Setup & Migration Script
+ * OpsOne Platform — Setup & Migration Script
  * Run: php setup.php
  */
 

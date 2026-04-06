@@ -12,7 +12,11 @@ class Database {
             $driver = env('DB_DRIVER', 'mysql');
             
             if ($driver === 'sqlite') {
-                $dbPath = env('DB_DATABASE', BASE_PATH . '/database/crewassist.sqlite');
+                $dbPath = env('DB_DATABASE', 'database/crewassist.sqlite');
+                // Resolve relative paths against BASE_PATH
+                if (!str_starts_with($dbPath, '/')) {
+                    $dbPath = (defined('BASE_PATH') ? BASE_PATH : dirname(__DIR__)) . '/' . $dbPath;
+                }
                 self::$instance = new PDO("sqlite:$dbPath", null, null, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
