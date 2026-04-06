@@ -26,9 +26,9 @@ class Database {
             } else {
                 $host = env('DB_HOST', '127.0.0.1');
                 $port = env('DB_PORT', '3306');
-                $database = env('DB_DATABASE', 'crewassist');
-                $username = env('DB_USERNAME', 'root');
-                $password = env('DB_PASSWORD', '');
+                $database = env('DB_DATABASE', 'fruinxrj_opsone');
+                $username = env('DB_USERNAME', 'fruinxrj_opsone_user');
+                $password = env('DB_PASSWORD', 'N682LygNp1=I');
 
                 $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password, [

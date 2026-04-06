@@ -24,11 +24,17 @@ try {
     exit;
 }
 
-// Check if already seeded
+// Check if already seeded and wipe to allow re-seeding safely
 $existingTenant = Database::fetch("SELECT id FROM tenants WHERE code = 'GWA'");
 if ($existingTenant) {
-    echo "<p>Database is already seeded! You can log in.</p>";
-    exit;
+    echo "<p>Wiping previous demo data to ensure a clean slate...</p>";
+    Database::execute("DELETE FROM user_roles");
+    Database::execute("DELETE FROM users");
+    Database::execute("DELETE FROM roles");
+    Database::execute("DELETE FROM file_categories");
+    Database::execute("DELETE FROM bases");
+    Database::execute("DELETE FROM departments");
+    Database::execute("DELETE FROM tenants");
 }
 
 $sysRoles = [
@@ -77,6 +83,7 @@ $baseId = $baseId1;
 echo "<li>Creating demo users...</li>";
 $pw = password_hash('demo', PASSWORD_BCRYPT);
 $users = [
+    ['Tariq Al-Fayed',          'ceo@airline.com',        'DIR-001', $deptIds['Management'],        $baseId, 'director'],
     ['Omar Bin Zayed',          'admin@airline.com',      'SYS-001', $deptIds['IT'],                $baseId, 'super_admin'],
     ['Fatima Al-Zaabi',         'hr@airline.com',         'HR-003',  $deptIds['Human Resources'],   $baseId, 'hr'],
     ['Captain Rashid Hussein',  'pilot@airline.com',      'FLT-001', $deptIds['Flight Operations'], $baseId, 'pilot'],
@@ -106,6 +113,10 @@ foreach ($users as [$name, $email, $empId, $deptId, $bId, $roleSlug]) {
     if ($roleSlug === 'super_admin' && isset($roleMap['airline_admin'])) {
         Database::insert("INSERT INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)", [$userId, $roleMap['airline_admin'], $tenantId]);
     }
+    // Give CEO / Director additional airline_admin role
+    if ($roleSlug === 'director' && isset($roleMap['airline_admin'])) {
+        Database::insert("INSERT INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)", [$userId, $roleMap['airline_admin'], $tenantId]);
+    }
 }
 
 echo "<li>Creating file categories...</li>";
@@ -115,6 +126,6 @@ foreach ($cats as [$catName, $catSlug]) {
 }
 
 echo "</ul>";
-echo "<h2>✅ Setup Complete!</h2>";
+echo "<h2>✅ Setup Complete! All 11 users available.</h2>";
 echo "<p>Database seeded successfully. Please <strong>delete this file (seed-db.php)</strong> from the server immediately after use for security.</p>";
 echo "<p><a href='/login'>Go to Login</a></p>";
