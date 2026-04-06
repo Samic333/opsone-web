@@ -8,13 +8,8 @@ class InstallController {
         $user = currentUser();
         $tenantId = currentTenantId();
 
-        if (!$user) {
-            flash('error', 'You must be logged in to access the install page.');
-            redirect('/login');
-        }
-
         // Log page view
-        InstallLog::log('page_view', $user['id'], $tenantId);
+        InstallLog::log('page_view', $user['id'] ?? null, $tenantId);
 
         // Get latest build info
         $latestBuild = AppBuild::latest();
@@ -27,18 +22,14 @@ class InstallController {
         ob_start();
         require VIEWS_PATH . '/install/index.php';
         $content = ob_get_clean();
-        require VIEWS_PATH . '/layouts/app.php';
+        require VIEWS_PATH . '/layouts/public.php';
     }
 
     public function instructions(): void {
         $user = currentUser();
         $tenantId = currentTenantId();
 
-        if (!$user) {
-            redirect('/login');
-        }
-
-        InstallLog::log('instructions_view', $user['id'], $tenantId);
+        InstallLog::log('instructions_view', $user['id'] ?? null, $tenantId);
 
         $brand = require CONFIG_PATH . '/branding.php';
         $pageTitle = 'Installation Guide';
@@ -47,18 +38,12 @@ class InstallController {
         ob_start();
         require VIEWS_PATH . '/install/instructions.php';
         $content = ob_get_clean();
-        require VIEWS_PATH . '/layouts/app.php';
+        require VIEWS_PATH . '/layouts/public.php';
     }
 
     public function manifest(): void {
         $user = currentUser();
-        if (!$user) {
-            http_response_code(403);
-            echo 'Unauthorized';
-            exit;
-        }
-
-        InstallLog::log('manifest_request', $user['id'], currentTenantId());
+        InstallLog::log('manifest_request', $user['id'] ?? null, currentTenantId());
 
         $build = AppBuild::latest();
         if (!$build) {
@@ -91,11 +76,6 @@ class InstallController {
 
     public function download(int $buildId): void {
         $user = currentUser();
-        if (!$user) {
-            http_response_code(403);
-            echo 'Unauthorized';
-            exit;
-        }
 
         $build = AppBuild::find($buildId);
         if (!$build || !$build['file_path']) {
@@ -104,7 +84,7 @@ class InstallController {
             exit;
         }
 
-        InstallLog::log('build_download', $user['id'], currentTenantId(), $buildId);
+        InstallLog::log('build_download', $user['id'] ?? null, currentTenantId(), $buildId);
 
         $filePath = storagePath('builds/' . $build['file_path']);
         if (!file_exists($filePath)) {

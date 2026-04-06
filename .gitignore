@@ -32,3 +32,4 @@ vendor/
 
 # Docker
 docker/mysql_data/
+.env.production

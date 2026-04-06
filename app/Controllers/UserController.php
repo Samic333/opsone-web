@@ -37,6 +37,7 @@ class UserController {
         $baseId = (int)($_POST['base_id'] ?? 0);
         $status = $_POST['status'] ?? 'active';
         $mobileAccess = isset($_POST['mobile_access']) ? 1 : 0;
+        $webAccess = isset($_POST['web_access']) ? 1 : 0;
         $roleIds = $_POST['roles'] ?? [];
 
         if (empty($name) || empty($email) || empty($password)) {
@@ -61,6 +62,7 @@ class UserController {
             'base_id' => $baseId,
             'status' => $status,
             'mobile_access' => $mobileAccess,
+            'web_access' => $webAccess,
         ]);
 
         // Assign roles
@@ -110,6 +112,7 @@ class UserController {
         $baseId = (int)($_POST['base_id'] ?? 0);
         $status = $_POST['status'] ?? 'active';
         $mobileAccess = isset($_POST['mobile_access']) ? 1 : 0;
+        $webAccess = isset($_POST['web_access']) ? 1 : 0;
         $roleIds = $_POST['roles'] ?? [];
 
         if (empty($name) || empty($email)) {
@@ -126,6 +129,7 @@ class UserController {
             'base_id' => $baseId,
             'status' => $status,
             'mobile_access' => $mobileAccess,
+            'web_access' => $webAccess,
         ]);
 
         // Re-assign roles

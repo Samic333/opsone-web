@@ -116,12 +116,8 @@ if ($isApi) {
         $apiAuth = new ApiAuthMiddleware();
         $apiAuth->handle();
     }
-} elseif ($isPublic) {
+} elseif ($isPublic || $isInstall) {
     // Public routes: NO auth required
-} elseif ($isInstall) {
-    // Install routes: require auth + active status + mobile access
-    $installAccess = new InstallAccessMiddleware();
-    $installAccess->handle();
 } else {
     // Web routes: session auth (except login page)
     if ($controllerName !== 'AuthController') {

@@ -51,9 +51,12 @@
                     <?php endforeach; ?>
                 </select>
             </div>
-            <div class="form-group" style="display:flex;align-items:flex-end;padding-bottom:22px;">
+            <div class="form-group" style="display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:22px;gap:8px;">
                 <label class="form-check">
-                    <input type="checkbox" name="mobile_access" <?= $user['mobile_access'] ? 'checked' : '' ?>> Allow mobile app access
+                    <input type="checkbox" name="web_access" <?= !empty($user['web_access']) ? 'checked' : '' ?>> Allow web portal access
+                </label>
+                <label class="form-check">
+                    <input type="checkbox" name="mobile_access" <?= !empty($user['mobile_access']) ? 'checked' : '' ?>> Allow mobile app access
                 </label>
             </div>
         </div>

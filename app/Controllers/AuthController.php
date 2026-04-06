@@ -58,12 +58,9 @@ class AuthController {
         // Load roles
         $roles = UserModel::getRoleSlugs($user['id']);
 
-        // Check user has web portal access (not mobile-only roles without admin access)
-        $webRoles = ['super_admin', 'airline_admin', 'hr', 'scheduler', 'safety_officer', 'document_control', 'chief_pilot', 'fdm_analyst', 'director', 'base_manager'];
-        $hasWebAccess = !empty(array_intersect($roles, $webRoles));
-        
-        if (!$hasWebAccess) {
-            flash('error', 'Your role does not have web portal access.');
+        // Check user has web portal access via specific web_access flag
+        if (empty($user['web_access'])) {
+            flash('error', 'Your account does not have web portal access. Contact your administrator.');
             redirect('/login');
         }
 

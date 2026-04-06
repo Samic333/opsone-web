@@ -16,10 +16,17 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
 </head>
 <body>
 <div class="login-page">
+    <div style="position: absolute; top: var(--spacing-lg); left: var(--spacing-lg);">
+        <a href="/home" style="color: var(--text-secondary); text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+            <span>←</span> Back to Website
+        </a>
+    </div>
     <div class="login-card">
         <div class="login-logo">
-            <div class="login-logo-icon">✈</div>
-            <h1><?= e($brand['product_name']) ?></h1>
+            <a href="/home" style="text-decoration: none; color: inherit; display: inline-block;">
+                <div class="login-logo-icon">✈</div>
+                <h1><?= e($brand['product_name']) ?></h1>
+            </a>
             <p>Airline Operations Portal</p>
         </div>
 
@@ -51,10 +58,17 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px;">
                 <?php
                 $demos = [
-                    ['admin@airline.com', 'Super Admin', '🔧'],
+                    ['ceo@airline.com', 'Airline Super Admin', '👑'],
+                    ['admin@airline.com', 'System Admin', '🔧'],
                     ['hr@airline.com', 'HR Manager', '👥'],
+                    ['doccontrol@airline.com', 'Doc Control', '📄'],
+                    ['scheduling@airline.com', 'Scheduler', '🗓'],
+                    ['chiefpilot@airline.com', 'Chief Pilot', '👨‍✈️'],
                     ['pilot@airline.com', 'Pilot', '✈'],
+                    ['cabin@airline.com', 'Cabin Crew', '💁'],
+                    ['engineer@airline.com', 'Engineer', '🧰'],
                     ['safety@airline.com', 'Safety Officer', '⚠'],
+                    ['fdm@airline.com', 'FDM Analyst', '📊'],
                 ];
                 foreach ($demos as [$dEmail, $dLabel, $dIcon]):
                 ?>

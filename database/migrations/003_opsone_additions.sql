@@ -21,6 +21,9 @@ CREATE TABLE IF NOT EXISTS notices (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Add explicit web_access to users table
+ALTER TABLE users ADD COLUMN web_access TINYINT(1) DEFAULT 1;
+
 -- App Builds — tracks enterprise build versions
 CREATE TABLE IF NOT EXISTS app_builds (
     id             INTEGER PRIMARY KEY AUTOINCREMENT,
