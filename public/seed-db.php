@@ -13,27 +13,65 @@ if (file_exists($envFile)) {
 require BASE_PATH . '/app/Helpers/functions.php';
 require BASE_PATH . '/config/database.php';
 
-echo "<h1>OpsOne Database Seeder</h1>";
+echo "<h1>OpsOne Database Setup & Seeder</h1>";
 echo "<p>Connecting to database...</p>";
-
-// Ensure we have correct defaults for Namecheap if .env is missing
-if (!env('DB_DATABASE')) {
-    echo "<p><em>Note: No .env found. Using hardcoded production defaults.</em></p>";
-}
 
 try {
     $db = Database::getInstance();
     echo "<p>Connected successfully.</p>";
 } catch (\Exception $e) {
-    echo "<p><strong>Connection Error:</strong> " . e($e->getMessage()) . "</p>";
-    echo "<p>Please ensure you have renamed .env.production to .env on the server or that the database credentials in config/database.php are correct.</p>";
+    echo "<p><strong style='color:red;'>Connection Error:</strong> " . e($e->getMessage()) . "</p>";
     exit;
 }
 
-// Check if already seeded and wipe to allow re-seeding safely
-$existingTenant = Database::fetch("SELECT id FROM tenants WHERE code = 'GWA'");
+// 1. RUN MIGRATIONS (Create Tables)
+echo "<h3>1. Creating Database Schema...</h3>";
+$migrations = [
+    BASE_PATH . '/database/migrations/001_create_schema.sql',
+    BASE_PATH . '/database/migrations/003_opsone_additions.sql'
+];
+
+foreach ($migrations as $migFile) {
+    if (!file_exists($migFile)) {
+        echo "<p style='color:orange;'>Skipping missing migration: $migFile</p>";
+        continue;
+    }
+    
+    echo "<li>Executing " . basename($migFile) . "... ";
+    $sql = file_get_contents($migFile);
+    // Remove comments and multi-statements
+    $cleanSql = preg_replace('/--[^\n]*/', '', $sql);
+    $statements = explode(';', $cleanSql);
+    
+    $count = 0;
+    foreach ($statements as $stmt) {
+        $stmt = trim($stmt);
+        if (empty($stmt)) continue;
+        try {
+            $db->exec($stmt);
+            $count++;
+        } catch (\PDOException $e) {
+            // Silently ignore 'already exists' errors
+            if (!str_contains($e->getMessage(), 'already exists')) {
+                echo "<br><small style='color:red;'>Error in " . basename($migFile) . ": " . e($e->getMessage()) . "</small>";
+            }
+        }
+    }
+    echo "Done ($count statements executed)</li>";
+}
+
+// 2. SEED DATA
+echo "<h3>2. Seeding Demo Data...</h3>";
+
+// Check if already seeded
+try {
+    $existingTenant = Database::fetch("SELECT id FROM tenants WHERE code = 'GWA'");
+} catch (\Exception $e) {
+    $existingTenant = null;
+}
+
 if ($existingTenant) {
-    echo "<p>Wiping previous demo data to ensure a clean slate...</p>";
+    echo "<p>Database already contains data. Wiping for a clean slate...</p>";
     Database::execute("DELETE FROM user_roles");
     Database::execute("DELETE FROM users");
     Database::execute("DELETE FROM roles");
@@ -130,6 +168,6 @@ foreach ($cats as [$catName, $catSlug]) {
 }
 
 echo "</ul>";
-echo "<h2>✅ Setup Complete! All users live at acentoza.com</h2>";
+echo "<h2>✅ Setup Complete! Tables created and data seeded.</h2>";
 echo "<p>Please <strong>delete this file (seed-db.php)</strong> from the server for security.</p>";
 echo "<p><a href='/login'>Go to Login</a></p>";
