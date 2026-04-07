@@ -9,7 +9,7 @@ class Notice {
                 WHERE n.tenant_id = ?";
         $params = [$tenantId];
         if ($publishedOnly) {
-            $sql .= " AND n.published = 1 AND (n.expires_at IS NULL OR n.expires_at > datetime('now'))";
+            $sql .= " AND n.published = 1 AND (n.expires_at IS NULL OR n.expires_at > " . dbNow() . ")";
         }
         $sql .= " ORDER BY n.created_at DESC";
         return Database::fetchAll($sql, $params);
@@ -78,8 +78,17 @@ class Notice {
 
     public static function activeCount(int $tenantId): int {
         return (int) Database::fetch(
-            "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1 AND (expires_at IS NULL OR expires_at > datetime('now'))",
+            "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1 AND (expires_at IS NULL OR expires_at > " . dbNow() . ")",
             [$tenantId]
         )['c'];
+    }
+
+    public static function recent(int $tenantId, int $limit = 5): array {
+        return Database::fetchAll(
+            "SELECT * FROM notices WHERE tenant_id = ? AND published = 1 
+             AND (expires_at IS NULL OR expires_at > " . dbNow() . ")
+             ORDER BY created_at DESC LIMIT ?",
+            [$tenantId, $limit]
+        );
     }
 }

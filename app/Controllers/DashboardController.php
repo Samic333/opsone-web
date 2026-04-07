@@ -63,7 +63,7 @@ class DashboardController {
     private function pilotDashboard(int $tenantId): void {
         $user = currentUser();
         $data = [
-            'recent_notices' => NoticeModel::recent($tenantId, 5),
+            'recent_notices' => Notice::recent($tenantId, 5),
             'sync_status' => Device::getLatestSync($user['id']),
             'last_login' => $user['last_login'] ?? 'Never',
         ];
