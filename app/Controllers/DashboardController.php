@@ -233,11 +233,11 @@ class DashboardController {
         $month = (int) date('n');
 
         $todayDuties = Database::fetchAll(
-            "SELECT r.*, CONCAT(u.first_name,' ',u.last_name) AS user_name, u.employee_id
+            "SELECT r.*, u.name AS user_name, u.employee_id
              FROM rosters r
              JOIN users u ON u.id = r.user_id
              WHERE r.tenant_id = ? AND r.roster_date = ?
-             ORDER BY u.last_name, u.first_name",
+             ORDER BY u.name",
             [$tenantId, $today]
         );
 

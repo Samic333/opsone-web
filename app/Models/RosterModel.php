@@ -30,11 +30,11 @@ class RosterModel {
         $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
 
         $rows = Database::fetchAll(
-            "SELECT r.*, CONCAT(u.first_name, ' ', u.last_name) AS user_name, u.employee_id
+            "SELECT r.*, u.name AS user_name, u.employee_id
              FROM rosters r
              JOIN users u ON u.id = r.user_id
              WHERE r.tenant_id = ? AND r.roster_date BETWEEN ? AND ?
-             ORDER BY u.last_name, u.first_name, r.roster_date",
+             ORDER BY u.name, r.roster_date",
             [$tenantId, $from, $to]
         );
 
@@ -72,14 +72,14 @@ class RosterModel {
      */
     public static function getCrewList(int $tenantId): array {
         return Database::fetchAll(
-            "SELECT DISTINCT u.id, CONCAT(u.first_name, ' ', u.last_name) AS user_name,
+            "SELECT DISTINCT u.id, u.name AS user_name,
                     u.employee_id, r.name AS role_name
              FROM users u
              JOIN user_roles ur ON ur.user_id = u.id
              JOIN roles r ON r.id = ur.role_id
              WHERE u.tenant_id = ? AND u.status = 'active'
                AND r.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
-             ORDER BY u.last_name, u.first_name",
+             ORDER BY u.name",
             [$tenantId]
         );
     }
