@@ -650,6 +650,65 @@ try {
         echo "Rosters table not found — run migration 007 first.\n";
     }
 
+    // ─── 17. FDM demo data ────────────────────────────────
+    echo "Step 17: Seeding FDM demo data... ";
+    $hasFdm = $driver === 'sqlite'
+        ? $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='fdm_uploads'")->fetchColumn()
+        : $db->query("SHOW TABLES LIKE 'fdm_uploads'")->fetchColumn();
+
+    if ($hasFdm) {
+        try {
+            $db->exec("DELETE FROM fdm_events  WHERE tenant_id = 1");
+            $db->exec("DELETE FROM fdm_uploads WHERE tenant_id = 1");
+
+            $fdmUserId = $uids['demo.fdm@acentoza.com'] ?? ($uids['demo.airadmin@acentoza.com'] ?? 1);
+
+            // Create 3 sample uploads
+            $uploadSql = "INSERT INTO fdm_uploads (tenant_id, uploaded_by, filename, original_name, flight_date, aircraft_reg, flight_number, event_count, status, notes)
+                          VALUES (1, ?, ?, ?, ?, ?, ?, ?, 'processed', ?)";
+            $upStmt = $db->prepare($uploadSql);
+
+            $upStmt->execute([$fdmUserId, 'fdm_demo_1.csv', 'KQ101_2026-04-05.csv', '2026-04-05', '5Y-KQX', 'KQ101', 0, 'Monthly FOQA download — Nairobi to Dubai']);
+            $up1 = $db->lastInsertId();
+
+            $upStmt->execute([$fdmUserId, 'fdm_demo_2.csv', 'KQ202_2026-04-07.csv', '2026-04-07', '5Y-KQY', 'KQ202', 0, 'Monthly FOQA download — Nairobi to London']);
+            $up2 = $db->lastInsertId();
+
+            $upStmt->execute([$fdmUserId, 'fdm_manual.csv', 'Manual Entry', '2026-04-08', '5Y-KQX', 'KQ105', 0, null]);
+            $up3 = $db->lastInsertId();
+
+            // Create sample events
+            $evSql = "INSERT INTO fdm_events (tenant_id, fdm_upload_id, event_type, severity, flight_date, aircraft_reg, flight_number, flight_phase, parameter, value_recorded, threshold, notes)
+                      VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            $evStmt = $db->prepare($evSql);
+
+            // Upload 1 events (KQ101)
+            $evStmt->execute([$up1, 'hard_landing',          'medium',   '2026-04-05', '5Y-KQX', 'KQ101', 'landing',  'vertical_g',     2.3,  2.0,  'Firm touchdown — crew reported gusty conditions']);
+            $evStmt->execute([$up1, 'exceedance',            'low',      '2026-04-05', '5Y-KQX', 'KQ101', 'climb',    'climb_rate',     3200, 3000, 'Brief rate exceedance during initial climb']);
+            $evStmt->execute([$up1, 'unstabilised_approach', 'medium',   '2026-04-05', '5Y-KQX', 'KQ101', 'approach', 'airspeed',        148,  140,  'Speed above target inside 1000ft — crew corrected']);
+
+            // Upload 2 events (KQ202 — more serious)
+            $evStmt->execute([$up2, 'gpws',                  'high',     '2026-04-07', '5Y-KQY', 'KQ202', 'approach', 'terrain_alert',   1,    null, 'Mode 2 GPWS — terrain clearance — pulled up immediately']);
+            $evStmt->execute([$up2, 'overspeed',             'high',     '2026-04-07', '5Y-KQY', 'KQ202', 'cruise',   'mmo_exceedance',  0.84, 0.82, 'Brief Mmo exceedance in cruise — turbulence encounter']);
+            $evStmt->execute([$up2, 'hard_landing',          'critical', '2026-04-07', '5Y-KQY', 'KQ202', 'landing',  'vertical_g',     3.1,  2.0,  'Hard landing — maintenance inspection required']);
+            $evStmt->execute([$up2, 'exceedance',            'medium',   '2026-04-07', '5Y-KQY', 'KQ202', 'approach', 'bank_angle',      32,   30,   'Bank angle exceedance on final']);
+
+            // Upload 3 — manual entry
+            $evStmt->execute([$up3, 'windshear',             'high',     '2026-04-08', '5Y-KQX', 'KQ105', 'approach', 'wind_shear',      18,   15,   'Windshear warning — go-around executed']);
+
+            // Update event counts
+            $db->prepare("UPDATE fdm_uploads SET event_count = 3 WHERE id = ?")->execute([$up1]);
+            $db->prepare("UPDATE fdm_uploads SET event_count = 4 WHERE id = ?")->execute([$up2]);
+            $db->prepare("UPDATE fdm_uploads SET event_count = 1 WHERE id = ?")->execute([$up3]);
+
+            echo "✓\n";
+        } catch (\Exception $e) {
+            echo "(partial — " . $e->getMessage() . ")\n";
+        }
+    } else {
+        echo "FDM tables not found — run migration 008 first.\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

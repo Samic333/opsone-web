@@ -175,27 +175,34 @@ class DashboardController {
     }
 
     private function safetyDashboard(int $tenantId): void {
+        $fdmSummary = FdmModel::summary($tenantId);
+        $compliance = CrewProfileModel::complianceSummary($tenantId);
         $data = [
-            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
-            'critical_notices'=> (int) Database::fetch(
+            'active_staff'     => UserModel::countByTenant($tenantId, 'active'),
+            'critical_notices' => (int) Database::fetch(
                 "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1 AND priority IN ('critical','urgent')",
                 [$tenantId]
             )['c'],
-            'total_notices'   => (int) Database::fetch(
+            'total_notices'    => (int) Database::fetch(
                 "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1",
                 [$tenantId]
             )['c'],
-            'recent_notices'  => Notice::recent($tenantId, 5),
-            'recent_activity' => AuditLog::recent($tenantId, 8),
+            'recent_notices'   => Notice::recent($tenantId, 5),
+            'recent_activity'  => AuditLog::recent($tenantId, 8),
+            'fdm_summary'      => $fdmSummary,
+            'compliance'       => $compliance,
         ];
         require VIEWS_PATH . '/dashboard/safety.php';
     }
 
     private function fdmDashboard(int $tenantId): void {
+        $summary = FdmModel::summary($tenantId);
         $data = [
             'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
             'recent_activity' => AuditLog::recent($tenantId, 8),
             'total_files'     => FileModel::countByTenant($tenantId),
+            'fdm_summary'     => $summary,
+            'recent_events'   => FdmModel::recentEvents($tenantId, 8),
         ];
         require VIEWS_PATH . '/dashboard/fdm.php';
     }

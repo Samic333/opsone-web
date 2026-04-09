@@ -75,6 +75,18 @@ return [
     'POST /roster/assign'      => ['RosterController', 'assign'],
     'POST /roster/delete/{id}' => ['RosterController', 'delete'],
 
+    // ─── FDM ───────────────────────────
+    'GET /fdm'                                       => ['FdmController', 'index'],
+    'GET /fdm/upload'                                => ['FdmController', 'uploadForm'],
+    'POST /fdm/store'                                => ['FdmController', 'store'],
+    'GET /fdm/view/{id}'                             => ['FdmController', 'view'],
+    'POST /fdm/{id}/events/add'                      => ['FdmController', 'addEvent'],
+    'POST /fdm/{id}/events/delete/{lid}'             => ['FdmController', 'deleteEvent'],
+    'POST /fdm/delete/{id}'                          => ['FdmController', 'deleteUpload'],
+
+    // ─── Compliance ─────────────────────
+    'GET /compliance' => ['ComplianceController', 'index'],
+
     // ─── Install (Protected) ──────────
     'GET /install'                 => ['InstallController', 'index'],
     'GET /install/instructions'    => ['InstallController', 'instructions'],

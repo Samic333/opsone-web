@@ -140,13 +140,17 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Safety & FDM (placeholder) ────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'fdm_analyst'])): ?>
+            <!-- ─── Safety & FDM ──────────────────────── -->
+            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'fdm_analyst', 'chief_pilot', 'hr'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Safety</div>
-                <a href="/dashboard" class="sidebar-link" style="opacity:0.55; cursor:default;" title="FDM upload — coming in Phase 5">
-                    <span class="icon">📊</span> FDM Upload
-                    <span style="font-size:9px;background:var(--accent-amber,#f59e0b);color:#000;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:700;">SOON</span>
+                <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'fdm_analyst'])): ?>
+                <a href="/fdm" class="sidebar-link <?= str_starts_with($currentPath, '/fdm') ? 'active' : '' ?>">
+                    <span class="icon">📊</span> FDM Data
+                </a>
+                <?php endif; ?>
+                <a href="/compliance" class="sidebar-link <?= str_starts_with($currentPath, '/compliance') ? 'active' : '' ?>">
+                    <span class="icon">✅</span> Compliance
                 </a>
             </div>
             <?php endif; ?>
