@@ -1,56 +1,224 @@
 <?php
 /**
- * DashboardController — role-aware dashboards
+ * DashboardController — role-aware dashboard routing
+ *
+ * Routing priority (first match wins):
+ *   super_admin (multi-tenant)         → Platform overview
+ *   platform_support/security/monitor  → Platform overview (read-only feel)
+ *   airline_admin, hr                  → Airline admin / HR dashboard
+ *   chief_pilot                        → Chief Pilot dashboard
+ *   head_cabin_crew                    → Head of Cabin Crew dashboard
+ *   engineering_manager                → Engineering Manager dashboard
+ *   safety_officer                     → Safety Manager dashboard
+ *   fdm_analyst                        → FDM Analyst dashboard
+ *   document_control                   → Document Control dashboard
+ *   base_manager                       → Base Manager dashboard
+ *   scheduler                          → Scheduler dashboard
+ *   pilot, cabin_crew                  → Crew (pilot) dashboard
+ *   engineer                           → Engineer dashboard
+ *   training_admin                     → Training Admin dashboard
+ *   (fallback)                         → Airline admin dashboard
  */
 class DashboardController {
     public function index(): void {
         $tenantId = currentTenantId();
-        
+
         if (hasRole('super_admin') && isMultiTenant()) {
             $this->superAdminDashboard();
+
+        } elseif (hasAnyRole(['platform_support', 'platform_security', 'system_monitoring']) && isMultiTenant()) {
+            $this->platformSupportDashboard();
+
         } elseif (hasAnyRole(['airline_admin', 'hr'])) {
             $this->airlineAdminDashboard($tenantId);
+
+        } elseif (hasRole('chief_pilot')) {
+            $this->chiefPilotDashboard($tenantId);
+
+        } elseif (hasRole('head_cabin_crew')) {
+            $this->headCabinCrewDashboard($tenantId);
+
+        } elseif (hasRole('engineering_manager')) {
+            $this->engineeringDashboard($tenantId);
+
+        } elseif (hasRole('safety_officer')) {
+            $this->safetyDashboard($tenantId);
+
+        } elseif (hasRole('fdm_analyst')) {
+            $this->fdmDashboard($tenantId);
+
+        } elseif (hasRole('document_control')) {
+            $this->documentControlDashboard($tenantId);
+
+        } elseif (hasRole('base_manager')) {
+            $this->baseManagerDashboard($tenantId);
+
         } elseif (hasRole('scheduler')) {
             $this->schedulerDashboard($tenantId);
+
         } elseif (hasAnyRole(['pilot', 'cabin_crew'])) {
             $this->pilotDashboard($tenantId);
+
+        } elseif (hasRole('engineer')) {
+            $this->engineerDashboard($tenantId);
+
+        } elseif (hasRole('training_admin')) {
+            $this->trainingDashboard($tenantId);
+
         } else {
             $this->airlineAdminDashboard($tenantId);
         }
     }
 
+    // ─── Platform dashboards ──────────────────────────────
+
     private function superAdminDashboard(): void {
         $data = [
-            'total_airlines' => Tenant::countAll(),
-            'active_airlines' => Tenant::countActive(),
-            'total_users' => (int) Database::fetch("SELECT COUNT(*) as c FROM users")['c'],
-            'pending_devices' => (int) Database::fetch("SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'")['c'],
-            'recent_activity' => AuditLog::all(null, 10),
-            'tenants' => Tenant::all(),
+            'total_airlines'   => Tenant::countAll(),
+            'active_airlines'  => Tenant::countActive(),
+            'total_users'      => (int) Database::fetch("SELECT COUNT(*) as c FROM users")['c'],
+            'pending_devices'  => (int) Database::fetch("SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'")['c'],
+            'recent_activity'  => AuditLog::all(null, 10),
+            'tenants'          => Tenant::all(),
         ];
         require VIEWS_PATH . '/dashboard/super_admin.php';
     }
 
+    private function platformSupportDashboard(): void {
+        // Read-only platform view — same data, different context label
+        $data = [
+            'total_airlines'   => Tenant::countAll(),
+            'active_airlines'  => Tenant::countActive(),
+            'total_users'      => (int) Database::fetch("SELECT COUNT(*) as c FROM users")['c'],
+            'pending_devices'  => (int) Database::fetch("SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'")['c'],
+            'recent_activity'  => AuditLog::all(null, 10),
+            'tenants'          => Tenant::all(),
+        ];
+        require VIEWS_PATH . '/dashboard/platform_support.php';
+    }
+
+    // ─── Airline-level dashboards ─────────────────────────
+
     private function airlineAdminDashboard(int $tenantId): void {
         $data = [
-            'active_staff' => UserModel::countByTenant($tenantId, 'active'),
-            'pending_users' => UserModel::countByTenant($tenantId, 'pending'),
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'pending_users'   => UserModel::countByTenant($tenantId, 'pending'),
             'pending_devices' => Device::countPending($tenantId),
-            'total_files' => FileModel::countByTenant($tenantId),
-            'recent_uploads' => FileModel::recentUploads($tenantId, 5),
-            'recent_logins' => UserModel::recentLogins($tenantId, 8),
-            'users_by_role' => UserModel::countByRole($tenantId),
+            'total_files'     => FileModel::countByTenant($tenantId),
+            'recent_uploads'  => FileModel::recentUploads($tenantId, 5),
+            'recent_logins'   => UserModel::recentLogins($tenantId, 8),
+            'users_by_role'   => UserModel::countByRole($tenantId),
             'users_by_status' => UserModel::countByStatus($tenantId),
-            'device_stats' => Device::countByStatus($tenantId),
+            'device_stats'    => Device::countByStatus($tenantId),
             'recent_activity' => AuditLog::recent($tenantId, 10),
         ];
 
         $isHr = hasRole('hr') && !hasRole('airline_admin') && !hasRole('super_admin');
-        if ($isHr) {
-            require VIEWS_PATH . '/dashboard/hr.php';
-        } else {
-            require VIEWS_PATH . '/dashboard/airline_admin.php';
-        }
+        require VIEWS_PATH . '/dashboard/' . ($isHr ? 'hr' : 'airline_admin') . '.php';
+    }
+
+    // ─── Management dashboards ────────────────────────────
+
+    private function chiefPilotDashboard(int $tenantId): void {
+        $data = [
+            'pilot_count'     => (int) Database::fetch(
+                "SELECT COUNT(DISTINCT u.id) as c FROM users u
+                 JOIN user_roles ur ON ur.user_id = u.id
+                 JOIN roles r ON r.id = ur.role_id
+                 WHERE u.tenant_id = ? AND r.slug = 'pilot' AND u.status = 'active'",
+                [$tenantId]
+            )['c'],
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'total_files'     => FileModel::countByTenant($tenantId),
+            'recent_notices'  => Notice::recent($tenantId, 5),
+            'recent_activity' => AuditLog::recent($tenantId, 6),
+        ];
+        require VIEWS_PATH . '/dashboard/chief_pilot.php';
+    }
+
+    private function headCabinCrewDashboard(int $tenantId): void {
+        $data = [
+            'cabin_count'     => (int) Database::fetch(
+                "SELECT COUNT(DISTINCT u.id) as c FROM users u
+                 JOIN user_roles ur ON ur.user_id = u.id
+                 JOIN roles r ON r.id = ur.role_id
+                 WHERE u.tenant_id = ? AND r.slug = 'cabin_crew' AND u.status = 'active'",
+                [$tenantId]
+            )['c'],
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'recent_notices'  => Notice::recent($tenantId, 5),
+            'recent_activity' => AuditLog::recent($tenantId, 6),
+        ];
+        require VIEWS_PATH . '/dashboard/cabin_crew_mgmt.php';
+    }
+
+    private function engineeringDashboard(int $tenantId): void {
+        $data = [
+            'eng_count'       => (int) Database::fetch(
+                "SELECT COUNT(DISTINCT u.id) as c FROM users u
+                 JOIN user_roles ur ON ur.user_id = u.id
+                 JOIN roles r ON r.id = ur.role_id
+                 WHERE u.tenant_id = ? AND r.slug = 'engineer' AND u.status = 'active'",
+                [$tenantId]
+            )['c'],
+            'total_files'     => FileModel::countByTenant($tenantId),
+            'recent_notices'  => Notice::recent($tenantId, 5),
+            'recent_activity' => AuditLog::recent($tenantId, 6),
+        ];
+        require VIEWS_PATH . '/dashboard/engineering.php';
+    }
+
+    private function safetyDashboard(int $tenantId): void {
+        $data = [
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'critical_notices'=> (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1 AND priority IN ('critical','urgent')",
+                [$tenantId]
+            )['c'],
+            'total_notices'   => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1",
+                [$tenantId]
+            )['c'],
+            'recent_notices'  => Notice::recent($tenantId, 5),
+            'recent_activity' => AuditLog::recent($tenantId, 8),
+        ];
+        require VIEWS_PATH . '/dashboard/safety.php';
+    }
+
+    private function fdmDashboard(int $tenantId): void {
+        $data = [
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'recent_activity' => AuditLog::recent($tenantId, 8),
+            'total_files'     => FileModel::countByTenant($tenantId),
+        ];
+        require VIEWS_PATH . '/dashboard/fdm.php';
+    }
+
+    private function documentControlDashboard(int $tenantId): void {
+        $data = [
+            'total_files'     => FileModel::countByTenant($tenantId),
+            'draft_files'     => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM files WHERE tenant_id = ? AND status = 'draft'",
+                [$tenantId]
+            )['c'],
+            'total_notices'   => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM notices WHERE tenant_id = ? AND published = 1",
+                [$tenantId]
+            )['c'],
+            'recent_uploads'  => FileModel::recentUploads($tenantId, 8),
+        ];
+        require VIEWS_PATH . '/dashboard/document_control.php';
+    }
+
+    private function baseManagerDashboard(int $tenantId): void {
+        $user = currentUser();
+        $data = [
+            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
+            'pending_devices' => Device::countPending($tenantId),
+            'recent_notices'  => Notice::recent($tenantId, 5),
+            'recent_activity' => AuditLog::recent($tenantId, 6),
+        ];
+        require VIEWS_PATH . '/dashboard/base_manager.php';
     }
 
     private function schedulerDashboard(int $tenantId): void {
@@ -60,13 +228,33 @@ class DashboardController {
         require VIEWS_PATH . '/dashboard/scheduler.php';
     }
 
+    // ─── Operational dashboards ───────────────────────────
+
     private function pilotDashboard(int $tenantId): void {
         $user = currentUser();
         $data = [
             'recent_notices' => Notice::recent($tenantId, 5),
-            'sync_status' => Device::getLatestSync($user['id']),
-            'last_login' => $user['last_login'] ?? 'Never',
+            'sync_status'    => Device::getLatestSync($user['id']),
+            'last_login'     => $user['last_login'] ?? 'Never',
         ];
         require VIEWS_PATH . '/dashboard/pilot.php';
+    }
+
+    private function engineerDashboard(int $tenantId): void {
+        $user = currentUser();
+        $data = [
+            'recent_notices' => Notice::recent($tenantId, 5),
+            'sync_status'    => Device::getLatestSync($user['id']),
+            'total_files'    => FileModel::countByTenant($tenantId),
+        ];
+        require VIEWS_PATH . '/dashboard/engineer.php';
+    }
+
+    private function trainingDashboard(int $tenantId): void {
+        $data = [
+            'active_staff'   => UserModel::countByTenant($tenantId, 'active'),
+            'recent_notices' => Notice::recent($tenantId, 5),
+        ];
+        require VIEWS_PATH . '/dashboard/training.php';
     }
 }
