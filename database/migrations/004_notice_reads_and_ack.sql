@@ -1,9 +1,10 @@
 -- =====================================================
 -- Migration 004 — Notice Reads & File Acknowledgements
 -- Phase 2: Persists read/ack state for notices and files
--- MySQL / MariaDB Compatible
+-- MySQL 8.0+ Compatible (NOT MariaDB-only syntax)
 -- Run: manually via phpMyAdmin or migration runner script
--- Safe to run multiple times (CREATE TABLE IF NOT EXISTS)
+-- Safe to run multiple times (CREATE TABLE IF NOT EXISTS,
+--   stored procedure guards ALTER TABLE column additions)
 -- =====================================================
 
 SET NAMES utf8mb4;
@@ -30,12 +31,56 @@ CREATE TABLE IF NOT EXISTS `notice_reads` (
     INDEX `idx_nr_tenant`  (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add requires_ack to notices if not present (safe ALTER)
-ALTER TABLE `notices`
-    ADD COLUMN IF NOT EXISTS `requires_ack` TINYINT(1) NOT NULL DEFAULT 0 AFTER `published`,
-    ADD COLUMN IF NOT EXISTS `target_roles` JSON DEFAULT NULL AFTER `requires_ack`,
-    ADD COLUMN IF NOT EXISTS `target_departments` JSON DEFAULT NULL AFTER `target_roles`,
-    ADD COLUMN IF NOT EXISTS `target_bases` JSON DEFAULT NULL AFTER `target_departments`;
+-- Add columns to notices if not already present.
+-- MySQL 8.0 does not support ADD COLUMN IF NOT EXISTS in ALTER TABLE.
+-- This stored procedure checks INFORMATION_SCHEMA and skips columns that exist.
+DROP PROCEDURE IF EXISTS _migration_004_add_notice_cols;
+DELIMITER //
+CREATE PROCEDURE _migration_004_add_notice_cols()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'notices'
+          AND COLUMN_NAME  = 'requires_ack'
+    ) THEN
+        ALTER TABLE `notices`
+            ADD COLUMN `requires_ack` TINYINT(1) NOT NULL DEFAULT 0 AFTER `published`;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'notices'
+          AND COLUMN_NAME  = 'target_roles'
+    ) THEN
+        ALTER TABLE `notices`
+            ADD COLUMN `target_roles` JSON DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'notices'
+          AND COLUMN_NAME  = 'target_departments'
+    ) THEN
+        ALTER TABLE `notices`
+            ADD COLUMN `target_departments` JSON DEFAULT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME   = 'notices'
+          AND COLUMN_NAME  = 'target_bases'
+    ) THEN
+        ALTER TABLE `notices`
+            ADD COLUMN `target_bases` JSON DEFAULT NULL;
+    END IF;
+END//
+DELIMITER ;
+CALL _migration_004_add_notice_cols();
+DROP PROCEDURE IF EXISTS _migration_004_add_notice_cols;
 
 -- ─── File Acknowledgements ────────────────────────
 -- Tracks which users have acknowledged which files/manuals.
