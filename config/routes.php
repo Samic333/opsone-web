@@ -69,6 +69,12 @@ return [
     'POST /notices/toggle/{id}'  => ['NoticeController', 'togglePublish'],
     'POST /notices/delete/{id}'  => ['NoticeController', 'delete'],
 
+    // ─── Roster ────────────────────────
+    'GET /roster'              => ['RosterController', 'index'],
+    'GET /roster/assign'       => ['RosterController', 'assignForm'],
+    'POST /roster/assign'      => ['RosterController', 'assign'],
+    'POST /roster/delete/{id}' => ['RosterController', 'delete'],
+
     // ─── Install (Protected) ──────────
     'GET /install'                 => ['InstallController', 'index'],
     'GET /install/instructions'    => ['InstallController', 'instructions'],
@@ -85,6 +91,9 @@ return [
 
     // ─── API: User ─────────────────────
     'GET /api/user/profile' => ['UserApiController', 'profile'],
+
+    // ─── API: Roster ───────────────────
+    'GET /api/roster' => ['RosterApiController', 'index'],
 
     // ─── API: Files ────────────────────
     'GET /api/files'                   => ['FileApiController', 'index'],

@@ -126,11 +126,14 @@ ob_start();
 <!-- Module placeholders -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 0;">
     <div class="card">
-        <div class="card-header"><div class="card-title">Crew Roster</div></div>
+        <div class="card-header">
+            <div class="card-title">Crew Roster</div>
+            <a href="/roster" class="btn btn-sm btn-outline">View →</a>
+        </div>
         <div class="empty-state">
             <div class="icon">📅</div>
-            <h3>Roster Module</h3>
-            <p>Monthly crew roster integration — coming in Phase 4.</p>
+            <p>Monthly crew roster — view and manage duty assignments.</p>
+            <a href="/roster" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Roster →</a>
         </div>
     </div>
     <div class="card">

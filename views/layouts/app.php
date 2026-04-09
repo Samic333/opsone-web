@@ -115,13 +115,12 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Scheduling (placeholder for roster module) ─ -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew', 'base_manager'])): ?>
+            <!-- ─── Scheduling ────────────────────────────── -->
+            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew', 'base_manager', 'pilot', 'cabin_crew', 'engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Scheduling</div>
-                <a href="/dashboard" class="sidebar-link" style="opacity:0.55; cursor:default;" title="Roster module — coming in Phase 4">
+                <a href="/roster" class="sidebar-link <?= str_starts_with($currentPath, '/roster') ? 'active' : '' ?>">
                     <span class="icon">📅</span> Roster
-                    <span style="font-size:9px;background:var(--accent-amber,#f59e0b);color:#000;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:700;">SOON</span>
                 </a>
             </div>
             <?php endif; ?>

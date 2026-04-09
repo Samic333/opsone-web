@@ -228,8 +228,36 @@ class DashboardController {
     }
 
     private function schedulerDashboard(int $tenantId): void {
+        $today = date('Y-m-d');
+        $year  = (int) date('Y');
+        $month = (int) date('n');
+
+        $todayDuties = Database::fetchAll(
+            "SELECT r.*, CONCAT(u.first_name,' ',u.last_name) AS user_name, u.employee_id
+             FROM rosters r
+             JOIN users u ON u.id = r.user_id
+             WHERE r.tenant_id = ? AND r.roster_date = ?
+             ORDER BY u.last_name, u.first_name",
+            [$tenantId, $today]
+        );
+
         $data = [
-            'active_staff' => UserModel::countByTenant($tenantId, 'active'),
+            'active_staff'       => UserModel::countByTenant($tenantId, 'active'),
+            'roster_count_month' => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM rosters
+                 WHERE tenant_id = ? AND roster_date BETWEEN ? AND ?",
+                [$tenantId, "{$year}-" . str_pad($month, 2, '0', STR_PAD_LEFT) . "-01",
+                            date('Y-m-t', mktime(0,0,0,$month,1,$year))]
+            )['c'],
+            'on_duty_today' => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM rosters WHERE tenant_id = ? AND roster_date = ? AND duty_type NOT IN ('off','leave','rest')",
+                [$tenantId, $today]
+            )['c'],
+            'on_leave_today' => (int) Database::fetch(
+                "SELECT COUNT(*) as c FROM rosters WHERE tenant_id = ? AND roster_date = ? AND duty_type = 'leave'",
+                [$tenantId, $today]
+            )['c'],
+            'today_duties' => $todayDuties,
         ];
         require VIEWS_PATH . '/dashboard/scheduler.php';
     }

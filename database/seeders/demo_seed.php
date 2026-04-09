@@ -578,6 +578,78 @@ try {
         echo "(skipped crew profiles — " . $e->getMessage() . ")\n";
     }
 
+    // ─── 16. Roster data ──────────────────────────────────
+    echo "Step 16: Seeding demo roster... ";
+    $hasRosters = $driver === 'sqlite'
+        ? $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='rosters'")->fetchColumn()
+        : $db->query("SHOW TABLES LIKE 'rosters'")->fetchColumn();
+
+    if ($hasRosters) {
+        try {
+            // Clear existing roster data for tenant 1
+            $db->exec("DELETE FROM rosters WHERE tenant_id = 1");
+
+            $rStmt = $db->prepare(
+                "INSERT OR IGNORE INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
+                 VALUES (1, ?, ?, ?, ?, ?)"
+            );
+            if ($driver !== 'sqlite') {
+                $rStmt = $db->prepare(
+                    "INSERT IGNORE INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
+                     VALUES (1, ?, ?, ?, ?, ?)"
+                );
+            }
+
+            // Seed ~30 days around today (current month)
+            $today    = new DateTime();
+            $year     = (int) $today->format('Y');
+            $month    = (int) $today->format('n');
+            $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+            $pilotPattern   = ['flight','flight','flight','off','off','standby','flight','flight','rest','off','flight','sim','off','off','flight','flight','standby','off','leave','flight','flight','off','flight','rest','off','flight','flight','off','standby','flight','flight'];
+            $cabinPattern   = ['flight','flight','flight','off','off','flight','flight','standby','off','off','flight','flight','rest','off','flight','flight','off','standby','leave','flight','flight','off','off','flight','rest','off','flight','flight','off','standby','flight'];
+            $chiefPattern   = ['flight','off','off','flight','flight','training','off','flight','flight','off','off','sim','off','flight','flight','off','off','flight','flight','off','off','flight','training','off','flight','flight','off','off','flight','off','off'];
+            $engPattern     = ['off','off','training','off','off','off','training','off','off','off','off','sim','off','off','training','off','off','off','off','off','training','off','off','off','off','off','training','off','off','off','off'];
+            $headCabinPat   = ['off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off','flight','flight','off','off','standby','off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off'];
+
+            $dutyNotes = [
+                'flight'   => ['Route NBO-DXB','Route NBO-ADD','Route NBO-LHR','Route NBO-DAR','Route NBO-LOS','', ''],
+                'sim'      => ['B737-800 OPC','B737-800 LPC','Emergency procedures','LOFT session'],
+                'training' => ['CRM training','CFIT awareness','SMS induction','Leadership workshop','First aid refresher'],
+                'standby'  => ['Airport standby','Home standby','', ''],
+                'leave'    => ['Annual leave','Sick leave',''],
+                'off'      => ['','',''],
+                'rest'     => ['',''],
+            ];
+
+            $userPatterns = [];
+            if ($pilotId)       $userPatterns[$pilotId]      = $pilotPattern;
+            if ($cabinId)       $userPatterns[$cabinId]      = $cabinPattern;
+            if ($chiefPilotId)  $userPatterns[$chiefPilotId] = $chiefPattern;
+            if ($engId)         $userPatterns[$engId]        = $engPattern;
+            $headCabinId = $uids['demo.headcabin@acentoza.com'] ?? null;
+            if ($headCabinId) $userPatterns[$headCabinId] = $headCabinPat;
+
+            foreach ($userPatterns as $uid => $pattern) {
+                for ($d = 1; $d <= $daysInMonth; $d++) {
+                    $idx      = ($d - 1) % count($pattern);
+                    $dutyType = $pattern[$idx];
+                    $dateStr  = sprintf('%04d-%02d-%02d', $year, $month, $d);
+
+                    $notesPool = $dutyNotes[$dutyType] ?? [''];
+                    $note = $notesPool[array_rand($notesPool)];
+
+                    $rStmt->execute([$uid, $dateStr, $dutyType, null, $note ?: null]);
+                }
+            }
+            echo "✓\n";
+        } catch (\Exception $e) {
+            echo "(partial — " . $e->getMessage() . ")\n";
+        }
+    } else {
+        echo "Rosters table not found — run migration 007 first.\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";
