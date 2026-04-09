@@ -16,6 +16,9 @@ storage/builds/*
 !storage/builds/.gitkeep
 storage/logs/*
 !storage/logs/.gitkeep
+# Dev debug artifacts in storage root
+storage/cookies.*
+storage/*.txt
 
 # OS files
 .DS_Store
