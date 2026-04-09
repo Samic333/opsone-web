@@ -24,17 +24,18 @@ class Database {
                 self::$instance->exec("PRAGMA journal_mode=WAL");
                 self::$instance->exec("PRAGMA foreign_keys=ON");
             } else {
-                $host = env('DB_HOST', '127.0.0.1');
-                if ($host === 'db') $host = '127.0.0.1'; // Failsafe for Namecheap
-                $port = env('DB_PORT', '3306');
-                $database = env('DB_DATABASE', 'fruinxrj_opsone');
-                if ($database === 'crewassist') $database = 'fruinxrj_opsone';
+                $host     = env('DB_HOST', '127.0.0.1');
+                $port     = env('DB_PORT', '3306');
+                $database = env('DB_DATABASE', '');
+                $username = env('DB_USERNAME', '');
+                $password = env('DB_PASSWORD', '');
 
-                $username = env('DB_USERNAME', 'fruinxrj_opsone_user');
-                if ($username === 'crewassist' || $username === 'root') $username = 'fruinxrj_opsone_user';
-
-                $password = env('DB_PASSWORD', 'N682LygNp1=I');
-                if ($password === 'secret' || $password === '') $password = 'N682LygNp1=I';
+                if (empty($database) || empty($username)) {
+                    throw new \RuntimeException(
+                        'Database credentials are not configured. ' .
+                        'Set DB_DATABASE, DB_USERNAME, and DB_PASSWORD in your .env file.'
+                    );
+                }
 
                 $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password, [

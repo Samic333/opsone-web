@@ -84,15 +84,19 @@ return [
     'GET /api/user/profile' => ['UserApiController', 'profile'],
 
     // ─── API: Files ────────────────────
-    'GET /api/files'              => ['FileApiController', 'index'],
-    'GET /api/files/download/{id}' => ['FileApiController', 'download'],
+    'GET /api/files'                   => ['FileApiController', 'index'],
+    'GET /api/files/download/{id}'     => ['FileApiController', 'download'],
+    'POST /api/files/{id}/acknowledge' => ['FileApiController', 'acknowledge'],
 
     // ─── API: Sync ─────────────────────
     'POST /api/sync/heartbeat' => ['SyncApiController', 'heartbeat'],
     'GET /api/sync/manifest'   => ['InstallApiController', 'syncManifest'],
 
     // ─── API: Notices ──────────────────
-    'GET /api/notices'         => ['InstallApiController', 'notices'],
+    // Notices API — full notice controller (replaces InstallApiController::notices)
+    'GET /api/notices'              => ['NoticeApiController', 'index'],
+    'POST /api/notices/{id}/read'   => ['NoticeApiController', 'markRead'],
+    'POST /api/notices/{id}/ack'    => ['NoticeApiController', 'acknowledge'],
 
     // ─── API: App Info ─────────────────
     'GET /api/app/version'     => ['InstallApiController', 'appVersion'],

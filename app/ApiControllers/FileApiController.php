@@ -64,4 +64,65 @@ class FileApiController {
         readfile($fullPath);
         exit;
     }
+
+    // ─── POST /api/files/{id}/acknowledge ─────────────────────
+    /**
+     * Records that the authenticated user has acknowledged a file/manual.
+     * The file must be published, require acknowledgement, and belong to this tenant.
+     *
+     * Response: { success: true, acknowledged_at: "..." }
+     */
+    public function acknowledge(int $id): void {
+        $user     = apiUser();
+        $tenantId = apiTenantId();
+
+        $file = \FileModel::find($id);
+        if (!$file || (int)$file['tenant_id'] !== $tenantId) {
+            jsonResponse(['error' => 'File not found'], 404);
+            return;
+        }
+        if ($file['status'] !== 'published') {
+            jsonResponse(['error' => 'File is not published'], 403);
+            return;
+        }
+        if (empty($file['requires_ack'])) {
+            jsonResponse(['error' => 'This file does not require acknowledgement'], 422);
+            return;
+        }
+
+        $now = dbNow();
+
+        // Upsert — re-acknowledging after a version change updates the record
+        $existing = Database::fetch(
+            "SELECT id, acknowledged_at, version FROM file_acknowledgements
+             WHERE file_id = ? AND user_id = ?",
+            [$id, $user['id']]
+        );
+
+        if (!$existing) {
+            Database::insert(
+                "INSERT INTO file_acknowledgements
+                    (file_id, user_id, tenant_id, version, device_id, acknowledged_at)
+                 VALUES (?, ?, ?, ?, ?, ?)",
+                [$id, $user['id'], $tenantId, $file['version'], null, $now]
+            );
+        } else {
+            // Update if re-acknowledging a new version
+            Database::execute(
+                "UPDATE file_acknowledgements
+                 SET acknowledged_at = ?, version = ?
+                 WHERE file_id = ? AND user_id = ?",
+                [$now, $file['version'], $id, $user['id']]
+            );
+        }
+
+        AuditLog::apiLog(
+            'file_acknowledged',
+            'file',
+            $id,
+            "File '{$file['title']}' v{$file['version']} acknowledged via iPad"
+        );
+
+        jsonResponse(['success' => true, 'acknowledged_at' => $now]);
+    }
 }
