@@ -474,6 +474,110 @@ try {
         echo "(skipped — notice_reads table not yet created)\n";
     }
 
+    // ─── 15. Crew profiles & licenses ────────────────────
+    try {
+        $cpCheck = ($driver === 'sqlite')
+            ? $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='crew_profiles'")->fetchColumn()
+            : $db->query("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='crew_profiles'")->fetchColumn();
+
+        if ($cpCheck) {
+            echo "Seeding crew profiles... ";
+            $db->exec("DELETE FROM crew_profiles WHERE tenant_id = 1");
+            $db->exec("DELETE FROM licenses WHERE tenant_id = 1");
+
+            $cpStmt = $db->prepare(
+                "INSERT INTO crew_profiles (user_id, tenant_id, date_of_birth, nationality, phone, emergency_name, emergency_phone, emergency_relation, passport_number, passport_country, passport_expiry, medical_class, medical_expiry, contract_type, contract_expiry)
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+
+            $chiefPilotId = $uids['demo.chiefpilot@acentoza.com'] ?? null;
+            $engId        = $uids['demo.engineer@acentoza.com']  ?? null;
+
+            // Chief Pilot — medical expiring soon (60 days)
+            if ($chiefPilotId) {
+                $cpStmt->execute([
+                    $chiefPilotId,
+                    '1975-03-12', 'Kenyan',       '+254 722 100 200',
+                    'Jane Kamau', '+254 722 100 201', 'Spouse',
+                    'KE123456', 'Kenya', date('Y-m-d', strtotime('+18 months')),
+                    'Class 1', date('Y-m-d', strtotime('+62 days')),
+                    'permanent', null,
+                ]);
+            }
+
+            // Pilot — licence expiring in 45 days, medical expiring in 80 days
+            if ($pilotId) {
+                $cpStmt->execute([
+                    $pilotId,
+                    '1988-07-24', 'Ugandan',       '+256 701 234 567',
+                    'David Ochieng', '+256 701 234 568', 'Brother',
+                    'UG987654', 'Uganda', date('Y-m-d', strtotime('+14 months')),
+                    'Class 1', date('Y-m-d', strtotime('+78 days')),
+                    'permanent', null,
+                ]);
+            }
+
+            // Cabin crew — passport expiring in 5 months
+            if ($cabinId) {
+                $cpStmt->execute([
+                    $cabinId,
+                    '1994-11-05', 'Kenyan',       '+254 733 400 500',
+                    'Mary Wanjiku', '+254 733 400 501', 'Mother',
+                    'KE654321', 'Kenya', date('Y-m-d', strtotime('+5 months')),
+                    'Cabin Crew Medical', date('Y-m-d', strtotime('+11 months')),
+                    'fixed_term', date('Y-m-d', strtotime('+8 months')),
+                ]);
+            }
+
+            // Engineer — contract expiring in 3 months
+            if ($engId) {
+                $cpStmt->execute([
+                    $engId,
+                    '1985-02-18', 'Congolese',    '+243 81 500 6000',
+                    'Pierre Kabila', '+243 81 500 6001', 'Father',
+                    'CD112233', 'DR Congo', date('Y-m-d', strtotime('+20 months')),
+                    'Class 3', date('Y-m-d', strtotime('+9 months')),
+                    'fixed_term', date('Y-m-d', strtotime('+3 months')),
+                ]);
+            }
+            echo "✓\n";
+
+            echo "Seeding demo licenses... ";
+            $licStmt = $db->prepare(
+                "INSERT INTO licenses (user_id, tenant_id, license_type, license_number, issuing_authority, issue_date, expiry_date, notes)
+                 VALUES (?, 1, ?, ?, ?, ?, ?, ?)"
+            );
+
+            if ($chiefPilotId) {
+                $licStmt->execute([$chiefPilotId, 'ATPL(A)', 'KEN-ATPL-0042', 'KCAA', '2018-06-01', date('Y-m-d', strtotime('+2 years')), null]);
+                $licStmt->execute([$chiefPilotId, 'Type Rating B737-800', 'KEN-TR-0042-B738', 'KCAA', '2022-11-15', date('Y-m-d', strtotime('+1 year 4 months')), 'Initial type rating NBO sim centre']);
+                $licStmt->execute([$chiefPilotId, 'ME/IR', 'KEN-MEIR-0042', 'KCAA', '2018-06-01', date('Y-m-d', strtotime('+8 months')), null]);
+            }
+
+            if ($pilotId) {
+                // Pilot ATPL expiring in 45 days — will trigger compliance alert
+                $licStmt->execute([$pilotId, 'ATPL(A)', 'UGA-ATPL-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+45 days')), 'Renewal due — exam booked']);
+                $licStmt->execute([$pilotId, 'Type Rating B737-800', 'UGA-TR-1187-B738', 'UCAA', '2023-01-20', date('Y-m-d', strtotime('+1 year 7 months')), null]);
+                $licStmt->execute([$pilotId, 'ME/IR', 'UGA-MEIR-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+45 days')), 'Renewal with ATPL']);
+            }
+
+            if ($cabinId) {
+                $licStmt->execute([$cabinId, 'Cabin Crew Attestation', 'KEN-CCA-4421', 'KCAA', '2023-06-01', date('Y-m-d', strtotime('+1 year 2 months')), null]);
+                $licStmt->execute([$cabinId, 'Aviation Security (AVSEC)', 'KEN-AVSEC-4421', 'KCAA', '2024-01-10', date('Y-m-d', strtotime('+1 year 9 months')), null]);
+            }
+
+            if ($engId) {
+                $licStmt->execute([$engId, 'EASA Part-66 Cat B1', 'DRC-B1-0088', 'ANAC DRC', '2017-09-01', date('Y-m-d', strtotime('+3 years')), 'Aircraft maintenance engineer']);
+                $licStmt->execute([$engId, 'B737-800 Type Endorsement', 'DRC-B1-0088-B738', 'ANAC DRC', '2021-04-01', date('Y-m-d', strtotime('+2 years 6 months')), null]);
+            }
+            echo "✓\n";
+        } else {
+            echo "Crew profiles table not found — run migration 006 first.\n";
+        }
+    } catch (\Exception $e) {
+        echo "(skipped crew profiles — " . $e->getMessage() . ")\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

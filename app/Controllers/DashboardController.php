@@ -100,17 +100,21 @@ class DashboardController {
     // ─── Airline-level dashboards ─────────────────────────
 
     private function airlineAdminDashboard(int $tenantId): void {
+        $compliance = CrewProfileModel::complianceSummary($tenantId);
         $data = [
-            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
-            'pending_users'   => UserModel::countByTenant($tenantId, 'pending'),
-            'pending_devices' => Device::countPending($tenantId),
-            'total_files'     => FileModel::countByTenant($tenantId),
-            'recent_uploads'  => FileModel::recentUploads($tenantId, 5),
-            'recent_logins'   => UserModel::recentLogins($tenantId, 8),
-            'users_by_role'   => UserModel::countByRole($tenantId),
-            'users_by_status' => UserModel::countByStatus($tenantId),
-            'device_stats'    => Device::countByStatus($tenantId),
-            'recent_activity' => AuditLog::recent($tenantId, 10),
+            'active_staff'       => UserModel::countByTenant($tenantId, 'active'),
+            'pending_users'      => UserModel::countByTenant($tenantId, 'pending'),
+            'pending_devices'    => Device::countPending($tenantId),
+            'total_files'        => FileModel::countByTenant($tenantId),
+            'recent_uploads'     => FileModel::recentUploads($tenantId, 5),
+            'recent_logins'      => UserModel::recentLogins($tenantId, 8),
+            'users_by_role'      => UserModel::countByRole($tenantId),
+            'users_by_status'    => UserModel::countByStatus($tenantId),
+            'device_stats'       => Device::countByStatus($tenantId),
+            'recent_activity'    => AuditLog::recent($tenantId, 10),
+            'compliance'         => $compliance,
+            'expiring_licenses'  => CrewProfileModel::expiringLicenses($tenantId, 90),
+            'expiring_medicals'  => CrewProfileModel::expiringMedicals($tenantId, 90),
         ];
 
         $isHr = hasRole('hr') && !hasRole('airline_admin') && !hasRole('super_admin');
@@ -121,17 +125,19 @@ class DashboardController {
 
     private function chiefPilotDashboard(int $tenantId): void {
         $data = [
-            'pilot_count'     => (int) Database::fetch(
+            'pilot_count'       => (int) Database::fetch(
                 "SELECT COUNT(DISTINCT u.id) as c FROM users u
                  JOIN user_roles ur ON ur.user_id = u.id
                  JOIN roles r ON r.id = ur.role_id
                  WHERE u.tenant_id = ? AND r.slug = 'pilot' AND u.status = 'active'",
                 [$tenantId]
             )['c'],
-            'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
-            'total_files'     => FileModel::countByTenant($tenantId),
-            'recent_notices'  => Notice::recent($tenantId, 5),
-            'recent_activity' => AuditLog::recent($tenantId, 6),
+            'active_staff'      => UserModel::countByTenant($tenantId, 'active'),
+            'total_files'       => FileModel::countByTenant($tenantId),
+            'recent_notices'    => Notice::recent($tenantId, 5),
+            'recent_activity'   => AuditLog::recent($tenantId, 6),
+            'expiring_licenses' => CrewProfileModel::expiringLicenses($tenantId, 90),
+            'expiring_medicals' => CrewProfileModel::expiringMedicals($tenantId, 90),
         ];
         require VIEWS_PATH . '/dashboard/chief_pilot.php';
     }

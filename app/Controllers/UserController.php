@@ -88,6 +88,8 @@ class UserController {
         $userRoles = UserModel::getRoles($id);
         $userRoleIds = array_column($userRoles, 'id');
         $devices = Device::forUser($id);
+        $crewProfile = CrewProfileModel::findByUser($id) ?? [];
+        $licenses = CrewProfileModel::getLicenses($id);
         require VIEWS_PATH . '/users/edit.php';
     }
 
@@ -142,6 +144,70 @@ class UserController {
         flash('success', "User \"$name\" updated successfully.");
         redirect('/users');
     }
+
+    // ─── Crew Profile ────────────────────────────────────
+
+    public function saveProfile(int $id): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/users/edit/$id");
+        }
+        $user = UserModel::find($id);
+        if (!$user || $user['tenant_id'] != currentTenantId()) {
+            flash('error', 'User not found.');
+            redirect('/users');
+        }
+
+        CrewProfileModel::save($id, currentTenantId(), $_POST);
+        AuditLog::log('Updated Crew Profile', 'user', $id, "Updated crew profile for: {$user['name']}");
+        flash('success', "Crew profile for \"{$user['name']}\" saved.");
+        redirect("/users/edit/$id#crew-profile");
+    }
+
+    // ─── Licenses ────────────────────────────────────────
+
+    public function addLicense(int $id): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/users/edit/$id");
+        }
+        $user = UserModel::find($id);
+        if (!$user || $user['tenant_id'] != currentTenantId()) {
+            flash('error', 'User not found.');
+            redirect('/users');
+        }
+
+        $licenseType = trim($_POST['license_type'] ?? '');
+        if (empty($licenseType)) {
+            flash('error', 'Licence type is required.');
+            redirect("/users/edit/$id#licenses");
+        }
+
+        CrewProfileModel::addLicense($id, currentTenantId(), $_POST);
+        AuditLog::log('Added Licence', 'user', $id, "Added licence '{$licenseType}' for: {$user['name']}");
+        flash('success', "Licence added for \"{$user['name']}\".");
+        redirect("/users/edit/$id#licenses");
+    }
+
+    public function deleteLicense(int $userId, int $licId): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/users/edit/$userId");
+        }
+        $user = UserModel::find($userId);
+        if (!$user || $user['tenant_id'] != currentTenantId()) {
+            flash('error', 'User not found.');
+            redirect('/users');
+        }
+
+        $lic = CrewProfileModel::findLicense($licId);
+        CrewProfileModel::deleteLicense($licId, $userId);
+        AuditLog::log('Deleted Licence', 'user', $userId, "Deleted licence '{$lic['license_type']}' for: {$user['name']}");
+        flash('success', 'Licence removed.');
+        redirect("/users/edit/$userId#licenses");
+    }
+
+    // ─── Status toggle ────────────────────────────────────
 
     public function toggleStatus(int $id): void {
         if (!verifyCsrf()) {

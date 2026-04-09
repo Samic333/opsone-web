@@ -41,7 +41,10 @@ return [
     'POST /users/store'       => ['UserController', 'store'],
     'GET /users/edit/{id}'    => ['UserController', 'edit'],
     'POST /users/update/{id}' => ['UserController', 'update'],
-    'POST /users/toggle/{id}' => ['UserController', 'toggleStatus'],
+    'POST /users/toggle/{id}'                   => ['UserController', 'toggleStatus'],
+    'POST /users/profile/{id}'                  => ['UserController', 'saveProfile'],
+    'POST /users/licenses/add/{id}'             => ['UserController', 'addLicense'],
+    'POST /users/licenses/delete/{id}/{lid}'    => ['UserController', 'deleteLicense'],
 
     // ─── Devices ───────────────────────
     'GET /devices'               => ['DeviceController', 'index'],
