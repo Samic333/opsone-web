@@ -193,22 +193,23 @@ try {
     // ─── 8. Demo users ────────────────────────────────────
     echo "Creating demo users... ";
     // [name, email, emp_id, dept_code, base_code, web_access, mobile_access]
+    // All demo accounts have mobile_access=1 so all role dashboards can be tested on iPad.
     $userDefs = [
-        // Platform level (web portal only — no mobile)
-        ['Alex Mwangi',           'demo.superadmin@acentoza.com',  'PLT-001', 'MGT', 'NBO', 1, 0],
+        // Platform level
+        ['Alex Mwangi',           'demo.superadmin@acentoza.com',  'PLT-001', 'MGT', 'NBO', 1, 1],
         ['Jordan Taylor',         'demo.support@acentoza.com',     'PLT-002', 'MGT', 'NBO', 1, 0],
         ['Sarah Kimani',          'demo.security@acentoza.com',    'PLT-003', 'MGT', 'NBO', 1, 0],
         // Airline management
-        ['Amara Diallo',          'demo.airadmin@acentoza.com',    'ODA-001', 'MGT', 'NBO', 1, 0],
-        ['Fatima Al-Zaabi',       'demo.hr@acentoza.com',          'HR-001',  'HR',  'NBO', 1, 0],
-        ['Layla Hassan',          'demo.scheduler@acentoza.com',   'CTC-001', 'CTC', 'NBO', 1, 0],
-        ['Capt. Ahmed Mansoori',  'demo.chiefpilot@acentoza.com',  'FLT-CP1', 'FLT', 'NBO', 1, 0],
-        ['Grace Okonkwo',         'demo.headcabin@acentoza.com',   'CAB-HM1', 'CAB', 'NBO', 1, 0],
-        ['Mark Sullivan',         'demo.engmanager@acentoza.com',  'ENG-MGR', 'ENG', 'NBO', 1, 0],
-        ['Dr. Nadia Okelo',       'demo.safety@acentoza.com',      'SAF-001', 'SAF', 'NBO', 1, 0],
-        ['Dr. Priya Sharma',      'demo.fdm@acentoza.com',         'FDM-001', 'FDM', 'NBO', 1, 0],
-        ['Sara Khalid',           'demo.doccontrol@acentoza.com',  'DOC-001', 'DOC', 'NBO', 1, 0],
-        ['Joseph Kariuki',        'demo.basemanager@acentoza.com', 'BMS-NBO', 'BMS', 'NBO', 1, 0],
+        ['Amara Diallo',          'demo.airadmin@acentoza.com',    'ODA-001', 'MGT', 'NBO', 1, 1],
+        ['Fatima Al-Zaabi',       'demo.hr@acentoza.com',          'HR-001',  'HR',  'NBO', 1, 1],
+        ['Layla Hassan',          'demo.scheduler@acentoza.com',   'CTC-001', 'CTC', 'NBO', 1, 1],
+        ['Capt. Ahmed Mansoori',  'demo.chiefpilot@acentoza.com',  'FLT-CP1', 'FLT', 'NBO', 1, 1],
+        ['Grace Okonkwo',         'demo.headcabin@acentoza.com',   'CAB-HM1', 'CAB', 'NBO', 1, 1],
+        ['Mark Sullivan',         'demo.engmanager@acentoza.com',  'ENG-MGR', 'ENG', 'NBO', 1, 1],
+        ['Dr. Nadia Okelo',       'demo.safety@acentoza.com',      'SAF-001', 'SAF', 'NBO', 1, 1],
+        ['Dr. Priya Sharma',      'demo.fdm@acentoza.com',         'FDM-001', 'FDM', 'NBO', 1, 1],
+        ['Sara Khalid',           'demo.doccontrol@acentoza.com',  'DOC-001', 'DOC', 'NBO', 1, 1],
+        ['Joseph Kariuki',        'demo.basemanager@acentoza.com', 'BMS-NBO', 'BMS', 'NBO', 1, 1],
         // Operational (web + mobile)
         ['Capt. Rashid Hussein',  'demo.pilot@acentoza.com',       'FLT-001', 'FLT', 'NBO', 1, 1],
         ['Noor Al-Rashidi',       'demo.cabin@acentoza.com',       'CAB-020', 'CAB', 'EBB', 1, 1],
