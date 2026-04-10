@@ -16,9 +16,9 @@ ob_start();
         <div class="stat-label">Crew on Duty Today</div>
         <div class="stat-value"><?= $data['on_duty_today'] ?></div>
     </div>
-    <div class="stat-card cyan">
-        <div class="stat-label">Crew on Leave Today</div>
-        <div class="stat-value"><?= $data['on_leave_today'] ?></div>
+    <div class="stat-card <?= count($data['flagged_crew']) > 0 ? 'red' : 'cyan' ?>">
+        <div class="stat-label">Compliance Issues</div>
+        <div class="stat-value"><?= count($data['flagged_crew']) ?></div>
     </div>
 </div>
 
@@ -64,14 +64,101 @@ ob_start();
 </div>
 <?php endif; ?>
 
+<!-- Compliance alerts -->
+<?php if (!empty($data['flagged_crew'])): ?>
+<div class="card">
+    <div class="card-header">
+        <div class="card-title" style="color:#ef4444;">✕ Compliance Issues — Action Required</div>
+        <a href="/compliance" class="btn btn-sm btn-outline">Full Report →</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Crew Member</th><th>Role</th><th>Issues</th><th>Action</th></tr></thead>
+            <tbody>
+            <?php foreach ($data['flagged_crew'] as $fc): ?>
+            <tr>
+                <td><strong><?= e($fc['user_name']) ?></strong>
+                    <?php if ($fc['employee_id']): ?><span class="text-xs text-muted"> (<?= e($fc['employee_id']) ?>)</span><?php endif; ?>
+                </td>
+                <td style="font-size:12px;"><?= e($fc['role_name']) ?></td>
+                <td>
+                    <ul style="margin:0;padding-left:16px;font-size:11px;color:#ef4444;">
+                        <?php foreach ($fc['compliance']['issues'] as $iss): ?>
+                        <li><?= e($iss) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </td>
+                <td>
+                    <a href="/roster/suggest/<?= $fc['id'] ?>?date=<?= urlencode(date('Y-m-d')) ?>"
+                       class="btn btn-sm btn-primary" style="font-size:11px;">Find Replacement</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Today's standby pool -->
+<?php if (!empty($data['standby_today'])): ?>
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Standby Pool — Today</div>
+        <a href="/roster/standby" class="btn btn-sm btn-outline">Full Pool →</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Crew Member</th><th>Role</th><th>Code / Notes</th><th>Compliance</th><th>Action</th></tr></thead>
+            <tbody>
+            <?php foreach ($data['standby_today'] as $sb): ?>
+            <tr>
+                <td><strong><?= e($sb['user_name']) ?></strong>
+                    <?php if ($sb['employee_id']): ?><span class="text-xs text-muted"> (<?= e($sb['employee_id']) ?>)</span><?php endif; ?>
+                </td>
+                <td style="font-size:12px;"><?= e($sb['role_name']) ?></td>
+                <td>
+                    <code><?= e($sb['duty_code'] ?: 'SBY') ?></code>
+                    <?php if ($sb['notes']): ?><span style="font-size:11px;color:var(--text-muted);"> — <?= e($sb['notes']) ?></span><?php endif; ?>
+                </td>
+                <td>
+                    <?php $c = $sb['compliance'];
+                    if (!$c): ?>
+                        <span style="color:#10b981;font-weight:600;font-size:12px;">✓ OK</span>
+                    <?php elseif ($c['severity'] === 'critical'): ?>
+                        <span style="color:#ef4444;font-weight:600;font-size:12px;">✕ Non-compliant</span>
+                    <?php else: ?>
+                        <span style="color:#f59e0b;font-weight:600;font-size:12px;">⚠ Expiry soon</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <a href="/roster/suggest/<?= $sb['user_id'] ?>?date=<?= urlencode(date('Y-m-d')) ?>"
+                       class="btn btn-sm btn-outline" style="font-size:11px;">Replace</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- Quick links -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
     <div class="card">
         <div class="card-header"><div class="card-title">Monthly Roster</div></div>
         <div class="empty-state">
             <div class="icon">🗓</div>
             <p>View and manage the full crew roster grid.</p>
             <a href="/roster" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Roster →</a>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title">Standby Pool</div></div>
+        <div class="empty-state">
+            <div class="icon">📋</div>
+            <p>View all standby crew and their compliance status.</p>
+            <a href="/roster/standby" class="btn btn-sm btn-primary" style="margin-top:8px;">View Standby →</a>
         </div>
     </div>
     <div class="card">

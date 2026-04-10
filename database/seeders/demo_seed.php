@@ -555,14 +555,15 @@ try {
             }
 
             if ($pilotId) {
-                // Pilot ATPL expiring in 45 days — will trigger compliance alert
-                $licStmt->execute([$pilotId, 'ATPL(A)', 'UGA-ATPL-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+45 days')), 'Renewal due — exam booked']);
+                // Pilot ATPL expiring in 20 days — triggers ⚠ warning badge (within 30-day threshold)
+                $licStmt->execute([$pilotId, 'ATPL(A)', 'UGA-ATPL-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+20 days')), 'Renewal due — exam booked']);
                 $licStmt->execute([$pilotId, 'Type Rating B737-800', 'UGA-TR-1187-B738', 'UCAA', '2023-01-20', date('Y-m-d', strtotime('+1 year 7 months')), null]);
-                $licStmt->execute([$pilotId, 'ME/IR', 'UGA-MEIR-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+45 days')), 'Renewal with ATPL']);
+                $licStmt->execute([$pilotId, 'ME/IR', 'UGA-MEIR-1187', 'UCAA', '2020-03-10', date('Y-m-d', strtotime('+20 days')), 'Renewal with ATPL']);
             }
 
             if ($cabinId) {
-                $licStmt->execute([$cabinId, 'Cabin Crew Attestation', 'KEN-CCA-4421', 'KCAA', '2023-06-01', date('Y-m-d', strtotime('+1 year 2 months')), null]);
+                // Cabin crew attestation EXPIRED 3 months ago — triggers ✕ CRITICAL badge + replacement suggestion
+                $licStmt->execute([$cabinId, 'Cabin Crew Attestation', 'KEN-CCA-4421', 'KCAA', '2022-06-01', date('Y-m-d', strtotime('-3 months')), 'EXPIRED — renewal overdue']);
                 $licStmt->execute([$cabinId, 'Aviation Security (AVSEC)', 'KEN-AVSEC-4421', 'KCAA', '2024-01-10', date('Y-m-d', strtotime('+1 year 9 months')), null]);
             }
 

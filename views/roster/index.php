@@ -2,8 +2,10 @@
 /**
  * Roster monthly grid view
  * Variables: $year, $month, $daysInMonth, $grid (indexed [userId][date]),
- *            $crewList, $dutyTypes, $prevMonth, $prevYear, $nextMonth, $nextYear
+ *            $crewList, $dutyTypes, $prevMonth, $prevYear, $nextMonth, $nextYear,
+ *            $complianceIssues (keyed by user_id)
  */
+$today = date('Y-m-d');
 ?>
 <style>
 .roster-wrap { overflow-x: auto; }
@@ -23,6 +25,10 @@
 .legend-dot { width: 16px; height: 16px; border-radius: 3px; }
 .nav-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .nav-bar .month-label { font-size: 18px; font-weight: 700; min-width: 160px; text-align: center; }
+.compliance-crit { display:inline-block; background:#ef4444; color:#fff; border-radius:3px; padding:0 4px; font-size:9px; font-weight:700; margin-left:4px; cursor:help; }
+.compliance-warn { display:inline-block; background:#f59e0b; color:#fff; border-radius:3px; padding:0 4px; font-size:9px; font-weight:700; margin-left:4px; cursor:help; }
+.replace-btn { display:inline-block; font-size:9px; color: var(--accent-blue, #3b82f6); text-decoration:none; margin-left:4px; }
+.replace-btn:hover { text-decoration:underline; }
 </style>
 
 <!-- Month navigation -->
@@ -77,6 +83,18 @@
                     <?= e($crew['user_name']) ?>
                     <?php if ($crew['employee_id']): ?>
                         <span style="font-size:10px;color:var(--text-muted);font-weight:400;"> (<?= e($crew['employee_id']) ?>)</span>
+                    <?php endif; ?>
+                    <?php
+                    $ci = $complianceIssues[$userId] ?? null;
+                    if ($ci):
+                        $issueTitle = implode('; ', $ci['issues']);
+                        $badgeClass = $ci['severity'] === 'critical' ? 'compliance-crit' : 'compliance-warn';
+                        $badgeText  = $ci['severity'] === 'critical' ? '✕ COMPLIANCE' : '⚠ EXPIRY';
+                    ?>
+                        <span class="<?= $badgeClass ?>" title="<?= e($issueTitle) ?>"><?= $badgeText ?></span>
+                        <?php if (hasAnyRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew'])): ?>
+                        <a href="/roster/suggest/<?= $userId ?>?date=<?= urlencode($today) ?>" class="replace-btn" title="Find replacement crew">Replace</a>
+                        <?php endif; ?>
                     <?php endif; ?>
                     <div style="font-size:10px;color:var(--text-muted);font-weight:400;"><?= e($crew['role_name']) ?></div>
                 </td>

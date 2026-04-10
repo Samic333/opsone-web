@@ -248,6 +248,31 @@ class DashboardController {
             [$tenantId, $today]
         );
 
+        $complianceIssues  = RosterModel::getComplianceIssues($tenantId);
+        $standbyToday      = RosterModel::getStandbyPool($tenantId, $today);
+        $complianceFlagged = array_filter($complianceIssues, fn($c) => $c['severity'] === 'critical');
+
+        // Enrich compliance-flagged entries with user info for dashboard display
+        $flaggedCrew = [];
+        if (!empty($complianceFlagged)) {
+            $flaggedIds = array_keys($complianceFlagged);
+            $placeholders = implode(',', array_fill(0, count($flaggedIds), '?'));
+            $crewRows = Database::fetchAll(
+                "SELECT u.id, u.name AS user_name, u.employee_id, ro.name AS role_name
+                 FROM users u
+                 JOIN user_roles ur ON ur.user_id = u.id
+                 JOIN roles ro ON ro.id = ur.role_id
+                 WHERE u.id IN ($placeholders) AND u.tenant_id = ? AND u.status = 'active'
+                   AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
+                 ORDER BY u.name",
+                [...$flaggedIds, $tenantId]
+            );
+            foreach ($crewRows as $cr) {
+                $cr['compliance'] = $complianceIssues[$cr['id']];
+                $flaggedCrew[] = $cr;
+            }
+        }
+
         $data = [
             'active_staff'       => UserModel::countByTenant($tenantId, 'active'),
             'roster_count_month' => (int) Database::fetch(
@@ -264,7 +289,10 @@ class DashboardController {
                 "SELECT COUNT(*) as c FROM rosters WHERE tenant_id = ? AND roster_date = ? AND duty_type = 'leave'",
                 [$tenantId, $today]
             )['c'],
-            'today_duties' => $todayDuties,
+            'on_standby_today'   => count($standbyToday),
+            'today_duties'       => $todayDuties,
+            'standby_today'      => $standbyToday,
+            'flagged_crew'       => $flaggedCrew,
         ];
         require VIEWS_PATH . '/dashboard/scheduler.php';
     }

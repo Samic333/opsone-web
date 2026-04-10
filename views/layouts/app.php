@@ -119,9 +119,14 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew', 'base_manager', 'pilot', 'cabin_crew', 'engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Scheduling</div>
-                <a href="/roster" class="sidebar-link <?= str_starts_with($currentPath, '/roster') ? 'active' : '' ?>">
+                <a href="/roster" class="sidebar-link <?= $currentPath === '/roster' || (str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath, '/roster/standby') && !str_starts_with($currentPath, '/roster/suggest')) ? 'active' : '' ?>">
                     <span class="icon">📅</span> Roster
                 </a>
+                <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew'])): ?>
+                <a href="/roster/standby" class="sidebar-link <?= str_starts_with($currentPath, '/roster/standby') ? 'active' : '' ?>">
+                    <span class="icon">📋</span> Standby Pool
+                </a>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
 

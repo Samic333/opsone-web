@@ -16,10 +16,11 @@ class RosterController {
         if ($month < 1) { $month = 12; $year--; }
         if ($month > 12) { $month = 1;  $year++; }
 
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $grid        = RosterModel::getMonth($tenantId, $year, $month);
-        $crewList    = RosterModel::getCrewList($tenantId);
-        $dutyTypes   = RosterModel::dutyTypes();
+        $daysInMonth      = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $grid             = RosterModel::getMonth($tenantId, $year, $month);
+        $crewList         = RosterModel::getCrewList($tenantId);
+        $dutyTypes        = RosterModel::dutyTypes();
+        $complianceIssues = RosterModel::getComplianceIssues($tenantId);
 
         $prevMonth = $month - 1 < 1  ? 12 : $month - 1;
         $prevYear  = $month - 1 < 1  ? $year - 1 : $year;
@@ -95,6 +96,70 @@ class RosterController {
         // Return to the month of the assigned date
         [$y, $m] = explode('-', $date);
         redirect("/roster?year={$y}&month=" . ltrim($m, '0'));
+    }
+
+    /**
+     * Standby pool for today (GET /roster/standby)
+     */
+    public function standbyPool(): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew']);
+
+        $tenantId = currentTenantId();
+        $date     = $_GET['date'] ?? date('Y-m-d');
+        $pool     = RosterModel::getStandbyPool($tenantId, $date);
+
+        $pageTitle    = 'Standby Pool';
+        $pageSubtitle = date('D, d M Y', strtotime($date));
+
+        ob_start();
+        require VIEWS_PATH . '/roster/standby.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * Suggest replacement crew (GET /roster/suggest/{id}?date=YYYY-MM-DD)
+     */
+    public function suggest(int $userId): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew']);
+
+        $tenantId = currentTenantId();
+        $date     = $_GET['date'] ?? date('Y-m-d');
+
+        // Load the crew member being replaced
+        $crewMember = Database::fetch(
+            "SELECT u.id, u.name AS user_name, u.employee_id, ro.name AS role_name, ro.slug AS role_slug
+             FROM users u
+             JOIN user_roles ur ON ur.user_id = u.id
+             JOIN roles ro ON ro.id = ur.role_id
+             WHERE u.id = ? AND u.tenant_id = ?
+               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')",
+            [$userId, $tenantId]
+        );
+
+        if (!$crewMember) {
+            flash('error', 'Crew member not found.');
+            redirect('/roster');
+        }
+
+        // Their current roster entry for this date
+        $currentDuty = Database::fetch(
+            "SELECT * FROM rosters WHERE user_id = ? AND roster_date = ? AND tenant_id = ?",
+            [$userId, $date, $tenantId]
+        );
+
+        $complianceIssues = RosterModel::getComplianceIssues($tenantId);
+        $crewCompliance   = $complianceIssues[$userId] ?? null;
+        $suggestions      = RosterModel::suggestReplacements($tenantId, $date, $userId);
+        $dutyTypes        = RosterModel::dutyTypes();
+
+        $pageTitle    = 'Replacement Suggestions';
+        $pageSubtitle = 'For ' . htmlspecialchars($crewMember['user_name']) . ' on ' . date('D, d M Y', strtotime($date));
+
+        ob_start();
+        require VIEWS_PATH . '/roster/suggest.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
     }
 
     /**

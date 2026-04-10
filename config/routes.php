@@ -70,10 +70,12 @@ return [
     'POST /notices/delete/{id}'  => ['NoticeController', 'delete'],
 
     // ─── Roster ────────────────────────
-    'GET /roster'              => ['RosterController', 'index'],
-    'GET /roster/assign'       => ['RosterController', 'assignForm'],
-    'POST /roster/assign'      => ['RosterController', 'assign'],
-    'POST /roster/delete/{id}' => ['RosterController', 'delete'],
+    'GET /roster'                  => ['RosterController', 'index'],
+    'GET /roster/assign'           => ['RosterController', 'assignForm'],
+    'POST /roster/assign'          => ['RosterController', 'assign'],
+    'POST /roster/delete/{id}'     => ['RosterController', 'delete'],
+    'GET /roster/standby'          => ['RosterController', 'standbyPool'],
+    'GET /roster/suggest/{id}'     => ['RosterController', 'suggest'],
 
     // ─── FDM ───────────────────────────
     'GET /fdm'                                       => ['FdmController', 'index'],
