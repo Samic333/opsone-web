@@ -9,7 +9,10 @@ class AuditLogController {
     public function index(): void {
         RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
 
-        $tenantId  = currentTenantId();
+        // Prefer session user's tenant_id — more reliable than currentTenantId()
+        // which returns null in single-tenant mode when FIXED_TENANT_ID is not set.
+        $sessionUser  = currentUser();
+        $tenantId     = $sessionUser['tenant_id'] ?? currentTenantId();
         $isSuperAdmin = hasRole('super_admin');
 
         // Filters
@@ -77,7 +80,8 @@ class AuditLogController {
     public function loginActivity(): void {
         RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
 
-        $tenantId  = currentTenantId();
+        $sessionUser  = currentUser();
+        $tenantId     = $sessionUser['tenant_id'] ?? currentTenantId();
         $isSuperAdmin = hasRole('super_admin');
 
         $filterEmail  = trim($_GET['email']  ?? '');

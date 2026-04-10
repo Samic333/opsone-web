@@ -4,12 +4,13 @@
  */
 class AuditLog {
     public static function log(string $action, ?string $entityType = null, ?int $entityId = null, ?string $details = null): void {
-        $user = currentUser();
+        $user     = currentUser();
+        $tenantId = currentTenantId() ?? ($user['tenant_id'] ?? null);
         Database::insert(
             "INSERT INTO audit_logs (tenant_id, user_id, user_name, action, entity_type, entity_id, details, ip_address)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                currentTenantId(),
+                $tenantId,
                 $user['id'] ?? null,
                 $user['name'] ?? 'System',
                 $action,
