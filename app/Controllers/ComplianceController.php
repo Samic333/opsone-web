@@ -7,7 +7,7 @@
 class ComplianceController {
 
     public function index(): void {
-        RbacMiddleware::requireRole(['airline_admin', 'hr', 'chief_pilot', 'safety_officer', 'super_admin']);
+        RbacMiddleware::requireRole(['airline_admin', 'hr', 'chief_pilot', 'safety_officer', 'super_admin', 'fdm_analyst']);
 
         $tenantId = currentTenantId();
 

@@ -135,9 +135,9 @@ $fullClassName = str_contains($controllerName, '\\')
 if (!class_exists($fullClassName)) {
     http_response_code(500);
     if ($isApi) {
-        jsonResponse(['error' => 'Controller not found'], 500);
+        jsonResponse(['error' => 'Internal server error'], 500);
     }
-    echo "Controller not found: $fullClassName";
+    require VIEWS_PATH . '/errors/500.php';
     exit;
 }
 
@@ -145,9 +145,9 @@ $controller = new $fullClassName();
 if (!method_exists($controller, $action)) {
     http_response_code(500);
     if ($isApi) {
-        jsonResponse(['error' => 'Action not found'], 500);
+        jsonResponse(['error' => 'Internal server error'], 500);
     }
-    echo "Action not found: $action";
+    require VIEWS_PATH . '/errors/500.php';
     exit;
 }
 

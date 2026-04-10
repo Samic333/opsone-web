@@ -21,7 +21,8 @@
  */
 class DashboardController {
     public function index(): void {
-        $tenantId = currentTenantId();
+        $sessionUser = currentUser();
+        $tenantId    = ($sessionUser['tenant_id'] ?? null) ?? currentTenantId();
 
         if (hasRole('super_admin') && isMultiTenant()) {
             $this->superAdminDashboard();

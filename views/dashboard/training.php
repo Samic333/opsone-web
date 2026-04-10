@@ -20,9 +20,8 @@ ob_start();
         <div class="card-header"><div class="card-title">Training Records</div></div>
         <div class="empty-state">
             <div class="icon">🎓</div>
-            <h3>Training Module</h3>
-            <p>Crew training records, recurrent checks, and course completions — coming in Phase 3.</p>
-            <span style="display:inline-block;margin-top:8px;padding:3px 10px;background:var(--accent-amber,#f59e0b);color:#000;font-size:11px;font-weight:700;border-radius:4px;">COMING IN PHASE 3</span>
+            <p>Crew training records are managed via the staff profiles in <a href="/users">Users</a>.</p>
+            <a href="/compliance" class="btn btn-sm btn-outline" style="margin-top:8px;">View Compliance Report →</a>
         </div>
     </div>
 
@@ -54,7 +53,8 @@ ob_start();
         <div class="card-header"><div class="card-title">Licence Expiry Tracking</div></div>
         <div class="empty-state">
             <div class="icon">📋</div>
-            <p>Licence, medical, and rating expiry alerts — coming in Phase 3.</p>
+            <p>Licence, medical, and rating expiry alerts are visible in the Compliance report.</p>
+            <a href="/compliance" class="btn btn-sm btn-outline" style="margin-top:8px;">Compliance Report →</a>
         </div>
     </div>
     <div class="card">

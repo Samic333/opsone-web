@@ -10,6 +10,16 @@ if (file_exists($envFile)) {
     loadEnv($envFile);
 }
 
+// ─── Production guard ─────────────────────────────────────────────────────────
+// This file must NEVER run in production. It wipes and re-seeds the database.
+// To run migrations/seed on a new server, use the CLI: php seed-db.php
+if (env('APP_ENV', 'production') === 'production') {
+    http_response_code(403);
+    echo "<h1>403 Forbidden</h1><p>This script is disabled in production (APP_ENV=production).</p>";
+    exit;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 require BASE_PATH . '/app/Helpers/functions.php';
 require BASE_PATH . '/config/database.php';
 

@@ -77,11 +77,14 @@ ob_start();
         </div>
     </div>
     <div class="card">
-        <div class="card-header"><div class="card-title">Base Roster</div></div>
+        <div class="card-header">
+            <div class="card-title">Crew Roster</div>
+            <a href="/roster" class="btn btn-sm btn-outline">View →</a>
+        </div>
         <div class="empty-state">
             <div class="icon">📅</div>
-            <h3>Roster Module</h3>
-            <p>Base-filtered crew roster — coming in Phase 4.</p>
+            <p>View the monthly crew duty roster.</p>
+            <a href="/roster" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Roster →</a>
         </div>
     </div>
 </div>
