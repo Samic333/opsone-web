@@ -35,10 +35,10 @@ class AuthController {
         }
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
-            // Log failed login
-            if ($user) {
-                AuditLog::logLogin($user['id'], $user['tenant_id'], $email, false, 'web');
-            }
+            // Log failed login — always record, even when email is not found
+            $logUserId   = $user['id']        ?? 0;
+            $logTenantId = $user['tenant_id'] ?? (isSingleTenant() ? getFixedTenantId() : 0);
+            AuditLog::logLogin($logUserId, $logTenantId, $email, false, 'web');
             flash('error', 'Invalid email or password.');
             redirect('/login');
         }
@@ -63,6 +63,9 @@ class AuthController {
             flash('error', 'Your account does not have web portal access. Contact your administrator.');
             redirect('/login');
         }
+
+        // Regenerate session ID after auth to prevent session fixation
+        session_regenerate_id(true);
 
         // Set session
         $_SESSION['user'] = [

@@ -89,6 +89,10 @@ return [
     // ─── Compliance ─────────────────────
     'GET /compliance' => ['ComplianceController', 'index'],
 
+    // ─── Audit Log ──────────────────────
+    'GET /audit-log'         => ['AuditLogController', 'index'],
+    'GET /audit-log/logins'  => ['AuditLogController', 'loginActivity'],
+
     // ─── Install (Protected) ──────────
     'GET /install'                 => ['InstallController', 'index'],
     'GET /install/instructions'    => ['InstallController', 'instructions'],

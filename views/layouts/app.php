@@ -160,6 +160,16 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
+            <!-- ─── Admin / Security ──────────────────── -->
+            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Security</div>
+                <a href="/audit-log" class="sidebar-link <?= str_starts_with($currentPath, '/audit-log') ? 'active' : '' ?>">
+                    <span class="icon">🔒</span> Audit Log
+                </a>
+            </div>
+            <?php endif; ?>
+
             <!-- ─── Operational crew: Documents & Notices ─ -->
             <?php if (hasAnyRole(['pilot', 'cabin_crew', 'engineer']) && !hasAnyRole(['airline_admin', 'hr', 'chief_pilot', 'head_cabin_crew', 'engineering_manager', 'safety_officer', 'document_control', 'fdm_analyst', 'base_manager', 'scheduler'])): ?>
             <div class="sidebar-section">

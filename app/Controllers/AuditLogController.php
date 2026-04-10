@@ -1,0 +1,133 @@
+<?php
+/**
+ * AuditLogController — view audit log + login activity
+ *
+ * Accessible by: super_admin, airline_admin, safety_officer
+ */
+class AuditLogController {
+
+    public function index(): void {
+        RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
+
+        $tenantId  = currentTenantId();
+        $isSuperAdmin = hasRole('super_admin');
+
+        // Filters
+        $filterAction = trim($_GET['action'] ?? '');
+        $filterUser   = trim($_GET['user']   ?? '');
+        $filterEntity = trim($_GET['entity'] ?? '');
+        $page         = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage      = 50;
+        $offset       = ($page - 1) * $perPage;
+
+        // Build query
+        $where  = [];
+        $params = [];
+
+        if (!$isSuperAdmin) {
+            $where[]  = 'al.tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        if ($filterAction) {
+            $where[]  = 'al.action LIKE ?';
+            $params[] = '%' . $filterAction . '%';
+        }
+        if ($filterUser) {
+            $where[]  = 'al.user_name LIKE ?';
+            $params[] = '%' . $filterUser . '%';
+        }
+        if ($filterEntity) {
+            $where[]  = 'al.entity_type = ?';
+            $params[] = $filterEntity;
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $logs = Database::fetchAll(
+            "SELECT al.*, t.name AS tenant_name
+             FROM audit_logs al
+             LEFT JOIN tenants t ON al.tenant_id = t.id
+             $whereClause
+             ORDER BY al.created_at DESC
+             LIMIT ? OFFSET ?",
+            [...$params, $perPage, $offset]
+        );
+
+        $totalRow = Database::fetch(
+            "SELECT COUNT(*) AS c FROM audit_logs al $whereClause",
+            $params
+        );
+        $totalLogs = (int) ($totalRow['c'] ?? 0);
+        $totalPages = max(1, (int) ceil($totalLogs / $perPage));
+
+        // Distinct entity types for filter dropdown
+        $entityTypes = Database::fetchAll(
+            "SELECT DISTINCT entity_type FROM audit_logs WHERE entity_type IS NOT NULL ORDER BY entity_type"
+        );
+
+        $pageTitle    = 'Audit Log';
+        $pageSubtitle = 'Security & action history';
+
+        ob_start();
+        require VIEWS_PATH . '/audit/index.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function loginActivity(): void {
+        RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
+
+        $tenantId  = currentTenantId();
+        $isSuperAdmin = hasRole('super_admin');
+
+        $filterEmail  = trim($_GET['email']  ?? '');
+        $filterResult = trim($_GET['result'] ?? ''); // 'success' | 'fail' | ''
+        $page    = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage = 50;
+        $offset  = ($page - 1) * $perPage;
+
+        $where  = [];
+        $params = [];
+
+        if (!$isSuperAdmin) {
+            $where[]  = 'la.tenant_id = ?';
+            $params[] = $tenantId;
+        }
+        if ($filterEmail) {
+            $where[]  = 'la.email LIKE ?';
+            $params[] = '%' . $filterEmail . '%';
+        }
+        if ($filterResult === 'success') {
+            $where[] = 'la.success = 1';
+        } elseif ($filterResult === 'fail') {
+            $where[] = 'la.success = 0';
+        }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        $activity = Database::fetchAll(
+            "SELECT la.*, t.name AS tenant_name, u.name AS user_name
+             FROM login_activity la
+             LEFT JOIN tenants t ON la.tenant_id = t.id
+             LEFT JOIN users u ON la.user_id = u.id
+             $whereClause
+             ORDER BY la.created_at DESC
+             LIMIT ? OFFSET ?",
+            [...$params, $perPage, $offset]
+        );
+
+        $totalRow = Database::fetch(
+            "SELECT COUNT(*) AS c FROM login_activity la $whereClause",
+            $params
+        );
+        $totalPages = max(1, (int) ceil(($totalRow['c'] ?? 0) / $perPage));
+
+        $pageTitle    = 'Login Activity';
+        $pageSubtitle = 'Authentication history — web + API';
+
+        ob_start();
+        require VIEWS_PATH . '/audit/login.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+}

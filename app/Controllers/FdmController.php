@@ -197,6 +197,7 @@ class FdmController {
 
         $newCount = count(FdmModel::getEvents($id));
         FdmModel::updateEventCount($id, $newCount);
+        AuditLog::log('fdm_event_added', 'fdm_upload', $id, "Added FDM event to upload #{$id}");
 
         flash('success', 'Event added.');
         redirect('/fdm/view/' . $id);
@@ -215,6 +216,7 @@ class FdmController {
 
         $newCount = count(FdmModel::getEvents($uploadId));
         FdmModel::updateEventCount($uploadId, $newCount);
+        AuditLog::log('fdm_event_deleted', 'fdm_event', $eventId, "Deleted FDM event #{$eventId} from upload #{$uploadId}");
 
         flash('success', 'Event removed.');
         redirect('/fdm/view/' . $uploadId);

@@ -23,9 +23,10 @@ class AuthApiController {
         }
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
-            if ($user) {
-                \AuditLog::logLogin($user['id'], $user['tenant_id'], $email, false, 'api');
-            }
+            // Always log failed attempts, even when the email is unknown
+            $logUserId   = $user['id']        ?? 0;
+            $logTenantId = $user['tenant_id'] ?? (isSingleTenant() ? getFixedTenantId() : 0);
+            \AuditLog::logLogin($logUserId, $logTenantId, $email, false, 'api');
             jsonResponse(['error' => 'Invalid credentials'], 401);
         }
 
@@ -42,6 +43,12 @@ class AuthApiController {
         if (!$tenant || !$tenant['is_active']) {
             jsonResponse(['error' => 'Airline account is not active'], 403);
         }
+
+        // Prune expired / revoked tokens for this user before issuing new one
+        \Database::execute(
+            "DELETE FROM api_tokens WHERE user_id = ? AND (expires_at < CURRENT_TIMESTAMP OR revoked = 1)",
+            [$user['id']]
+        );
 
         // Generate API token
         $token = generateApiToken();
