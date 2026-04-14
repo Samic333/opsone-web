@@ -123,6 +123,22 @@ if ($isApi) {
     if ($controllerName !== 'AuthController') {
         $webAuth = new WebAuthMiddleware();
         $webAuth->handle();
+
+        // ── Platform separation guard ─────────────────────────────
+        // Platform-only users must NOT access airline-operational controllers.
+        // They should use /platform/* routes instead.
+        $airlineOnlyControllers = [
+            'RosterController',
+            'FdmController',
+            'NoticeController',
+            'FileController',
+            'ComplianceController',
+            'UserController',    // airline /users — platform uses /platform/users
+        ];
+        if (in_array($controllerName, $airlineOnlyControllers, true) && isPlatformOnly()) {
+            flash('error', 'That section is scoped to a specific airline. Use controlled access to enter an airline workspace.');
+            redirect('/dashboard');
+        }
     }
 }
 

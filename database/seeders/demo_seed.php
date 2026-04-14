@@ -182,7 +182,10 @@ try {
 
     // ─── 6. Clear old demo users ──────────────────────────
     echo "Clearing old demo users... ";
+    // Clear airline-tenant demo users
     $db->exec("DELETE FROM users WHERE tenant_id = 1 AND (email LIKE '%@airline.com' OR email LIKE 'demo.%@acentoza.com')");
+    // Clear platform-level demo users (NULL tenant) from previous seeds
+    $db->exec("DELETE FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'");
     echo "✓\n";
 
     // ─── 7. Reload maps ───────────────────────────────────
@@ -192,13 +195,45 @@ try {
 
     // ─── 8. Demo users ────────────────────────────────────
     echo "Creating demo users... ";
+
+    // Build INSERT — handle whether web_access column exists (MySQL may need migration 005 first)
+    $hasWebAccess = true;
+    if ($driver === 'mysql') {
+        $cols = $db->query("SHOW COLUMNS FROM users LIKE 'web_access'")->fetchColumn();
+        $hasWebAccess = !empty($cols);
+    }
+
+    // ── 8a. Platform users (tenant_id = NULL) ────────────
+    // These are pure platform-staff accounts with no airline affiliation.
+    // [name, email, emp_id, web_access, mobile_access]
+    $platformUserDefs = [
+        ['Alex Mwangi',    'demo.superadmin@acentoza.com', 'PLT-001', 1, 0],
+        ['Jordan Taylor',  'demo.support@acentoza.com',    'PLT-002', 1, 0],
+        ['Sarah Kimani',   'demo.security@acentoza.com',   'PLT-003', 1, 0],
+        ['James Okafor',   'demo.sysmonitor@acentoza.com', 'SYS-001', 1, 0],
+    ];
+
+    if ($hasWebAccess) {
+        $platStmt = $db->prepare(
+            "INSERT INTO users (tenant_id, name, email, employee_id, status, password_hash, web_access, mobile_access)
+             VALUES (NULL, ?, ?, ?, 'active', ?, ?, ?)"
+        );
+        foreach ($platformUserDefs as [$name, $email, $empId, $webA, $mobileA]) {
+            $platStmt->execute([$name, $email, $empId, $pw, $webA, $mobileA]);
+        }
+    } else {
+        $platStmt = $db->prepare(
+            "INSERT INTO users (tenant_id, name, email, employee_id, status, password_hash, mobile_access)
+             VALUES (NULL, ?, ?, ?, 'active', ?, ?)"
+        );
+        foreach ($platformUserDefs as [$name, $email, $empId, $webA, $mobileA]) {
+            $platStmt->execute([$name, $email, $empId, $pw, $mobileA]);
+        }
+    }
+
+    // ── 8b. Airline users (tenant_id = 1) ────────────────
     // [name, email, emp_id, dept_code, base_code, web_access, mobile_access]
-    // All demo accounts have mobile_access=1 so all role dashboards can be tested on iPad.
-    $userDefs = [
-        // Platform level
-        ['Alex Mwangi',           'demo.superadmin@acentoza.com',  'PLT-001', 'MGT', 'NBO', 1, 1],
-        ['Jordan Taylor',         'demo.support@acentoza.com',     'PLT-002', 'MGT', 'NBO', 1, 0],
-        ['Sarah Kimani',          'demo.security@acentoza.com',    'PLT-003', 'MGT', 'NBO', 1, 0],
+    $airlineUserDefs = [
         // Airline management
         ['Amara Diallo',          'demo.airadmin@acentoza.com',    'ODA-001', 'MGT', 'NBO', 1, 1],
         ['Fatima Al-Zaabi',       'demo.hr@acentoza.com',          'HR-001',  'HR',  'NBO', 1, 1],
@@ -216,31 +251,23 @@ try {
         ['Eric Mbeki',            'demo.engineer@acentoza.com',    'ENG-007', 'ENG', 'NBO', 1, 1],
         // Optional roles
         ['Ruth Nambozo',          'demo.training@acentoza.com',    'TRN-001', 'HR',  'NBO', 1, 0],
-        ['James Okafor',          'demo.sysmonitor@acentoza.com',  'SYS-001', 'MGT', 'NBO', 1, 0],
     ];
 
-    // Build INSERT — handle whether web_access column exists (MySQL may need migration 005 first)
-    $hasWebAccess = true;
-    if ($driver === 'mysql') {
-        $cols = $db->query("SHOW COLUMNS FROM users LIKE 'web_access'")->fetchColumn();
-        $hasWebAccess = !empty($cols);
-    }
-
     if ($hasWebAccess) {
-        $userStmt = $db->prepare(
+        $airStmt = $db->prepare(
             "INSERT INTO users (tenant_id, name, email, employee_id, department_id, base_id, status, password_hash, web_access, mobile_access)
              VALUES (1, ?, ?, ?, ?, ?, 'active', ?, ?, ?)"
         );
-        foreach ($userDefs as [$name, $email, $empId, $dept, $base, $webA, $mobileA]) {
-            $userStmt->execute([$name, $email, $empId, $deptMap[$dept] ?? null, $baseMap[$base] ?? null, $pw, $webA, $mobileA]);
+        foreach ($airlineUserDefs as [$name, $email, $empId, $dept, $base, $webA, $mobileA]) {
+            $airStmt->execute([$name, $email, $empId, $deptMap[$dept] ?? null, $baseMap[$base] ?? null, $pw, $webA, $mobileA]);
         }
     } else {
-        $userStmt = $db->prepare(
+        $airStmt = $db->prepare(
             "INSERT INTO users (tenant_id, name, email, employee_id, department_id, base_id, status, password_hash, mobile_access)
              VALUES (1, ?, ?, ?, ?, ?, 'active', ?, ?)"
         );
-        foreach ($userDefs as [$name, $email, $empId, $dept, $base, $webA, $mobileA]) {
-            $userStmt->execute([$name, $email, $empId, $deptMap[$dept] ?? null, $baseMap[$base] ?? null, $pw, $mobileA]);
+        foreach ($airlineUserDefs as [$name, $email, $empId, $dept, $base, $webA, $mobileA]) {
+            $airStmt->execute([$name, $email, $empId, $deptMap[$dept] ?? null, $baseMap[$base] ?? null, $pw, $mobileA]);
         }
         echo "\n  ⚠ web_access column missing in MySQL — run migration 005 first!\n  ";
     }
@@ -248,13 +275,44 @@ try {
 
     // ─── 9. Assign roles ─────────────────────────────────
     echo "Assigning roles... ";
-    $tenantRoles = $db->query("SELECT slug, id FROM roles WHERE tenant_id = 1")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $userIds     = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
 
-    $roleMap = [
-        'demo.superadmin@acentoza.com'  => ['super_admin', 'airline_admin'],
+    // System roles (NULL tenant) for platform users
+    $systemRoleIds = $db->query("SELECT slug, id FROM roles WHERE tenant_id IS NULL")->fetchAll(PDO::FETCH_KEY_PAIR);
+    // Tenant-1 roles for airline users
+    $tenantRoles   = $db->query("SELECT slug, id FROM roles WHERE tenant_id = 1")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    // Platform user IDs (NULL tenant_id)
+    $platUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    // Airline user IDs
+    $airUserIds  = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $userIds     = $platUserIds + $airUserIds;
+
+    // Clear old role assignments for ALL demo users
+    if (!empty($userIds)) {
+        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
+        $db->prepare("DELETE FROM user_roles WHERE user_id IN ($placeholders)")
+           ->execute(array_values($userIds));
+    }
+
+    // Platform role map — assigned using system roles (tenant_id = NULL in user_roles)
+    $platformRoleMap = [
+        'demo.superadmin@acentoza.com'  => ['super_admin'],       // pure platform — NO airline_admin
         'demo.support@acentoza.com'     => ['platform_support'],
         'demo.security@acentoza.com'    => ['platform_security'],
+        'demo.sysmonitor@acentoza.com'  => ['system_monitoring'],
+    ];
+
+    $platAssignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, NULL)");
+    foreach ($platformRoleMap as $email => $slugs) {
+        if (!isset($platUserIds[$email])) continue;
+        foreach ($slugs as $slug) {
+            if (!isset($systemRoleIds[$slug])) continue;
+            $platAssignStmt->execute([$platUserIds[$email], $systemRoleIds[$slug]]);
+        }
+    }
+
+    // Airline role map — assigned using tenant-1 roles
+    $roleMap = [
         'demo.airadmin@acentoza.com'    => ['airline_admin'],
         'demo.hr@acentoza.com'          => ['hr'],
         'demo.scheduler@acentoza.com'   => ['scheduler'],
@@ -269,22 +327,14 @@ try {
         'demo.cabin@acentoza.com'       => ['cabin_crew'],
         'demo.engineer@acentoza.com'    => ['engineer'],
         'demo.training@acentoza.com'    => ['training_admin'],
-        'demo.sysmonitor@acentoza.com'  => ['system_monitoring'],
     ];
 
-    // Clear old role assignments for demo users first
-    if (!empty($userIds)) {
-        $placeholders = implode(',', array_fill(0, count($userIds), '?'));
-        $db->prepare("DELETE FROM user_roles WHERE user_id IN ($placeholders)")
-           ->execute(array_values($userIds));
-    }
-
-    $assignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, 1)");
+    $airAssignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, 1)");
     foreach ($roleMap as $email => $slugs) {
-        if (!isset($userIds[$email])) continue;
+        if (!isset($airUserIds[$email])) continue;
         foreach ($slugs as $slug) {
             if (!isset($tenantRoles[$slug])) continue;
-            $assignStmt->execute([$userIds[$email], $tenantRoles[$slug]]);
+            $airAssignStmt->execute([$airUserIds[$email], $tenantRoles[$slug]]);
         }
     }
     echo "✓\n";
@@ -312,13 +362,14 @@ try {
     echo "Seeding demo notices... ";
     $db->exec("DELETE FROM notices WHERE tenant_id = 1");
 
-    // Get created_by user IDs
-    $uids = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $docId    = $uids['demo.doccontrol@acentoza.com']  ?? null;
-    $safetyId = $uids['demo.safety@acentoza.com']      ?? null;
-    $adminId  = $uids['demo.superadmin@acentoza.com']  ?? null;
-    $pilotId  = $uids['demo.pilot@acentoza.com']       ?? null;
-    $cabinId  = $uids['demo.cabin@acentoza.com']       ?? null;
+    // Get created_by user IDs (airline users from tenant 1; platform users from NULL tenant)
+    $uids     = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $platUids = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $docId    = $uids['demo.doccontrol@acentoza.com']      ?? null;
+    $safetyId = $uids['demo.safety@acentoza.com']          ?? null;
+    $adminId  = $platUids['demo.superadmin@acentoza.com']  ?? null; // platform user
+    $pilotId  = $uids['demo.pilot@acentoza.com']           ?? null;
+    $cabinId  = $uids['demo.cabin@acentoza.com']           ?? null;
 
     $now       = date('Y-m-d H:i:s');
     $yesterday = date('Y-m-d H:i:s', strtotime('-1 day'));

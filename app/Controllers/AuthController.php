@@ -48,20 +48,37 @@ class AuthController {
             redirect('/login');
         }
 
-        // Check tenant is active
-        $tenant = Tenant::find($user['tenant_id']);
-        if (!$tenant || !$tenant['is_active']) {
-            flash('error', 'Your airline account is not active.');
-            redirect('/login');
-        }
-
-        // Load roles
-        $roles = UserModel::getRoleSlugs($user['id']);
-
-        // Check user has web portal access via specific web_access flag
+        // Check user has web portal access
         if (empty($user['web_access'])) {
             flash('error', 'Your account does not have web portal access. Contact your administrator.');
             redirect('/login');
+        }
+
+        // Load roles first — needed to determine platform vs airline context
+        $roles = UserModel::getRoleSlugs($user['id']);
+
+        // Platform roles: users holding ONLY these roles are platform-only
+        $platformRoleSlugs = ['super_admin', 'platform_support', 'platform_security', 'system_monitoring'];
+        $hasPlatformRole   = !empty(array_intersect($roles, $platformRoleSlugs));
+        $hasAirlineRole    = !empty(array_diff($roles, $platformRoleSlugs));
+        $isPlatformOnlyUser = $hasPlatformRole && !$hasAirlineRole;
+
+        if ($isPlatformOnlyUser) {
+            // Platform users: no airline tenant required
+            $tenant = null;
+            $_SESSION['is_platform_session'] = true;
+            $_SESSION['tenant_id']           = null;
+            $_SESSION['tenant']              = null;
+        } else {
+            // Airline users: must belong to an active tenant
+            $tenant = Tenant::find($user['tenant_id']);
+            if (!$tenant || !$tenant['is_active']) {
+                flash('error', 'Your airline account is not active.');
+                redirect('/login');
+            }
+            $_SESSION['is_platform_session'] = false;
+            $_SESSION['tenant_id']           = $user['tenant_id'];
+            $_SESSION['tenant']              = $tenant;
         }
 
         // Regenerate session ID after auth to prevent session fixation
@@ -69,19 +86,17 @@ class AuthController {
 
         // Set session
         $_SESSION['user'] = [
-            'id' => $user['id'],
-            'name' => $user['name'],
-            'email' => $user['email'],
-            'tenant_id' => $user['tenant_id'],
+            'id'          => $user['id'],
+            'name'        => $user['name'],
+            'email'       => $user['email'],
+            'tenant_id'   => $user['tenant_id'],
             'employee_id' => $user['employee_id'],
         ];
         $_SESSION['user_roles'] = $roles;
-        $_SESSION['tenant_id'] = $user['tenant_id'];
-        $_SESSION['tenant'] = $tenant;
 
         // Log successful login
         UserModel::updateLastLogin($user['id']);
-        AuditLog::logLogin($user['id'], $user['tenant_id'], $email, true, 'web');
+        AuditLog::logLogin($user['id'], $user['tenant_id'] ?? 0, $email, true, 'web');
         AuditLog::log('Web Login', 'user', $user['id'], "User logged in from web portal");
 
         redirect('/dashboard');

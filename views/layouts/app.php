@@ -116,6 +116,12 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
 
             <?php if (hasRole('super_admin')): ?>
             <div class="sidebar-section">
+                <div class="sidebar-section-title">Platform Staff</div>
+                <a href="/platform/users" class="sidebar-link <?= str_starts_with($currentPath, '/platform/users') ? 'active' : '' ?>">
+                    <span class="icon">👤</span> Staff Accounts
+                </a>
+            </div>
+            <div class="sidebar-section">
                 <div class="sidebar-section-title">Configuration</div>
                 <a href="/platform/modules" class="sidebar-link <?= str_starts_with($currentPath, '/platform/modules') ? 'active' : '' ?>">
                     <span class="icon">🧩</span> Module Catalog

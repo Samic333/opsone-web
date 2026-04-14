@@ -213,14 +213,19 @@ function isPlatformUser(): bool {
 
 /**
  * True if the user is purely a platform user (no airline roles mixed in).
- * Used to decide which sidebar context to render.
+ * Uses the session flag set at login as a fast path; falls back to role check.
  */
 function isPlatformOnly(): bool {
+    // Fast path: AuthController sets this flag at login
+    if (isset($_SESSION['is_platform_session'])) {
+        return (bool) $_SESSION['is_platform_session'];
+    }
+    // Fallback for sessions created before Phase 0.5
     if (!isPlatformUser()) return false;
     $airlineRoles = ['airline_admin','hr','scheduler','chief_pilot','head_cabin_crew',
                      'engineering_manager','safety_officer','fdm_analyst','document_control',
                      'base_manager','training_admin','pilot','cabin_crew','engineer',
-                     'director','airline_admin'];
+                     'director'];
     return !hasAnyRole($airlineRoles);
 }
 

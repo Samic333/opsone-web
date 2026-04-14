@@ -44,6 +44,12 @@ return [
     'POST /tenants/{id}/access'               => ['TenantController', 'logAccess'],
     'POST /tenants/{id}/invite'               => ['TenantController', 'createInvitation'],
 
+    // ─── Platform: Staff Management ────
+    'GET /platform/users'              => ['PlatformUsersController', 'index'],
+    'GET /platform/users/create'       => ['PlatformUsersController', 'create'],
+    'POST /platform/users/store'       => ['PlatformUsersController', 'store'],
+    'POST /platform/users/toggle/{id}' => ['PlatformUsersController', 'toggle'],
+
     // ─── Platform: Module Catalog ───────
     'GET /platform/modules'                        => ['ModuleCatalogController', 'index'],
     'GET /platform/modules/tenant/{id}'            => ['ModuleCatalogController', 'forTenant'],
