@@ -21,6 +21,15 @@
  */
 class DashboardController {
     public function index(): void {
+        // isPlatformOnly() reads $_SESSION['is_platform_session'] set at login.
+        // This is authoritative even when user_roles is empty (e.g. seeder not re-run).
+        // Must be checked BEFORE role-based routing to prevent the fallback else-branch
+        // from running airlineAdminDashboard(null) → redirect('/dashboard') → loop.
+        if (isPlatformOnly()) {
+            $this->superAdminDashboard();
+            return;
+        }
+
         $sessionUser = currentUser();
         $tenantId    = ($sessionUser['tenant_id'] ?? null) ?? currentTenantId();
 
@@ -101,7 +110,7 @@ class DashboardController {
     // ─── Airline-level dashboards ─────────────────────────
 
     private function airlineAdminDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $compliance = CrewProfileModel::complianceSummary($tenantId);
         $data = [
             'active_staff'       => UserModel::countByTenant($tenantId, 'active'),
@@ -126,7 +135,7 @@ class DashboardController {
     // ─── Management dashboards ────────────────────────────
 
     private function chiefPilotDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $data = [
             'pilot_count'       => (int) Database::fetch(
                 "SELECT COUNT(DISTINCT u.id) as c FROM users u
@@ -146,7 +155,7 @@ class DashboardController {
     }
 
     private function headCabinCrewDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $data = [
             'cabin_count'     => (int) Database::fetch(
                 "SELECT COUNT(DISTINCT u.id) as c FROM users u
@@ -163,7 +172,7 @@ class DashboardController {
     }
 
     private function engineeringDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $data = [
             'eng_count'       => (int) Database::fetch(
                 "SELECT COUNT(DISTINCT u.id) as c FROM users u
@@ -180,7 +189,7 @@ class DashboardController {
     }
 
     private function safetyDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $fdmSummary = FdmModel::summary($tenantId);
         $compliance = CrewProfileModel::complianceSummary($tenantId);
         $data = [
@@ -202,7 +211,7 @@ class DashboardController {
     }
 
     private function fdmDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $summary = FdmModel::summary($tenantId);
         $data = [
             'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
@@ -215,7 +224,7 @@ class DashboardController {
     }
 
     private function documentControlDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $data = [
             'total_files'     => FileModel::countByTenant($tenantId),
             'draft_files'     => (int) Database::fetch(
@@ -232,7 +241,7 @@ class DashboardController {
     }
 
     private function baseManagerDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $user = currentUser();
         $data = [
             'active_staff'    => UserModel::countByTenant($tenantId, 'active'),
@@ -244,7 +253,7 @@ class DashboardController {
     }
 
     private function schedulerDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $today = date('Y-m-d');
         $year  = (int) date('Y');
         $month = (int) date('n');
@@ -310,7 +319,7 @@ class DashboardController {
     // ─── Operational dashboards ───────────────────────────
 
     private function pilotDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $user = currentUser();
         $data = [
             'recent_notices' => Notice::recent($tenantId, 5),
@@ -321,7 +330,7 @@ class DashboardController {
     }
 
     private function engineerDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $user = currentUser();
         $data = [
             'recent_notices' => Notice::recent($tenantId, 5),
@@ -332,7 +341,7 @@ class DashboardController {
     }
 
     private function trainingDashboard(?int $tenantId): void {
-        if (!$tenantId) { redirect('/dashboard'); }
+        if (!$tenantId) { redirect('/login'); }
         $data = [
             'active_staff'   => UserModel::countByTenant($tenantId, 'active'),
             'recent_notices' => Notice::recent($tenantId, 5),

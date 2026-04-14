@@ -54,8 +54,8 @@ class RbacMiddleware {
             if (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
                 jsonResponse(['error' => 'Platform admins must use the controlled access workflow'], 403);
             }
-            flash('error', 'Platform administrators must use the Airline Access portal to enter airline areas.');
-            redirect('/platform/airlines');
+            flash('error', 'That section is airline-scoped. Use controlled access to enter an airline workspace.');
+            redirect('/tenants');
         }
 
         if (!empty($roles)) {
@@ -142,6 +142,7 @@ class RbacMiddleware {
             jsonResponse(['error' => 'Insufficient permissions'], 403);
         }
         flash('error', $msg ?: 'You do not have permission to access this resource.');
-        redirect('/dashboard');
+        // Route to context-appropriate home to prevent redirect loops
+        redirect(isPlatformOnly() ? '/tenants' : '/dashboard');
     }
 }

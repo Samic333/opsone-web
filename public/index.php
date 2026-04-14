@@ -137,7 +137,7 @@ if ($isApi) {
         ];
         if (in_array($controllerName, $airlineOnlyControllers, true) && isPlatformOnly()) {
             flash('error', 'That section is scoped to a specific airline. Use controlled access to enter an airline workspace.');
-            redirect('/dashboard');
+            redirect('/tenants');
         }
     }
 }
