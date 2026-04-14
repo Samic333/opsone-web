@@ -201,3 +201,62 @@ function dbDateAdd(string $interval, int $amount): string {
     return "DATE_ADD(NOW(), INTERVAL $amount " . strtoupper($interval) . ")";
 }
 
+// ─── Phase Zero: Authorization helpers ────────────────────────────────────────
+
+/**
+ * True if the current user holds any platform-level role.
+ * Platform roles: super_admin, platform_support, platform_security, system_monitoring
+ */
+function isPlatformUser(): bool {
+    return hasAnyRole(['super_admin', 'platform_support', 'platform_security', 'system_monitoring']);
+}
+
+/**
+ * True if the user is purely a platform user (no airline roles mixed in).
+ * Used to decide which sidebar context to render.
+ */
+function isPlatformOnly(): bool {
+    if (!isPlatformUser()) return false;
+    $airlineRoles = ['airline_admin','hr','scheduler','chief_pilot','head_cabin_crew',
+                     'engineering_manager','safety_officer','fdm_analyst','document_control',
+                     'base_manager','training_admin','pilot','cabin_crew','engineer',
+                     'director','airline_admin'];
+    return !hasAnyRole($airlineRoles);
+}
+
+/**
+ * True if the user holds any airline/tenant-level role.
+ */
+function isAirlineUser(): bool {
+    return !isPlatformOnly();
+}
+
+/**
+ * Check if a module is enabled for the current tenant AND the user has the capability.
+ * Platform admins always return true.
+ *
+ * @param string $moduleCode  e.g. 'rostering'
+ * @param string $capability  e.g. 'view', 'edit', 'publish'
+ */
+function canAccessModule(string $moduleCode, string $capability = 'view'): bool {
+    if (isPlatformUser()) return true;
+    return AuthorizationService::canAccessModule($moduleCode, $capability);
+}
+
+/**
+ * Check if the current user can access a given tenant.
+ * Platform users: yes. Airline users: only their own tenant.
+ */
+function canAccessTenant(int $tenantId): bool {
+    if (isPlatformUser()) return true;
+    return (int)(currentTenantId()) === $tenantId;
+}
+
+/**
+ * Return 'platform' or 'airline' navigation context string.
+ */
+function navContext(): string {
+    return isPlatformOnly() ? 'platform' : 'airline';
+}
+
+

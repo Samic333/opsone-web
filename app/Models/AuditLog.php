@@ -1,76 +1,36 @@
 <?php
 /**
- * AuditLog Model — records privileged actions
+ * AuditLog Model — legacy compatibility wrapper
+ *
+ * All new code should use AuditService directly.
+ * This class delegates to AuditService so existing controller
+ * calls continue to work without modification.
  */
 class AuditLog {
+
+    /**
+     * @deprecated Use AuditService::log() directly
+     */
     public static function log(string $action, ?string $entityType = null, ?int $entityId = null, ?string $details = null): void {
-        $user     = currentUser();
-        $tenantId = currentTenantId() ?? ($user['tenant_id'] ?? null);
-        Database::insert(
-            "INSERT INTO audit_logs (tenant_id, user_id, user_name, action, entity_type, entity_id, details, ip_address)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                $tenantId,
-                $user['id'] ?? null,
-                $user['name'] ?? 'System',
-                $action,
-                $entityType,
-                $entityId,
-                $details,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-            ]
-        );
+        AuditService::log($action, $entityType, $entityId, $details);
     }
 
+    /**
+     * @deprecated Use AuditService::logApi() directly
+     */
     public static function apiLog(string $action, ?string $entityType = null, ?int $entityId = null, ?string $details = null): void {
-        $user = apiUser();
-        Database::insert(
-            "INSERT INTO audit_logs (tenant_id, user_id, user_name, action, entity_type, entity_id, details, ip_address)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                apiTenantId(),
-                $user['user_id'] ?? null,
-                $user['name'] ?? 'API User',
-                $action,
-                $entityType,
-                $entityId,
-                $details,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-            ]
-        );
-    }
-
-    public static function recent(int $tenantId, int $limit = 20): array {
-        return Database::fetchAll(
-            "SELECT * FROM audit_logs WHERE tenant_id = ? ORDER BY created_at DESC LIMIT ?",
-            [$tenantId, $limit]
-        );
-    }
-
-    public static function all(?int $tenantId = null, int $limit = 50): array {
-        if ($tenantId) {
-            return Database::fetchAll(
-                "SELECT al.*, t.name as tenant_name FROM audit_logs al LEFT JOIN tenants t ON al.tenant_id = t.id WHERE al.tenant_id = ? ORDER BY al.created_at DESC LIMIT ?",
-                [$tenantId, $limit]
-            );
-        }
-        return Database::fetchAll(
-            "SELECT al.*, t.name as tenant_name FROM audit_logs al LEFT JOIN tenants t ON al.tenant_id = t.id ORDER BY al.created_at DESC LIMIT ?",
-            [$limit]
-        );
+        AuditService::logApi($action, $entityType, $entityId, $details);
     }
 
     public static function logLogin(int $userId, int $tenantId, string $email, bool $success, string $source = 'web'): void {
-        Database::insert(
-            "INSERT INTO login_activity (user_id, tenant_id, email, ip_address, user_agent, success, source)
-             VALUES (?, ?, ?, ?, ?, ?, ?)",
-            [
-                $userId, $tenantId, $email,
-                $_SERVER['REMOTE_ADDR'] ?? null,
-                substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 500),
-                $success ? 1 : 0,
-                $source,
-            ]
-        );
+        AuditService::logLogin($userId, $tenantId, $email, $success, $source);
+    }
+
+    public static function recent(int $tenantId, int $limit = 20): array {
+        return AuditService::recent($tenantId, $limit);
+    }
+
+    public static function all(?int $tenantId = null, int $limit = 50): array {
+        return AuditService::all($tenantId, $limit);
     }
 }

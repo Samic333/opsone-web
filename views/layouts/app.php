@@ -1,41 +1,62 @@
 <?php
 /**
  * OpsOne — Admin Portal Layout
+ *
+ * Phase Zero: Platform users see ONLY platform navigation.
+ *             Airline users see ONLY airline navigation.
+ *             Cross-contamination of sidebar items is blocked.
  */
-$brand = $brand ?? (file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsOne']);
-$user = currentUser();
-$roles = $_SESSION['user_roles'] ?? [];
-$tenant = $_SESSION['tenant'] ?? null;
+$brand = $brand ?? (file_exists(CONFIG_PATH . '/branding.php')
+    ? require CONFIG_PATH . '/branding.php'
+    : ['product_name' => 'OpsOne']);
+
+$user    = currentUser();
+$roles   = $_SESSION['user_roles'] ?? [];
+$tenant  = $_SESSION['tenant'] ?? null;
+
 $pendingDevices = 0;
 try {
-    $pendingDevices = Device::countPending(currentTenantId());
+    if (!isPlatformOnly() && currentTenantId()) {
+        $pendingDevices = Device::countPending(currentTenantId());
+    }
+} catch (\Exception $e) {}
+
+$pendingOnboarding = 0;
+try {
+    if (isPlatformOnly()) {
+        $pendingOnboarding = OnboardingRequest::countPending();
+    }
 } catch (\Exception $e) {}
 
 $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$isPlat      = isPlatformOnly();
 
-// Derive a readable role label from first role slug
 $roleLabelMap = [
     'super_admin'         => 'Platform Super Admin',
     'platform_support'    => 'Platform Support Admin',
     'platform_security'   => 'Platform Security Admin',
-    'system_monitoring'   => 'System Monitoring Admin',
+    'system_monitoring'   => 'System Monitoring',
     'airline_admin'       => 'Airline Admin',
     'hr'                  => 'HR Admin',
-    'scheduler'           => 'Scheduler Admin',
+    'scheduler'           => 'Scheduler / Crew Control',
     'chief_pilot'         => 'Chief Pilot',
     'head_cabin_crew'     => 'Head of Cabin Crew',
     'engineering_manager' => 'Engineering Manager',
     'safety_officer'      => 'Safety Manager',
     'fdm_analyst'         => 'FDM Analyst',
-    'document_control'    => 'Document Control Mgr',
+    'document_control'    => 'Document Control',
     'base_manager'        => 'Base Manager',
+    'training_admin'      => 'Training Admin',
     'pilot'               => 'Pilot',
     'cabin_crew'          => 'Cabin Crew',
     'engineer'            => 'Engineer',
-    'training_admin'      => 'Training Admin',
     'director'            => 'Director',
 ];
-$roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $roles[0] ?? 'User'));
+$roleLabel = $roleLabelMap[$roles[0] ?? '']
+           ?? ucwords(str_replace('_', ' ', $roles[0] ?? 'User'));
+
+$brandName  = $isPlat ? ($brand['product_name'] . ' Platform') : $brand['product_name'];
+$brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline Portal');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -46,25 +67,101 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
 </head>
-<body>
+<body class="<?= $isPlat ? 'ctx-platform' : 'ctx-airline' ?>">
 <div class="app-layout">
     <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle menu">
         <span></span><span></span><span></span>
     </button>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar <?= $isPlat ? 'sidebar-platform' : 'sidebar-airline' ?>" id="sidebar">
         <div class="sidebar-brand">
-            <div class="sidebar-brand-icon">✈</div>
+            <div class="sidebar-brand-icon"><?= $isPlat ? '🛡' : '✈' ?></div>
             <div>
-                <h1><?= e($brand['product_name']) ?></h1>
-                <small><?= e($tenant['name'] ?? 'Control Portal') ?></small>
+                <h1><?= e($brandName) ?></h1>
+                <small><?= e($brandSmall) ?></small>
             </div>
         </div>
 
         <nav class="sidebar-nav">
 
-            <!-- ─── Main ──────────────────────────────── -->
+        <?php if ($isPlat): ?>
+        <!-- ═══════════════════════════════════════════════════════
+             PLATFORM NAVIGATION — visible to platform admins only
+             ═══════════════════════════════════════════════════════ -->
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Platform</div>
+                <a href="/dashboard" class="sidebar-link <?= str_starts_with($currentPath, '/dashboard') ? 'active' : '' ?>">
+                    <span class="icon">📊</span> Platform Overview
+                </a>
+            </div>
+
+            <?php if (hasAnyRole(['super_admin', 'platform_support', 'system_monitoring'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Airlines</div>
+                <a href="/tenants" class="sidebar-link <?= str_starts_with($currentPath, '/tenants') ? 'active' : '' ?>">
+                    <span class="icon">🏢</span> Airline Registry
+                </a>
+                <?php if (hasRole('super_admin')): ?>
+                <a href="/platform/onboarding" class="sidebar-link <?= str_starts_with($currentPath, '/platform/onboarding') ? 'active' : '' ?>">
+                    <span class="icon">✈</span> Onboarding
+                    <?php if ($pendingOnboarding > 0): ?>
+                        <span class="badge"><?= $pendingOnboarding ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
+            <?php if (hasRole('super_admin')): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Configuration</div>
+                <a href="/platform/modules" class="sidebar-link <?= str_starts_with($currentPath, '/platform/modules') ? 'active' : '' ?>">
+                    <span class="icon">🧩</span> Module Catalog
+                </a>
+            </div>
+            <?php endif; ?>
+
+            <?php if (hasAnyRole(['super_admin', 'platform_security'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Security</div>
+                <a href="/audit-log" class="sidebar-link <?= str_starts_with($currentPath, '/audit-log') ? 'active' : '' ?>">
+                    <span class="icon">🔒</span> Audit Log
+                </a>
+                <a href="/audit-log/logins" class="sidebar-link <?= str_starts_with($currentPath, '/audit-log/logins') ? 'active' : '' ?>">
+                    <span class="icon">🔑</span> Login Activity
+                </a>
+            </div>
+            <?php endif; ?>
+
+            <?php if (hasAnyRole(['super_admin', 'platform_support'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Support</div>
+                <a href="/devices" class="sidebar-link <?= str_starts_with($currentPath, '/devices') ? 'active' : '' ?>">
+                    <span class="icon">📱</span> All Devices
+                </a>
+                <a href="/install" class="sidebar-link <?= str_starts_with($currentPath, '/install') ? 'active' : '' ?>">
+                    <span class="icon">📲</span> App Builds
+                </a>
+            </div>
+            <?php endif; ?>
+
+            <!-- Platform notice: accessing airline data -->
+            <div class="sidebar-section" style="margin-top: auto;">
+                <div style="padding: 10px 12px; background: rgba(245,158,11,0.1); border-radius: 6px;
+                            border-left: 3px solid #f59e0b; font-size: 11px; color: var(--text-muted);">
+                    <strong style="color: #f59e0b;">⚠ Platform Mode</strong><br>
+                    To access airline operational data, open the airline record and use
+                    <em>Controlled Access</em>.
+                </div>
+            </div>
+
+        <?php else: ?>
+        <!-- ═══════════════════════════════════════════════════════
+             AIRLINE NAVIGATION — visible to airline/tenant users
+             ═══════════════════════════════════════════════════════ -->
+
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Main</div>
                 <a href="/dashboard" class="sidebar-link <?= str_starts_with($currentPath, '/dashboard') || $currentPath === '/' ? 'active' : '' ?>">
@@ -72,24 +169,8 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
                 </a>
             </div>
 
-            <!-- ─── Platform (super_admin / support / security) ─ -->
-            <?php if (hasAnyRole(['super_admin', 'platform_support', 'platform_security', 'system_monitoring']) && isMultiTenant()): ?>
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Platform</div>
-                <?php if (hasRole('super_admin')): ?>
-                <a href="/tenants" class="sidebar-link <?= str_starts_with($currentPath, '/tenants') ? 'active' : '' ?>">
-                    <span class="icon">🏢</span> Airlines
-                </a>
-                <?php else: ?>
-                <a href="/tenants" class="sidebar-link <?= str_starts_with($currentPath, '/tenants') ? 'active' : '' ?>" style="opacity:0.7;" title="Read-only view">
-                    <span class="icon">🏢</span> Airlines <span style="font-size:9px;opacity:0.6;">(view only)</span>
-                </a>
-                <?php endif; ?>
-            </div>
-            <?php endif; ?>
-
-            <!-- ─── People & Devices ───────────────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'hr', 'training_admin'])): ?>
+            <!-- ─── People & Devices ─────────────────────── -->
+            <?php if (hasAnyRole(['airline_admin', 'hr', 'training_admin'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">People</div>
                 <a href="/users" class="sidebar-link <?= str_starts_with($currentPath, '/users') ? 'active' : '' ?>">
@@ -102,8 +183,7 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
                     <?php endif; ?>
                 </a>
             </div>
-            <?php elseif (hasAnyRole(['chief_pilot', 'head_cabin_crew', 'engineering_manager', 'base_manager', 'safety_officer'])): ?>
-            <!-- Management roles: devices only (for approval awareness) -->
+            <?php elseif (hasAnyRole(['chief_pilot','head_cabin_crew','engineering_manager','base_manager','safety_officer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Devices</div>
                 <a href="/devices" class="sidebar-link <?= str_starts_with($currentPath, '/devices') ? 'active' : '' ?>">
@@ -115,14 +195,14 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Scheduling ────────────────────────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew', 'base_manager', 'pilot', 'cabin_crew', 'engineer'])): ?>
+            <!-- ─── Scheduling ───────────────────────────── -->
+            <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager','pilot','cabin_crew','engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Scheduling</div>
-                <a href="/roster" class="sidebar-link <?= $currentPath === '/roster' || (str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath, '/roster/standby') && !str_starts_with($currentPath, '/roster/suggest')) ? 'active' : '' ?>">
+                <a href="/roster" class="sidebar-link <?= ($currentPath === '/roster' || (str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath, '/roster/standby') && !str_starts_with($currentPath, '/roster/suggest'))) ? 'active' : '' ?>">
                     <span class="icon">📅</span> Roster
                 </a>
-                <?php if (hasAnyRole(['super_admin', 'airline_admin', 'scheduler', 'chief_pilot', 'head_cabin_crew'])): ?>
+                <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew'])): ?>
                 <a href="/roster/standby" class="sidebar-link <?= str_starts_with($currentPath, '/roster/standby') ? 'active' : '' ?>">
                     <span class="icon">📋</span> Standby Pool
                 </a>
@@ -130,14 +210,18 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Content: Documents ─────────────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'hr', 'document_control', 'safety_officer', 'chief_pilot', 'head_cabin_crew', 'engineering_manager', 'base_manager', 'training_admin', 'fdm_analyst'])): ?>
+            <!-- ─── Content: Documents & Notices ─────────── -->
+            <?php if (hasAnyRole(['airline_admin','hr','document_control','safety_officer','chief_pilot',
+                                   'head_cabin_crew','engineering_manager','base_manager','training_admin',
+                                   'fdm_analyst','pilot','cabin_crew','engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Content</div>
                 <a href="/files" class="sidebar-link <?= str_starts_with($currentPath, '/files') ? 'active' : '' ?>">
                     <span class="icon">📄</span> Documents
                 </a>
-                <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'document_control', 'chief_pilot', 'head_cabin_crew', 'engineering_manager', 'hr'])): ?>
+                <?php if (hasAnyRole(['airline_admin','safety_officer','document_control','chief_pilot',
+                                       'head_cabin_crew','engineering_manager','hr',
+                                       'pilot','cabin_crew','engineer'])): ?>
                 <a href="/notices" class="sidebar-link <?= str_starts_with($currentPath, '/notices') ? 'active' : '' ?>">
                     <span class="icon">📢</span> Notices
                 </a>
@@ -145,11 +229,11 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Safety & FDM ──────────────────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'fdm_analyst', 'chief_pilot', 'hr'])): ?>
+            <!-- ─── Safety & Compliance ──────────────────── -->
+            <?php if (hasAnyRole(['airline_admin','safety_officer','fdm_analyst','chief_pilot','hr'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Safety</div>
-                <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer', 'fdm_analyst'])): ?>
+                <?php if (hasAnyRole(['airline_admin','safety_officer','fdm_analyst'])): ?>
                 <a href="/fdm" class="sidebar-link <?= str_starts_with($currentPath, '/fdm') ? 'active' : '' ?>">
                     <span class="icon">📊</span> FDM Data
                 </a>
@@ -160,8 +244,8 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Admin / Security ──────────────────── -->
-            <?php if (hasAnyRole(['super_admin', 'airline_admin', 'safety_officer'])): ?>
+            <!-- ─── Audit Log (airline level) ────────────── -->
+            <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Security</div>
                 <a href="/audit-log" class="sidebar-link <?= str_starts_with($currentPath, '/audit-log') ? 'active' : '' ?>">
@@ -170,20 +254,7 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
             </div>
             <?php endif; ?>
 
-            <!-- ─── Operational crew: Documents & Notices ─ -->
-            <?php if (hasAnyRole(['pilot', 'cabin_crew', 'engineer']) && !hasAnyRole(['airline_admin', 'hr', 'chief_pilot', 'head_cabin_crew', 'engineering_manager', 'safety_officer', 'document_control', 'fdm_analyst', 'base_manager', 'scheduler'])): ?>
-            <div class="sidebar-section">
-                <div class="sidebar-section-title">Operations</div>
-                <a href="/files" class="sidebar-link <?= str_starts_with($currentPath, '/files') ? 'active' : '' ?>">
-                    <span class="icon">📄</span> Documents
-                </a>
-                <a href="/notices" class="sidebar-link <?= str_starts_with($currentPath, '/notices') ? 'active' : '' ?>">
-                    <span class="icon">📢</span> Notices
-                </a>
-            </div>
-            <?php endif; ?>
-
-            <!-- ─── App Install ────────────────────────── -->
+            <!-- ─── App Install ───────────────────────────── -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">App</div>
                 <a href="/install" class="sidebar-link <?= str_starts_with($currentPath, '/install') ? 'active' : '' ?>">
@@ -191,6 +262,7 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
                 </a>
             </div>
 
+        <?php endif; ?>
         </nav>
 
         <div class="sidebar-footer">
@@ -238,7 +310,7 @@ $roleLabel = $roleLabelMap[$roles[0] ?? ''] ?? ucwords(str_replace('_', ' ', $ro
 </div>
 <script>
 (function() {
-    const toggle = document.getElementById('mobileToggle');
+    const toggle  = document.getElementById('mobileToggle');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
     if (toggle && sidebar && overlay) {

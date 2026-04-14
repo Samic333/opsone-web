@@ -3,6 +3,9 @@
  * Route Definitions
  * Format: 'METHOD /path' => [ControllerClass, 'method']
  * Use {id} for route parameters
+ *
+ * Phase Zero: Added platform/* routes.
+ *             Tenant routes now use /tenants/{id} for detailed view.
  */
 
 return [
@@ -27,13 +30,33 @@ return [
     'GET /'           => ['PublicController', 'home'],
     'GET /dashboard'  => ['DashboardController', 'index'],
 
-    // ─── Tenants (Super Admin) ─────────
+    // ─── Tenants (Platform Super Admin) ─────────
     'GET /tenants'              => ['TenantController', 'index'],
     'GET /tenants/create'       => ['TenantController', 'create'],
     'POST /tenants/store'       => ['TenantController', 'store'],
+    'GET /tenants/{id}'         => ['TenantController', 'show'],           // NEW: detail view
     'GET /tenants/edit/{id}'    => ['TenantController', 'edit'],
     'POST /tenants/update/{id}' => ['TenantController', 'update'],
     'POST /tenants/toggle/{id}' => ['TenantController', 'toggle'],
+
+    // Module management per tenant (platform super admin)
+    'POST /tenants/{id}/modules/{mid}/toggle' => ['TenantController', 'toggleModule'],
+    'POST /tenants/{id}/access'               => ['TenantController', 'logAccess'],
+    'POST /tenants/{id}/invite'               => ['TenantController', 'createInvitation'],
+
+    // ─── Platform: Module Catalog ───────
+    'GET /platform/modules'                        => ['ModuleCatalogController', 'index'],
+    'GET /platform/modules/tenant/{id}'            => ['ModuleCatalogController', 'forTenant'],
+    'POST /platform/modules/tenant/{id}/toggle/{mid}' => ['ModuleCatalogController', 'toggleForTenant'],
+
+    // ─── Platform: Onboarding ──────────
+    'GET /platform/onboarding'                 => ['OnboardingController', 'index'],
+    'GET /platform/onboarding/create'          => ['OnboardingController', 'create'],
+    'POST /platform/onboarding/store'          => ['OnboardingController', 'store'],
+    'GET /platform/onboarding/{id}'            => ['OnboardingController', 'show'],
+    'POST /platform/onboarding/{id}/approve'   => ['OnboardingController', 'approve'],
+    'POST /platform/onboarding/{id}/reject'    => ['OnboardingController', 'reject'],
+    'POST /platform/onboarding/{id}/provision' => ['OnboardingController', 'provision'],
 
     // ─── Users ─────────────────────────
     'GET /users'              => ['UserController', 'index'],
@@ -123,7 +146,6 @@ return [
     'GET /api/sync/manifest'   => ['InstallApiController', 'syncManifest'],
 
     // ─── API: Notices ──────────────────
-    // Notices API — full notice controller (replaces InstallApiController::notices)
     'GET /api/notices'              => ['NoticeApiController', 'index'],
     'POST /api/notices/{id}/read'   => ['NoticeApiController', 'markRead'],
     'POST /api/notices/{id}/ack'    => ['NoticeApiController', 'acknowledge'],
