@@ -16,21 +16,34 @@ class AuditLogController {
         $isSuperAdmin = hasRole('super_admin');
 
         // Filters
-        $filterAction = trim($_GET['action'] ?? '');
-        $filterUser   = trim($_GET['user']   ?? '');
-        $filterEntity = trim($_GET['entity'] ?? '');
-        $page         = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage      = 50;
-        $offset       = ($page - 1) * $perPage;
+        $filterAction     = trim($_GET['action']       ?? '');
+        $filterUser       = trim($_GET['user']         ?? '');
+        $filterEntity     = trim($_GET['entity']       ?? '');
+        $filterDateFrom   = trim($_GET['date_from']    ?? '');
+        $filterDateTo     = trim($_GET['date_to']      ?? '');
+        $filterTenantId   = $isSuperAdmin ? (int)($_GET['tenant_id']     ?? 0) : 0;
+        $filterPlatform   = $isSuperAdmin && !empty($_GET['platform_only']);
+        $page             = max(1, (int) ($_GET['page'] ?? 1));
+        $perPage          = 50;
+        $offset           = ($page - 1) * $perPage;
 
         // Build query
         $where  = [];
         $params = [];
 
         if (!$isSuperAdmin) {
+            // Airline users see only their own tenant's logs
             $where[]  = 'al.tenant_id = ?';
             $params[] = $tenantId;
+        } elseif ($filterTenantId > 0) {
+            // Super admin filtered to a specific airline
+            $where[]  = 'al.tenant_id = ?';
+            $params[] = $filterTenantId;
+        } elseif ($filterPlatform) {
+            // Super admin: platform-level events only (actor was a platform staff role)
+            $where[] = "al.actor_role IN ('super_admin','platform_support','platform_security','system_monitoring')";
         }
+
         if ($filterAction) {
             $where[]  = 'al.action LIKE ?';
             $params[] = '%' . $filterAction . '%';
@@ -42,6 +55,14 @@ class AuditLogController {
         if ($filterEntity) {
             $where[]  = 'al.entity_type = ?';
             $params[] = $filterEntity;
+        }
+        if ($filterDateFrom !== '') {
+            $where[]  = 'al.created_at >= ?';
+            $params[] = $filterDateFrom . ' 00:00:00';
+        }
+        if ($filterDateTo !== '') {
+            $where[]  = 'al.created_at <= ?';
+            $params[] = $filterDateTo . ' 23:59:59';
         }
 
         $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -60,13 +81,16 @@ class AuditLogController {
             "SELECT COUNT(*) AS c FROM audit_logs al $whereClause",
             $params
         );
-        $totalLogs = (int) ($totalRow['c'] ?? 0);
+        $totalLogs  = (int) ($totalRow['c'] ?? 0);
         $totalPages = max(1, (int) ceil($totalLogs / $perPage));
 
         // Distinct entity types for filter dropdown
         $entityTypes = Database::fetchAll(
             "SELECT DISTINCT entity_type FROM audit_logs WHERE entity_type IS NOT NULL ORDER BY entity_type"
         );
+
+        // Tenant list for super admin tenant filter dropdown
+        $allTenants = $isSuperAdmin ? Tenant::all() : [];
 
         $pageTitle    = 'Audit Log';
         $pageSubtitle = 'Security & action history';

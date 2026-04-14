@@ -60,9 +60,10 @@ return [
     'GET /platform/onboarding/create'          => ['OnboardingController', 'create'],
     'POST /platform/onboarding/store'          => ['OnboardingController', 'store'],
     'GET /platform/onboarding/{id}'            => ['OnboardingController', 'show'],
-    'POST /platform/onboarding/{id}/approve'   => ['OnboardingController', 'approve'],
-    'POST /platform/onboarding/{id}/reject'    => ['OnboardingController', 'reject'],
-    'POST /platform/onboarding/{id}/provision' => ['OnboardingController', 'provision'],
+    'POST /platform/onboarding/{id}/mark-in-review' => ['OnboardingController', 'markInReview'],
+    'POST /platform/onboarding/{id}/approve'        => ['OnboardingController', 'approve'],
+    'POST /platform/onboarding/{id}/reject'         => ['OnboardingController', 'reject'],
+    'POST /platform/onboarding/{id}/provision'      => ['OnboardingController', 'provision'],
 
     // ─── Users ─────────────────────────
     'GET /users'              => ['UserController', 'index'],

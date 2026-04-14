@@ -83,28 +83,115 @@ class DashboardController {
     // ─── Platform dashboards ──────────────────────────────
 
     private function superAdminDashboard(): void {
-        $data = [
-            'total_airlines'   => Tenant::countAll(),
-            'active_airlines'  => Tenant::countActive(),
-            'total_users'      => (int) Database::fetch("SELECT COUNT(*) as c FROM users")['c'],
-            'pending_devices'  => (int) Database::fetch("SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'")['c'],
-            'recent_activity'  => AuditLog::all(null, 10),
-            'tenants'          => Tenant::all(),
-        ];
+        $data = $this->buildPlatformDashboardData();
         require VIEWS_PATH . '/dashboard/super_admin.php';
     }
 
     private function platformSupportDashboard(): void {
-        // Read-only platform view — same data, different context label
-        $data = [
-            'total_airlines'   => Tenant::countAll(),
-            'active_airlines'  => Tenant::countActive(),
-            'total_users'      => (int) Database::fetch("SELECT COUNT(*) as c FROM users")['c'],
-            'pending_devices'  => (int) Database::fetch("SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'")['c'],
-            'recent_activity'  => AuditLog::all(null, 10),
-            'tenants'          => Tenant::all(),
-        ];
+        // Read-only platform view — same enriched data, different view label
+        $data = $this->buildPlatformDashboardData();
         require VIEWS_PATH . '/dashboard/platform_support.php';
+    }
+
+    /**
+     * Build the shared platform dashboard dataset for both super_admin and platform_support.
+     * Phase 1: enriched with onboarding counts, suspension stats, module totals,
+     *           support tier distribution, and recent platform-scoped events.
+     */
+    private function buildPlatformDashboardData(): array {
+        $totalAirlines  = Tenant::countAll();
+        $activeAirlines = Tenant::countActive();
+
+        // Suspended = total - active
+        $suspendedAirlines = max(0, $totalAirlines - $activeAirlines);
+
+        // Pending + in_review onboarding
+        $onboardingCounts = OnboardingRequest::countByStatus();
+        $pendingOnboarding = ($onboardingCounts['pending'] ?? 0) + ($onboardingCounts['in_review'] ?? 0);
+        $awaitingProvision = $onboardingCounts['approved'] ?? 0;
+
+        // Total users (platform staff excluded from airline count)
+        $totalUsers = (int)(Database::fetch("SELECT COUNT(*) as c FROM users")['c'] ?? 0);
+        $platformStaff = (int)(Database::fetch("SELECT COUNT(*) as c FROM users WHERE tenant_id IS NULL")['c'] ?? 0);
+        $airlineUsers  = $totalUsers - $platformStaff;
+
+        // Pending devices (all airlines)
+        $pendingDevices = (int)(Database::fetch(
+            "SELECT COUNT(*) as c FROM devices WHERE approval_status = 'pending'"
+        )['c'] ?? 0);
+
+        // Module enablement stats
+        $totalModulesInCatalog = (int)(Database::fetch(
+            "SELECT COUNT(*) as c FROM modules WHERE platform_status = 'available'"
+        )['c'] ?? 0);
+        $totalEnabledAssignments = (int)(Database::fetch(
+            "SELECT COUNT(*) as c FROM tenant_modules WHERE is_enabled = 1"
+        )['c'] ?? 0);
+
+        // Support tier distribution
+        $tierRows = Database::fetchAll(
+            "SELECT support_tier, COUNT(*) as c FROM tenants GROUP BY support_tier ORDER BY support_tier"
+        );
+        $tierDistribution = [];
+        foreach ($tierRows as $r) {
+            $tierDistribution[$r['support_tier']] = (int)$r['c'];
+        }
+
+        // Recent platform-level audit events (actor = platform staff, i.e. tenant_id IS NULL actions)
+        $recentPlatformEvents = Database::fetchAll(
+            "SELECT al.*, t.name AS tenant_name
+             FROM audit_logs al
+             LEFT JOIN tenants t ON al.tenant_id = t.id
+             WHERE al.actor_role IN ('super_admin','platform_support','platform_security','system_monitoring')
+                OR al.action LIKE 'onboarding.%'
+                OR al.action LIKE 'tenant.%'
+                OR al.action LIKE 'module.%'
+             ORDER BY al.created_at DESC
+             LIMIT 12"
+        );
+
+        // Recent 5 airlines (for the quick list)
+        $recentAirlines = Database::fetchAll(
+            "SELECT t.*, COUNT(DISTINCT u.id) as user_count
+             FROM tenants t
+             LEFT JOIN users u ON u.tenant_id = t.id
+             GROUP BY t.id
+             ORDER BY t.created_at DESC
+             LIMIT 5"
+        );
+
+        // Onboarding pipeline items needing action
+        $onboardingPipeline = array_merge(
+            OnboardingRequest::all('pending'),
+            OnboardingRequest::all('in_review'),
+            OnboardingRequest::all('approved')
+        );
+
+        return [
+            // Core counts
+            'total_airlines'       => $totalAirlines,
+            'active_airlines'      => $activeAirlines,
+            'suspended_airlines'   => $suspendedAirlines,
+            'platform_staff'       => $platformStaff,
+            'airline_users'        => $airlineUsers,
+            'total_users'          => $totalUsers,
+            'pending_devices'      => $pendingDevices,
+            // Onboarding
+            'pending_onboarding'   => $pendingOnboarding,
+            'awaiting_provision'   => $awaitingProvision,
+            'onboarding_counts'    => $onboardingCounts,
+            'onboarding_pipeline'  => $onboardingPipeline,
+            // Modules
+            'modules_in_catalog'   => $totalModulesInCatalog,
+            'module_assignments'   => $totalEnabledAssignments,
+            // Support tiers
+            'tier_distribution'    => $tierDistribution,
+            // Activity
+            'recent_activity'      => $recentPlatformEvents,
+            'recent_airlines'      => $recentAirlines,
+            // Legacy compatibility (kept for any view that uses $data['tenants'])
+            'tenants'              => Tenant::all(),
+        ];
     }
 
     // ─── Airline-level dashboards ─────────────────────────

@@ -69,6 +69,15 @@ class OnboardingRequest {
         );
     }
 
+    public static function markInReview(int $id, int $reviewerId, ?string $notes = null): void {
+        Database::execute(
+            "UPDATE tenant_onboarding_requests
+             SET status = 'in_review', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+             WHERE id = ?",
+            [$reviewerId, $notes, $id]
+        );
+    }
+
     public static function markProvisioned(int $id, int $tenantId): void {
         Database::execute(
             "UPDATE tenant_onboarding_requests SET status = 'provisioned', tenant_id = ? WHERE id = ?",
@@ -77,8 +86,20 @@ class OnboardingRequest {
     }
 
     public static function countPending(): int {
+        // Include in_review as actionable — both show in sidebar badge
         return (int)(Database::fetch(
-            "SELECT COUNT(*) as c FROM tenant_onboarding_requests WHERE status = 'pending'"
+            "SELECT COUNT(*) as c FROM tenant_onboarding_requests WHERE status IN ('pending','in_review')"
         )['c'] ?? 0);
+    }
+
+    public static function countByStatus(): array {
+        $rows = Database::fetchAll(
+            "SELECT status, COUNT(*) as c FROM tenant_onboarding_requests GROUP BY status"
+        );
+        $out = ['pending' => 0, 'in_review' => 0, 'approved' => 0, 'rejected' => 0, 'provisioned' => 0];
+        foreach ($rows as $r) {
+            $out[$r['status']] = (int)$r['c'];
+        }
+        return $out;
     }
 }

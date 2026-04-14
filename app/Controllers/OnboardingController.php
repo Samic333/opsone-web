@@ -13,6 +13,7 @@ class OnboardingController {
 
     public function index(): void {
         $pending     = OnboardingRequest::all('pending');
+        $inReview    = OnboardingRequest::all('in_review');
         $approved    = OnboardingRequest::all('approved');
         $rejected    = OnboardingRequest::all('rejected');
         $provisioned = OnboardingRequest::all('provisioned');
@@ -76,7 +77,7 @@ class OnboardingController {
         redirect("/platform/onboarding/$id");
     }
 
-    public function approve(int $id): void {
+    public function markInReview(int $id): void {
         RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
@@ -85,6 +86,30 @@ class OnboardingController {
 
         $request = OnboardingRequest::find($id);
         if (!$request || $request['status'] !== 'pending') {
+            flash('error', 'Request not found or cannot be moved to in-review (must be pending).');
+            redirect('/platform/onboarding');
+        }
+
+        $user  = currentUser();
+        $notes = trim($_POST['review_notes'] ?? '') ?: null;
+        OnboardingRequest::markInReview($id, $user['id'], $notes);
+
+        AuditService::log('onboarding.marked_in_review', 'onboarding_request', $id,
+            "Marked in review: {$request['legal_name']}");
+
+        flash('success', "Onboarding request #{$id} marked as In Review.");
+        redirect("/platform/onboarding/$id");
+    }
+
+    public function approve(int $id): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/platform/onboarding/$id");
+        }
+
+        $request = OnboardingRequest::find($id);
+        if (!$request || !in_array($request['status'], ['pending', 'in_review'])) {
             flash('error', 'Request not found or already actioned.');
             redirect('/platform/onboarding');
         }
@@ -108,7 +133,7 @@ class OnboardingController {
         }
 
         $request = OnboardingRequest::find($id);
-        if (!$request || $request['status'] !== 'pending') {
+        if (!$request || !in_array($request['status'], ['pending', 'in_review'])) {
             flash('error', 'Request not found or already actioned.');
             redirect('/platform/onboarding');
         }
