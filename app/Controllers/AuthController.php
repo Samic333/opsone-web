@@ -36,8 +36,8 @@ class AuthController {
 
         if (!$user || !password_verify($password, $user['password_hash'])) {
             // Log failed login — always record, even when email is not found
-            $logUserId   = $user['id']        ?? 0;
-            $logTenantId = $user['tenant_id'] ?? (isSingleTenant() ? getFixedTenantId() : 0);
+            $logUserId   = $user['id']        ?? null;
+            $logTenantId = $user['tenant_id'] ?? (isSingleTenant() ? getFixedTenantId() : null);
             AuditLog::logLogin($logUserId, $logTenantId, $email, false, 'web');
             flash('error', 'Invalid email or password.');
             redirect('/login');
@@ -71,13 +71,18 @@ class AuthController {
             $_SESSION['tenant']              = null;
         } else {
             // Airline users: must belong to an active tenant
-            $tenant = Tenant::find($user['tenant_id']);
+            // Defensive guard — tenant_id must be a valid int before calling Tenant::find()
+            if (empty($user['tenant_id'])) {
+                flash('error', 'Your account has no airline association. Contact your administrator.');
+                redirect('/login');
+            }
+            $tenant = Tenant::find((int) $user['tenant_id']);
             if (!$tenant || !$tenant['is_active']) {
                 flash('error', 'Your airline account is not active.');
                 redirect('/login');
             }
             $_SESSION['is_platform_session'] = false;
-            $_SESSION['tenant_id']           = $user['tenant_id'];
+            $_SESSION['tenant_id']           = (int) $user['tenant_id'];
             $_SESSION['tenant']              = $tenant;
         }
 
@@ -94,9 +99,9 @@ class AuthController {
         ];
         $_SESSION['user_roles'] = $roles;
 
-        // Log successful login
+        // Log successful login — pass null (not 0) for platform users with no tenant
         UserModel::updateLastLogin($user['id']);
-        AuditLog::logLogin($user['id'], $user['tenant_id'] ?? 0, $email, true, 'web');
+        AuditLog::logLogin($user['id'], $user['tenant_id'] ?? null, $email, true, 'web');
         AuditLog::log('Web Login', 'user', $user['id'], "User logged in from web portal");
 
         redirect('/dashboard');

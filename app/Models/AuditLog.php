@@ -22,7 +22,7 @@ class AuditLog {
         AuditService::logApi($action, $entityType, $entityId, $details);
     }
 
-    public static function logLogin(int $userId, int $tenantId, string $email, bool $success, string $source = 'web'): void {
+    public static function logLogin(?int $userId, ?int $tenantId, string $email, bool $success, string $source = 'web'): void {
         AuditService::logLogin($userId, $tenantId, $email, $success, $source);
     }
 
