@@ -54,25 +54,29 @@ class AuthController {
             redirect('/login');
         }
 
-        // Load roles first — needed to determine platform vs airline context
+        // Load roles — used for platform detection and session state
         $roles = UserModel::getRoleSlugs($user['id']);
 
-        // Platform roles: users holding ONLY these roles are platform-only
-        $platformRoleSlugs = ['super_admin', 'platform_support', 'platform_security', 'system_monitoring'];
-        $hasPlatformRole   = !empty(array_intersect($roles, $platformRoleSlugs));
-        $hasAirlineRole    = !empty(array_diff($roles, $platformRoleSlugs));
-        $isPlatformOnlyUser = $hasPlatformRole && !$hasAirlineRole;
+        // Platform detection:
+        //   Primary:   tenant_id = NULL in the users table is the definitive marker
+        //              for platform staff. These users have no airline affiliation.
+        //   Secondary: a user with tenant_id set but holding ONLY platform roles is
+        //              also treated as platform-only (edge case / misconfiguration safety).
+        $platformRoleSlugs  = ['super_admin', 'platform_support', 'platform_security', 'system_monitoring'];
+        $hasPlatformRole    = !empty(array_intersect($roles, $platformRoleSlugs));
+        $hasAirlineRole     = !empty(array_diff($roles, $platformRoleSlugs));
+        $isPlatformOnlyUser = ($user['tenant_id'] === null)
+                           || ($hasPlatformRole && !$hasAirlineRole);
 
         if ($isPlatformOnlyUser) {
-            // Platform users: no airline tenant required
-            $tenant = null;
+            // Platform users: no airline tenant required — never call Tenant::find()
             $_SESSION['is_platform_session'] = true;
             $_SESSION['tenant_id']           = null;
             $_SESSION['tenant']              = null;
         } else {
             // Airline users: must belong to an active tenant
-            // Defensive guard — tenant_id must be a valid int before calling Tenant::find()
             if (empty($user['tenant_id'])) {
+                // Airline-scoped user record with no tenant linkage — block login
                 flash('error', 'Your account has no airline association. Contact your administrator.');
                 redirect('/login');
             }
