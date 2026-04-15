@@ -7,7 +7,7 @@
 class AuditLogController {
 
     public function index(): void {
-        RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
+        RbacMiddleware::requireRole(['super_admin', 'platform_security', 'airline_admin', 'safety_officer']);
 
         // Prefer session user's tenant_id — more reliable than currentTenantId()
         // which returns null in single-tenant mode when FIXED_TENANT_ID is not set.
@@ -102,7 +102,7 @@ class AuditLogController {
     }
 
     public function loginActivity(): void {
-        RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'safety_officer']);
+        RbacMiddleware::requireRole(['super_admin', 'platform_security', 'airline_admin', 'safety_officer']);
 
         $sessionUser  = currentUser();
         $tenantId     = $sessionUser['tenant_id'] ?? currentTenantId();
