@@ -1000,6 +1000,99 @@ try {
         echo "(partial — " . $e->getMessage() . ")\n";
     }
 
+    // ─── Step 20: Seed qualifications + profile completion ─
+    echo "Step 20: Seeding qualifications and profile completion... ";
+    try {
+        // Ensure qualifications table exists (migration 014)
+        $qTables = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='qualifications'")->fetchAll();
+        if (empty($qTables)) {
+            // Create table inline if migration not run
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS qualifications (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     INTEGER NOT NULL,
+                    tenant_id   INTEGER NOT NULL,
+                    qual_type   TEXT    NOT NULL,
+                    qual_name   TEXT    NOT NULL,
+                    reference_no TEXT,
+                    authority   TEXT,
+                    issue_date  TEXT,
+                    expiry_date TEXT,
+                    status      TEXT    NOT NULL DEFAULT 'active',
+                    notes       TEXT,
+                    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+                )
+            ");
+        }
+
+        $db->exec("DELETE FROM qualifications WHERE tenant_id = 1");
+
+        $pilotUid   = $db->query("SELECT id FROM users WHERE email = 'demo.pilot@acentoza.com' AND tenant_id = 1")->fetchColumn();
+        $cpUid      = $db->query("SELECT id FROM users WHERE email = 'demo.chiefpilot@acentoza.com' AND tenant_id = 1")->fetchColumn();
+        $engUid     = $db->query("SELECT id FROM users WHERE email = 'demo.engineer@acentoza.com' AND tenant_id = 1")->fetchColumn();
+        $cabinUid   = $db->query("SELECT id FROM users WHERE email = 'demo.cabin@acentoza.com' AND tenant_id = 1")->fetchColumn();
+
+        $qStmt = $db->prepare(
+            "INSERT OR IGNORE INTO qualifications (user_id, tenant_id, qual_type, qual_name, reference_no, authority, issue_date, expiry_date, status)
+             VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?)"
+        );
+
+        if ($pilotUid) {
+            $qStmt->execute([$pilotUid, 'Type Rating', 'B737-800 Type Rating', 'KEN-TR-B738-001', 'KCAA', '2022-06-15', date('Y-m-d', strtotime('+18 months')), 'active']);
+            $qStmt->execute([$pilotUid, 'Instrument Rating', 'Multi-Engine / IR', 'KEN-ME-IR-0042', 'KCAA', '2021-03-10', date('Y-m-d', strtotime('+8 months')), 'active']);
+        }
+        if ($cpUid) {
+            $qStmt->execute([$cpUid, 'Type Rating', 'A320 Type Rating', 'KEN-TR-A320-007', 'KCAA', '2020-01-20', date('Y-m-d', strtotime('+6 months')), 'active']);
+            $qStmt->execute([$cpUid, 'Instructor Authority', 'B737 Type Rating Instructor', 'KEN-TRI-B738-001', 'KCAA', '2021-09-01', date('Y-m-d', strtotime('+12 months')), 'active']);
+            $qStmt->execute([$cpUid, 'Check Airman', 'B737 Line Check Airman', 'KEN-LCA-001', 'KCAA', '2022-03-15', date('Y-m-d', strtotime('+5 months')), 'active']);
+        }
+        if ($engUid) {
+            $qStmt->execute([$engUid, 'Endorsement', 'B737-800 Engine Run-up', 'KEN-ENG-B738-003', 'KCAA', '2023-01-10', date('Y-m-d', strtotime('+14 months')), 'active']);
+            $qStmt->execute([$engUid, 'Approval', 'Part-66 B1 Aircraft Maintenance', 'P66-B1-KEN-0022', 'KCAA', '2019-05-01', null, 'active']);
+        }
+        if ($cabinUid) {
+            $qStmt->execute([$cabinUid, 'Safety Course', 'Emergency Procedures & Safety Training', 'CAB-EPST-2024', 'KCAA', '2024-01-15', date('Y-m-d', strtotime('+10 months')), 'active']);
+            $qStmt->execute([$cabinUid, 'CRM Course', 'Crew Resource Management', 'CAB-CRM-2023', 'KCAA', '2023-06-01', date('Y-m-d', strtotime('+20 months')), 'active']);
+        }
+
+        // Recalculate profile completion for all tenant-1 users
+        $tenantUsers = $db->query("SELECT id FROM users WHERE tenant_id = 1")->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($tenantUsers as $uid) {
+            // Count filled fields (simplified inline version for seeder)
+            $u = $db->query("SELECT * FROM users WHERE id = $uid")->fetch(PDO::FETCH_ASSOC);
+            $cp = $db->query("SELECT * FROM crew_profiles WHERE user_id = $uid")->fetch(PDO::FETCH_ASSOC);
+            $licCount = (int) $db->query("SELECT COUNT(*) FROM licenses WHERE user_id = $uid")->fetchColumn();
+
+            $score = 0;
+            if (!empty($u['name']))              $score += 5;
+            if (!empty($u['email']))             $score += 5;
+            if (!empty($u['employee_id']))       $score += 5;
+            if (!empty($u['department_id']))     $score += 5;
+            if (!empty($u['base_id']))           $score += 5;
+            if (!empty($u['employment_status'])) $score += 5;
+            if ($cp) {
+                if (!empty($cp['date_of_birth']))    $score += 5;
+                if (!empty($cp['nationality']))      $score += 5;
+                if (!empty($cp['phone']))            $score += 5;
+                if (!empty($cp['emergency_name']))   $score += 5;
+                if (!empty($cp['emergency_phone']))  $score += 5;
+                if (!empty($cp['passport_number']))  $score += 5;
+                if (!empty($cp['passport_expiry']))  $score += 5;
+                if (!empty($cp['medical_class']))    $score += 5;
+                if (!empty($cp['medical_expiry']))   $score += 5;
+                if (!empty($cp['contract_type']))    $score += 5;
+            }
+            if ($licCount >= 1) $score += 10;
+            if ($licCount >= 2) $score += 10;
+            $score = min(100, $score);
+            $db->exec("UPDATE users SET profile_completion_pct = $score WHERE id = $uid");
+        }
+
+        echo "✓\n";
+    } catch (\Exception $e) {
+        echo "(partial — " . $e->getMessage() . ")\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

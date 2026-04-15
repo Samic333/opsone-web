@@ -182,6 +182,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <a href="/users" class="sidebar-link <?= str_starts_with($currentPath, '/users') ? 'active' : '' ?>">
                     <span class="icon">👥</span> Users
                 </a>
+                <a href="/crew-profiles" class="sidebar-link <?= str_starts_with($currentPath, '/crew-profiles') ? 'active' : '' ?>">
+                    <span class="icon">🪪</span> Crew Profiles
+                </a>
                 <a href="/devices" class="sidebar-link <?= str_starts_with($currentPath, '/devices') ? 'active' : '' ?>">
                     <span class="icon">📱</span> Devices
                     <?php if ($pendingDevices > 0): ?>
@@ -191,12 +194,27 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php elseif (hasAnyRole(['chief_pilot','head_cabin_crew','engineering_manager','base_manager','safety_officer'])): ?>
             <div class="sidebar-section">
-                <div class="sidebar-section-title">Devices</div>
+                <div class="sidebar-section-title">People</div>
+                <a href="/crew-profiles" class="sidebar-link <?= str_starts_with($currentPath, '/crew-profiles') ? 'active' : '' ?>">
+                    <span class="icon">🪪</span> Crew Profiles
+                </a>
                 <a href="/devices" class="sidebar-link <?= str_starts_with($currentPath, '/devices') ? 'active' : '' ?>">
                     <span class="icon">📱</span> iPad Devices
                     <?php if ($pendingDevices > 0): ?>
                         <span class="badge"><?= $pendingDevices ?></span>
                     <?php endif; ?>
+                </a>
+            </div>
+            <?php endif; ?>
+
+            <!-- ─── My Profile (all logged-in crew) ─────── -->
+            <?php if (hasAnyRole(['pilot','cabin_crew','engineer','scheduler','chief_pilot',
+                                   'head_cabin_crew','engineering_manager','base_manager',
+                                   'training_admin','fdm_analyst','document_control','safety_officer'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Me</div>
+                <a href="/my-profile" class="sidebar-link <?= str_starts_with($currentPath, '/my-profile') ? 'active' : '' ?>">
+                    <span class="icon">👤</span> My Profile
                 </a>
             </div>
             <?php endif; ?>

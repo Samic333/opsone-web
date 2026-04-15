@@ -93,6 +93,18 @@ return [
     'POST /fleets/update/{id}'  => ['FleetController', 'update'],
     'POST /fleets/delete/{id}'  => ['FleetController', 'delete'],
 
+    // ─── Crew Profiles ─────────────────────────────────────
+    'GET /crew-profiles'                                    => ['CrewProfileController', 'index'],
+    'GET /crew-profiles/{id}'                               => ['CrewProfileController', 'show'],
+    'POST /crew-profiles/{id}/qualifications/add'           => ['CrewProfileController', 'addQualification'],
+    'POST /crew-profiles/{id}/qualifications/delete/{qid}'  => ['CrewProfileController', 'deleteQualification'],
+
+    // ─── My Profile (self-service) ──────────────────────────
+    'GET /my-profile'                                       => ['CrewProfileController', 'myProfile'],
+    'POST /my-profile/update'                               => ['CrewProfileController', 'updateMyProfile'],
+    'POST /my-profile/qualifications/add'                   => ['CrewProfileController', 'addMyQualification'],
+    'POST /my-profile/qualifications/delete/{qid}'          => ['CrewProfileController', 'deleteMyQualification'],
+
     // ─── Users ─────────────────────────
     'GET /users'              => ['UserController', 'index'],
     'GET /users/create'       => ['UserController', 'create'],

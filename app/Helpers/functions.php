@@ -52,6 +52,15 @@ function flash(string $key, string $message = null): ?string {
 /**
  * Check if current user has role
  */
+/**
+ * Require any authenticated session — redirects to login if not logged in.
+ */
+function requireAuth(): void {
+    if (empty($_SESSION['user'])) {
+        redirect('/login');
+    }
+}
+
 function hasRole(string $role): bool {
     $user = $_SESSION['user'] ?? null;
     if (!$user) return false;

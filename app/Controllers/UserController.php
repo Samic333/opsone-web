@@ -179,6 +179,7 @@ class UserController {
         }
 
         CrewProfileModel::save($id, currentTenantId(), $_POST);
+        CrewProfileModel::updateCompletion($id);
         AuditLog::log('Updated Crew Profile', 'user', $id, "Updated crew profile for: {$user['name']}");
         flash('success', "Crew profile for \"{$user['name']}\" saved.");
         redirect("/users/edit/$id#crew-profile");
@@ -204,6 +205,7 @@ class UserController {
         }
 
         CrewProfileModel::addLicense($id, currentTenantId(), $_POST);
+        CrewProfileModel::updateCompletion($id);
         AuditLog::log('Added Licence', 'user', $id, "Added licence '{$licenseType}' for: {$user['name']}");
         flash('success', "Licence added for \"{$user['name']}\".");
         redirect("/users/edit/$id#licenses");
