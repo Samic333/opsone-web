@@ -264,6 +264,185 @@ class RosterModel {
         return ['standby' => $standby, 'available' => $available];
     }
 
+    // ─── Phase 5: Roster Periods ─────────────────────────────────────────────
+
+    public static function getPeriods(int $tenantId): array {
+        return Database::fetchAll(
+            "SELECT p.*, u.name AS created_by_name
+             FROM roster_periods p
+             LEFT JOIN users u ON u.id = p.created_by
+             WHERE p.tenant_id = ?
+             ORDER BY p.start_date DESC",
+            [$tenantId]
+        );
+    }
+
+    public static function getPeriod(int $id, int $tenantId): ?array {
+        return Database::fetch(
+            "SELECT * FROM roster_periods WHERE id = ? AND tenant_id = ?",
+            [$id, $tenantId]
+        ) ?: null;
+    }
+
+    public static function createPeriod(int $tenantId, string $name, string $startDate, string $endDate, ?string $notes, int $createdBy): int {
+        Database::execute(
+            "INSERT INTO roster_periods (tenant_id, name, start_date, end_date, notes, created_by)
+             VALUES (?, ?, ?, ?, ?, ?)",
+            [$tenantId, $name, $startDate, $endDate, $notes ?: null, $createdBy]
+        );
+        return (int)Database::lastInsertId();
+    }
+
+    public static function updatePeriodStatus(int $id, int $tenantId, string $status): void {
+        Database::execute(
+            "UPDATE roster_periods SET status = ?, updated_at = " . self::nowExpr() . " WHERE id = ? AND tenant_id = ?",
+            [$status, $id, $tenantId]
+        );
+    }
+
+    public static function updatePeriod(int $id, int $tenantId, string $name, string $startDate, string $endDate, ?string $notes): void {
+        Database::execute(
+            "UPDATE roster_periods SET name = ?, start_date = ?, end_date = ?, notes = ?, updated_at = " . self::nowExpr() . "
+             WHERE id = ? AND tenant_id = ? AND status = 'draft'",
+            [$name, $startDate, $endDate, $notes ?: null, $id, $tenantId]
+        );
+    }
+
+    public static function deletePeriod(int $id, int $tenantId): void {
+        // Only draft periods can be deleted
+        Database::execute(
+            "DELETE FROM roster_periods WHERE id = ? AND tenant_id = ? AND status = 'draft'",
+            [$id, $tenantId]
+        );
+    }
+
+    /**
+     * Get the active/most recent published period for a tenant.
+     */
+    public static function getActivePeriod(int $tenantId): ?array {
+        return Database::fetch(
+            "SELECT * FROM roster_periods
+             WHERE tenant_id = ? AND status IN ('published','frozen')
+             ORDER BY start_date DESC LIMIT 1",
+            [$tenantId]
+        ) ?: null;
+    }
+
+    // ─── Phase 5: Bulk Assign ─────────────────────────────────────────────────
+
+    /**
+     * Assign a duty type to one or more crew members across a date range.
+     * Skips existing entries unless $overwrite is true.
+     * Returns the count of entries written.
+     */
+    public static function bulkAssign(
+        int $tenantId,
+        array $userIds,
+        string $fromDate,
+        string $toDate,
+        string $dutyType,
+        ?string $dutyCode,
+        ?string $notes,
+        bool $overwrite = false,
+        ?int $periodId = null
+    ): int {
+        $current = new \DateTime($fromDate);
+        $end     = new \DateTime($toDate);
+        $count   = 0;
+
+        while ($current <= $end) {
+            $date = $current->format('Y-m-d');
+            foreach ($userIds as $userId) {
+                $userId = (int)$userId;
+                $existing = Database::fetch(
+                    "SELECT id FROM rosters WHERE user_id = ? AND roster_date = ?",
+                    [$userId, $date]
+                );
+                if ($existing) {
+                    if ($overwrite) {
+                        Database::execute(
+                            "UPDATE rosters SET duty_type = ?, duty_code = ?, notes = ?, roster_period_id = ?, updated_at = " . self::nowExpr() . "
+                             WHERE id = ?",
+                            [$dutyType, $dutyCode ?: null, $notes ?: null, $periodId, $existing['id']]
+                        );
+                        $count++;
+                    }
+                } else {
+                    Database::execute(
+                        "INSERT INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes, roster_period_id)
+                         VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [$tenantId, $userId, $date, $dutyType, $dutyCode ?: null, $notes ?: null, $periodId]
+                    );
+                    $count++;
+                }
+            }
+            $current->modify('+1 day');
+        }
+        return $count;
+    }
+
+    // ─── Phase 5: Change Requests / Comments ──────────────────────────────────
+
+    public static function createChangeRequest(
+        int $tenantId,
+        int $userId,
+        int $requestedBy,
+        string $changeType,
+        string $message,
+        ?int $periodId = null,
+        ?int $rosterId = null
+    ): void {
+        Database::execute(
+            "INSERT INTO roster_changes (tenant_id, roster_period_id, roster_id, user_id, requested_by, change_type, message)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [$tenantId, $periodId, $rosterId, $userId, $requestedBy, $changeType, $message]
+        );
+    }
+
+    public static function getChangesForPeriod(int $tenantId, int $periodId): array {
+        return Database::fetchAll(
+            "SELECT rc.*, u.name AS user_name, u.employee_id,
+                    rb.name AS responded_by_name
+             FROM roster_changes rc
+             JOIN users u ON u.id = rc.user_id
+             LEFT JOIN users rb ON rb.id = rc.responded_by
+             WHERE rc.tenant_id = ? AND rc.roster_period_id = ?
+             ORDER BY rc.created_at DESC",
+            [$tenantId, $periodId]
+        );
+    }
+
+    public static function getPendingChanges(int $tenantId): array {
+        return Database::fetchAll(
+            "SELECT rc.*, u.name AS user_name, u.employee_id,
+                    p.name AS period_name
+             FROM roster_changes rc
+             JOIN users u ON u.id = rc.user_id
+             LEFT JOIN roster_periods p ON p.id = rc.roster_period_id
+             WHERE rc.tenant_id = ? AND rc.status = 'pending'
+             ORDER BY rc.created_at ASC",
+            [$tenantId]
+        );
+    }
+
+    public static function respondToChange(int $id, int $tenantId, string $status, string $response, int $respondedBy): void {
+        Database::execute(
+            "UPDATE roster_changes
+             SET status = ?, response = ?, responded_by = ?, responded_at = " . self::nowExpr() . ", updated_at = " . self::nowExpr() . "
+             WHERE id = ? AND tenant_id = ?",
+            [$status, $response, $respondedBy, $id, $tenantId]
+        );
+    }
+
+    public static function getChangeRequest(int $id, int $tenantId): ?array {
+        return Database::fetch(
+            "SELECT rc.*, u.name AS user_name FROM roster_changes rc
+             JOIN users u ON u.id = rc.user_id
+             WHERE rc.id = ? AND rc.tenant_id = ?",
+            [$id, $tenantId]
+        ) ?: null;
+    }
+
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private static function isSqlite(): bool {

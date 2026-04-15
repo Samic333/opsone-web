@@ -1,0 +1,657 @@
+You are working on my existing project workspace.
+
+This is a phased continuation project for the OpsOne platform and CrewAssist iPad app.
+This is not a rebuild.
+This is not a greenfield project.
+This is not a one-shot feature dump.
+
+You must plan and execute the project phase by phase, locally first, with browser/local verification before any GitHub push or Namecheap deployment.
+
+==================================================
+WORKSPACE / FOLDER RULES
+==================================================
+
+Work only inside these target project areas:
+
+1. OpsOne web app
+
+2. CrewAssist iPad app
+   Use the active CrewAssist iPad app folder only
+
+3. Ignore any duplicate/old iPad app folder
+   Treat duplicate iPad-related folders as read-only reference only
+   Do not develop inside them
+   Do not merge from them blindly
+   Do not search across unrelated folders
+
+Important:
+- Do not scan the full machine or all folders
+- Do not open unrelated repositories or archives
+- If the active CrewAssist folder cannot be identified confidently, stop and ask me to choose it before touching iPad code
+
+==================================================
+WORKING METHOD — VERY IMPORTANT
+==================================================
+
+You must work in this way:
+
+1. Read this entire phased plan first
+2. Create an internal execution plan from these phases
+3. Work locally phase by phase
+4. At the end of each phase:
+   - run local/runtime checks
+   - open/check the local browser version where applicable
+   - summarize what was completed
+   - summarize what still needs review
+   - tell me exactly what to check locally
+5. Do NOT automatically deploy every phase to Namecheap
+6. Do NOT automatically push every phase to GitHub unless I explicitly want that phase pushed
+7. Only when a phase is stable:
+   - either continue locally to next phase
+   - or tell me the exact GitHub / Namecheap steps if I want to verify live
+8. For the iPad app, when a phase affects the app enough that I should test it on device/build workflow, tell me clearly:
+   - what was changed
+   - whether it should be pushed to GitHub now
+   - whether I should pull/deploy/check anything live
+9. Keep local-first workflow as default
+
+In other words:
+- local implementation first
+- local browser/app verification second
+- GitHub push third only when appropriate
+- Namecheap/live deploy last, only when appropriate
+
+==================================================
+HIGH-LEVEL PRODUCT VISION
+==================================================
+
+This system has two main products:
+
+A. OpsOne Web Platform
+A multi-tenant aviation operations SaaS platform used by the service provider and airline customers.
+
+B. CrewAssist iPad App
+The operational mobile/iPad companion app used by pilots, cabin crew, engineers, and selected airline staff depending on permissions/modules.
+
+Core architectural rule:
+- Platform Control Plane and Airline Workspace must remain strictly separated
+- The web platform manages tenants, modules, users, onboarding, audits, support/security visibility
+- Airline workspaces manage airline operations, personnel, documents, notices, roster-related tools, safety, training, etc.
+- CrewAssist must align with the web-side permissions/modules and remain the only active iPad app
+
+==================================================
+MASTER EXECUTION RULES
+==================================================
+
+You must preserve and build on the architecture we already established:
+
+- platform vs airline separation
+- tenant-aware design
+- module-based permissions
+- capability structure
+- audit logging
+- platform users may have NULL tenant_id
+- platform users must not require airline association
+- platform users must not see airline operational menus by default
+- airline users must not see platform-only menus
+- navigation must be role/context aware
+- local verification before deploy is mandatory
+
+Do not undo any of the above.
+
+==================================================
+PHASE OVERVIEW
+==================================================
+
+You must plan your work using the following phases.
+
+Do not start all phases at once.
+Do not merge all work into one giant change.
+Work phase by phase in order unless a dependency requires a small adjustment.
+
+==================================================
+PHASE 0 — ARCHITECTURE CORRECTION FOUNDATION
+==================================================
+
+Goal:
+Create the correct multi-tenant foundation and authorization architecture for all future work.
+
+Scope:
+- Separate Platform Control Plane from Airline Workspace
+- Introduce tenant model
+- Introduce platform roles, tenant roles, end-user roles
+- Introduce module catalog
+- Introduce capability structure
+- Introduce tenant-aware authorization checks
+- Introduce central audit logging
+- Correct platform navigation so platform does not expose airline ops directly
+- Improve tenant/onboarding structure foundation
+- Prepare user/profile structure for later crew and admin data
+- Prepare basic iPad/mobile readiness structure only, without overbuilding sync yet
+
+Phase 0 expected outcomes:
+- strict tenant-aware data model
+- module/capability architecture exists
+- audit log model/service exists
+- platform/airline separation exists in schema and core auth logic
+- future phases can build safely
+
+Important:
+Do not overbuild business features here.
+This phase is foundation only.
+
+==================================================
+PHASE 0.5 — RUNTIME / AUTH / SEPARATION STABILIZATION
+==================================================
+
+Goal:
+Fix all real-world runtime issues that appear after Phase 0 is applied.
+
+Scope:
+- fix platform login flow
+- allow platform users with tenant_id = NULL
+- fix auth/session logic
+- fix redirect loops
+- fix audit FK issues
+- fix platform-only vs airline-only route guards
+- fix sidebar context leakage
+- fix demo account seeding/runtime issues
+- fix schema mismatches needed for platform users and role assignments
+- fix live/runtime query mismatches such as legacy fields if still reachable
+
+Phase 0.5 expected outcomes:
+- platform login works
+- airline login works
+- no redirect loops
+- no platform user airline-association error
+- no mixed platform/airline sidebar state
+- demo users work locally
+- runtime is stable enough to proceed
+
+This phase is stabilization, not product expansion.
+
+==================================================
+PHASE 1 — PLATFORM CONTROL PLANE
+==================================================
+
+Goal:
+Build and stabilize the platform-side management system for the service provider.
+
+Scope:
+1. Platform dashboard
+2. Airline Registry / tenants list
+3. Airline detail / tenant summary page
+4. Onboarding requests
+5. Platform Staff management
+6. Module Catalog
+7. Module assignment to airlines
+8. Platform Audit Log visibility
+9. Platform support/security visibility where scaffolded
+10. clean left sidebar navigation for platform roles
+11. clear route protection for platform pages
+
+Platform dashboard should show:
+- airlines count
+- onboarding pending
+- active/suspended tenants
+- total users by tenant summary only
+- module assignment summary
+- recent audit/security events
+- recent platform actions
+- support/health summary if available
+
+Airline Registry should show:
+- airline/tenant list
+- onboarding status
+- support tier/status
+- headcount summary
+- module summary
+- status badges
+- last updated / created
+
+Airline detail should show:
+- company info
+- contacts
+- enabled modules
+- summary counts
+- tenant status
+- invitation/admin state if available
+- audit summary
+- controlled tenant access entry point if scaffold exists
+
+Platform Staff:
+- platform super admin
+- platform support
+- platform security
+- platform-only staff management must remain separate from airline user management
+
+Module Catalog:
+- module list
+- module description
+- per-tenant assignment
+- auditable changes
+
+Audit:
+- readable platform audit pages
+- filtering by actor, tenant, event, date if possible
+- login events
+- tenant updates
+- module assignment changes
+- role changes
+
+Sidebar requirement:
+All correct platform items must appear clearly on the left sidebar.
+No platform menu items should be hidden awkwardly at the bottom or misplaced.
+
+Phase 1 expected outcomes:
+- platform control plane is usable and clear
+- left sidebar is correct
+- platform pages load and are role-appropriate
+- airline ops are still not exposed by default
+
+==================================================
+PHASE 1.5 — PLATFORM POLISH / VALIDATION PASS
+==================================================
+
+Goal:
+Verify that Phase 1 is truly complete before moving into airline operational modules.
+
+Scope:
+- local browser verification of platform flows
+- cleanup of platform sidebar/nav UX
+- role label correctness
+- page loading sanity checks
+- route denial behavior
+- audit log sanity checks
+- platform security/support sidebar visibility alignment
+- final local Phase 1 completion checklist
+
+This phase should conclude with:
+- explicit statement whether Phase 1 is complete locally
+- exact list of what must be checked on live site if deployed
+
+==================================================
+PHASE 2 — AIRLINE ADMIN FOUNDATION
+==================================================
+
+Goal:
+Build the airline-side administration foundation.
+
+Scope:
+1. Airline profile / tenant settings
+2. Airline user directory
+3. User creation/edit for airline users
+4. role templates and module/capability assignment
+5. profile completion workflows
+6. crew/staff profile structure foundation
+7. licensing/qualification structure
+8. departments, bases, fleets, employment status foundation
+9. admin invitation / activation flow refinement
+10. airline left sidebar cleanup
+
+Important:
+This is not yet full ops automation.
+This is the airline admin foundation.
+
+The airline should be able to manage:
+- airline super admins
+- HR/admin users
+- schedulers
+- chief pilot / operations managers
+- cabin crew managers
+- training admins
+- safety admins
+- maintenance/admin engineering users
+- end users such as pilots, cabin crew, engineers
+
+Need structure for later fields like:
+- staff number
+- department
+- base
+- fleet
+- status
+- web access
+- mobile access
+- role templates
+- capabilities
+- license / expiry placeholders
+- profile completion status
+
+Phase 2 expected outcomes:
+- airline can manage its own people and foundational structure
+- platform and airline remain separated
+- module/capability assignment becomes practical
+
+==================================================
+PHASE 2.5 — AIRLINE USER EXPERIENCE / VALIDATION PASS
+==================================================
+
+Goal:
+Stabilize and verify airline admin/user flows before starting operations-heavy modules.
+
+Scope:
+- local browser verification for airline admin login
+- create/edit user flows
+- role assignment checks
+- module visibility checks
+- sidebar correctness for airline roles
+- direct URL protection
+- audit checks for user/admin actions
+- cleanup of UX confusion
+
+This phase should conclude with:
+- explicit statement whether airline admin foundation is stable
+- exact list of what should be checked live if deployed
+
+==================================================
+PHASE 3 — CREW PROFILES, LICENSING, QUALIFICATIONS
+==================================================
+
+Goal:
+Build the operational people-data layer required before rostering, training, and app entitlements.
+
+Scope:
+1. Crew profile detail pages
+2. pilot / cabin crew / engineer profile variants
+3. license and document metadata
+4. expiry dates
+5. qualification placeholders
+6. aircraft/fleet/base linkage
+7. profile verification/approval flow where appropriate
+8. airline admin + self-service upload/confirmation pattern
+9. web/mobile entitlement flags tied to profiles/modules
+
+Important:
+As discussed earlier:
+- airline/admin can create and manage crew profiles
+- users may also upload/update their own data where permitted
+- airline confirms/approves where required
+- expiry and qualification data must be structured for later alerts and scheduling
+
+Phase 3 expected outcomes:
+- people records are real operational records, not just names and emails
+- later training/roster modules can consume profile data
+- CrewAssist entitlements can align to user profile + module + capability logic
+
+==================================================
+PHASE 4 — NOTICES, MANUALS, DOCUMENT CONTROL, BASIC APP ENTITLEMENT
+==================================================
+
+Goal:
+Establish document/control flows and basic iPad relevance before advanced syncing.
+
+Scope:
+1. notices module foundation
+2. manuals/documents module refinement
+3. document categories
+4. publish/visibility rules
+5. acknowledgement support where needed
+6. role-based targeting
+7. module-based visibility for CrewAssist users
+8. basic CrewAssist awareness of assigned modules/content
+9. auditability of publish/access actions
+
+Important:
+This is not yet the full advanced sync engine.
+This is the content/control foundation.
+
+Phase 4 expected outcomes:
+- airline can manage notices/manuals in structured way
+- content visibility follows tenant/module/role/capability rules
+- CrewAssist can later consume this cleanly
+
+==================================================
+PHASE 5 — ROSTERING FOUNDATION (MANUAL / ASSISTED, NOT FULL AUTO)
+==================================================
+
+Goal:
+Build a better roster foundation without jumping straight into full optimization.
+
+Scope:
+1. roster period model
+2. draft vs published roster
+3. base/fleet/station-aware structure
+4. duty types
+5. bulk/range assignment tools
+6. monthly/period grid
+7. easier scheduler workflows
+8. reserve/standby structure foundation
+9. comment/request-change flow for chief pilot / managers / schedulers
+10. audit trail for changes
+
+Important:
+Do NOT build full automatic optimization yet.
+Do NOT overcomplicate with full solver logic.
+Start with manual and assisted rostering.
+
+Design guidance:
+- assigning day-by-day only is not enough
+- scheduler needs period/range based assignment
+- scheduler needs filters, easier bulk ops, and cleaner views
+- chief pilot or management should be able to comment/request changes, not silently alter history
+- publish/freeze/version logic matters
+
+Phase 5 expected outcomes:
+- roster handling becomes operationally usable
+- later automation can build on this
+
+==================================================
+PHASE 5.5 — TRAINING / ROSTER INTERLOCK
+==================================================
+
+Goal:
+Connect training requirements to scheduling awareness without overbuilding.
+
+Scope:
+1. training due indicators
+2. instructor/training placeholders
+3. recurrent training / sim / check placeholders
+4. scheduler warnings for due training
+5. training request/comment linkage
+6. training events reflected in roster framework
+7. future qualification effect scaffolding
+
+This is not full training management yet.
+It is the first useful connection between crew data and roster logic.
+
+==================================================
+PHASE 6 — SAFETY / REPORTING / COMPLIANCE FOUNDATION
+==================================================
+
+Goal:
+Build the reporting and safety/compliance layer.
+
+Scope:
+1. safety report submission structure
+2. routing/report visibility by role
+3. safety admin review flow
+4. audit/report lifecycle
+5. compliance/admin visibility where appropriate
+6. role-based follow-up / status handling
+7. groundwork for future analytics
+
+This phase should align:
+- pilot/crew reports
+- safety/admin review
+- controlled access and auditing
+
+==================================================
+PHASE 7 — CREWASSIST IPAD APP ALIGNMENT PHASE
+==================================================
+
+Goal:
+Bring CrewAssist into clean alignment with the mature web architecture.
+
+Use only the active CrewAssist app folder.
+
+Scope:
+1. auth/session alignment with web-side architecture
+2. module entitlement awareness
+3. role-aware navigation in app
+4. basic local content/module visibility alignment
+5. naming cleanup if needed
+6. basic settings/profile sync assumptions
+7. no duplicate app development
+
+Important:
+Do not start advanced sync engine unless Phase 8 requires it.
+Do not develop inside duplicate app folder.
+Do not create divergence between web platform and CrewAssist permission logic.
+
+Phase 7 expected outcomes:
+- CrewAssist reflects real user/module permissions
+- app navigation matches actual entitlement structure
+
+==================================================
+PHASE 8 — CREWASSIST CONTENT SYNC / NOTICE DELIVERY FOUNDATION
+==================================================
+
+Goal:
+Build the first proper sync/content delivery layer for the iPad app.
+
+Scope:
+1. local cache awareness
+2. sync metadata
+3. manual Sync Now action
+4. last sync timestamp
+5. document/version awareness
+6. notices/manual updates visibility
+7. basic retry/offline-friendly approach if appropriate
+8. audit or status indicators where practical
+
+Important:
+- do not assume permanent unrestricted background sync
+- design for realistic mobile/iPad constraints
+- manual sync button is important
+- content freshness and traceability matter
+
+Phase 8 expected outcomes:
+- iPad app can meaningfully sync/update assigned content
+- users can see whether content is current
+
+==================================================
+PHASE 9 — ADVANCED AIRLINE OPS REFINEMENT
+==================================================
+
+Goal:
+Refine cross-module operational workflows.
+
+Possible scope:
+- better module interactions
+- advanced comments/approvals
+- improved support/security visibility
+- better tenant access workflows
+- cleaner operational dashboards
+- stronger audit filtering
+- better managerial experiences
+
+This phase is for refinement after fundamentals are stable.
+
+==================================================
+PHASE 10 — FUTURE INTEGRATION READINESS
+==================================================
+
+Goal:
+Prepare for future premium modules without fully implementing them yet.
+
+Potential readiness only:
+- Jeppesen chart integration hooks
+- performance / OPT hooks
+- richer mobile entitlements
+- API/service abstraction for future modules
+- cleaner release/module rollout structure
+
+Do not fully implement these unless explicitly asked later.
+This phase is readiness, not full product delivery.
+
+==================================================
+PHASE EXECUTION INSTRUCTIONS
+==================================================
+
+You must now do the following:
+
+1. Read and understand all phases above
+2. Build an internal execution plan from them
+3. Confirm the active folders and ignore unrelated ones
+4. Review the current local state of the OpsOne web app and CrewAssist app
+5. Map what is already completed vs incomplete
+6. Continue execution from the current real phase, not from scratch
+7. If Phase 1 is already partially or fully done locally, verify it before proceeding
+8. Do not skip dependencies
+9. Work phase by phase
+10. At the end of each phase provide:
+   - completed items
+   - files changed
+   - local checks run
+   - what I need to check locally
+   - whether GitHub push is recommended now or later
+   - whether Namecheap/live deploy is needed now or should wait
+
+==================================================
+GITHUB / NAMECHEAP POLICY
+==================================================
+
+Default policy:
+- local first
+- browser/local verification first
+- GitHub push only when phase is stable
+- Namecheap/live deployment only when I choose or when explicitly recommended
+
+For phases that affect the iPad app heavily:
+- tell me when a GitHub push is appropriate
+- tell me what I should pull/check afterward
+
+For phases that affect the web app:
+- do not assume immediate live deployment
+- recommend deploy only when the phase is stable enough to verify live
+
+If I later ask you to deploy:
+- then you may push to GitHub and provide exact Namecheap steps
+- but do not force live deploy every phase
+
+==================================================
+CHECKING / TESTING RULES
+==================================================
+
+For web phases:
+- run local/runtime/syntax checks
+- use local browser where possible
+- verify role-based routing
+- verify no regressions
+- verify sidebar correctness
+- verify audit-relevant actions where appropriate
+
+For iPad phases:
+- verify folder alignment
+- verify build/runtime assumptions where possible
+- verify entitlement/navigation logic
+- do not make unverified claims about device behavior
+
+==================================================
+FINAL RESPONSE FORMAT FOR EACH PHASE
+==================================================
+
+At the end of each phase you work on, respond with:
+
+1. Phase Worked On
+2. What Was Already Done Before This Pass
+3. What I Completed Now
+4. Files Changed
+5. Local Checks Performed
+6. What You Should Check Locally
+7. Should We Push This Phase to GitHub Now? Yes/No and why
+8. Should We Deploy This Phase to Namecheap Now? Yes/No and why
+9. Next Recommended Phase
+
+==================================================
+IMPORTANT DISCIPLINE RULES
+==================================================
+
+- Do not rebuild the project
+- Do not search unrelated folders
+- Do not work in duplicate iPad app folders
+- Do not start future phases automatically without finishing/verifying the current one
+- Do not mix platform and airline contexts again
+- Do not expose airline operational data on platform by default
+- Do not claim a phase is complete unless local checks support it
+- If there is ambiguity about the CrewAssist folder, ask me before touching it

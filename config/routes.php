@@ -156,6 +156,23 @@ return [
     'GET /roster/standby'          => ['RosterController', 'standbyPool'],
     'GET /roster/suggest/{id}'     => ['RosterController', 'suggest'],
 
+    // ─── Roster: Bulk Assign ───────────
+    'GET /roster/bulk-assign'               => ['RosterController', 'bulkAssignForm'],
+    'POST /roster/bulk-assign'              => ['RosterController', 'bulkAssign'],
+
+    // ─── Roster: Periods ───────────────
+    'GET /roster/periods'                   => ['RosterController', 'periods'],
+    'GET /roster/periods/create'            => ['RosterController', 'createPeriodForm'],
+    'POST /roster/periods/store'            => ['RosterController', 'storePeriod'],
+    'POST /roster/periods/publish/{id}'     => ['RosterController', 'publishPeriod'],
+    'POST /roster/periods/freeze/{id}'      => ['RosterController', 'freezePeriod'],
+    'POST /roster/periods/delete/{id}'      => ['RosterController', 'deletePeriod'],
+
+    // ─── Roster: Change Requests ───────
+    'GET /roster/changes'                   => ['RosterController', 'changes'],
+    'POST /roster/changes/request'          => ['RosterController', 'requestChange'],
+    'POST /roster/changes/respond/{id}'     => ['RosterController', 'respondToChange'],
+
     // ─── FDM ───────────────────────────
     'GET /fdm'                                       => ['FdmController', 'index'],
     'GET /fdm/upload'                                => ['FdmController', 'uploadForm'],

@@ -1127,6 +1127,105 @@ try {
         echo "(partial — " . $e->getMessage() . ")\n";
     }
 
+    // ─── Step 22: Seed roster periods (Phase 5) ───────────
+    echo "Step 22: Seeding roster periods... ";
+    try {
+        // Ensure tables exist (migration 016)
+        $db->exec("CREATE TABLE IF NOT EXISTS roster_periods (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id   INTEGER NOT NULL,
+            name        TEXT    NOT NULL,
+            start_date  TEXT    NOT NULL,
+            end_date    TEXT    NOT NULL,
+            status      TEXT    NOT NULL DEFAULT 'draft',
+            notes       TEXT    DEFAULT NULL,
+            created_by  INTEGER DEFAULT NULL,
+            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+        )");
+        $db->exec("CREATE TABLE IF NOT EXISTS roster_changes (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id        INTEGER NOT NULL,
+            roster_period_id INTEGER DEFAULT NULL,
+            roster_id        INTEGER DEFAULT NULL,
+            user_id          INTEGER NOT NULL,
+            requested_by     INTEGER NOT NULL,
+            change_type      TEXT    NOT NULL,
+            status           TEXT    NOT NULL DEFAULT 'pending',
+            message          TEXT    NOT NULL,
+            response         TEXT    DEFAULT NULL,
+            responded_by     INTEGER DEFAULT NULL,
+            responded_at     TEXT    DEFAULT NULL,
+            created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+            updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+        )");
+        // Add new columns to rosters if they don't exist
+        $rosterCols = $db->query("PRAGMA table_info(rosters)")->fetchAll(PDO::FETCH_ASSOC);
+        $rosterColNames = array_column($rosterCols, 'name');
+        if (!in_array('roster_period_id', $rosterColNames)) {
+            $db->exec("ALTER TABLE rosters ADD COLUMN roster_period_id INTEGER DEFAULT NULL");
+        }
+        if (!in_array('base_id', $rosterColNames)) {
+            $db->exec("ALTER TABLE rosters ADD COLUMN base_id INTEGER DEFAULT NULL");
+        }
+        if (!in_array('fleet_id', $rosterColNames)) {
+            $db->exec("ALTER TABLE rosters ADD COLUMN fleet_id INTEGER DEFAULT NULL");
+        }
+        if (!in_array('reserve_type', $rosterColNames)) {
+            $db->exec("ALTER TABLE rosters ADD COLUMN reserve_type TEXT DEFAULT NULL");
+        }
+
+        // Find the scheduler or admin user to use as created_by
+        $schedulerUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='scheduler' LIMIT 1")->fetchColumn();
+        $adminUser = $schedulerUser ?: $db->query("SELECT id FROM users WHERE tenant_id=1 LIMIT 1")->fetchColumn();
+
+        // Seed two demo periods for current and next month
+        $thisMonth = date('Y-m');
+        $nextMonth = date('Y-m', strtotime('+1 month'));
+        $periods = [
+            [
+                'name'       => date('F Y') . ' Roster',
+                'start_date' => $thisMonth . '-01',
+                'end_date'   => date('Y-m-t'),
+                'status'     => 'published',
+                'notes'      => 'Current month — published for crew viewing',
+            ],
+            [
+                'name'       => date('F Y', strtotime('+1 month')) . ' Roster',
+                'start_date' => $nextMonth . '-01',
+                'end_date'   => date('Y-m-t', strtotime('+1 month')),
+                'status'     => 'draft',
+                'notes'      => 'Next month — in progress',
+            ],
+        ];
+        foreach ($periods as $p) {
+            $existing = $db->prepare("SELECT id FROM roster_periods WHERE tenant_id=1 AND start_date=?")->execute([$p['start_date']]);
+            $exists = $db->prepare("SELECT id FROM roster_periods WHERE tenant_id=1 AND start_date=?");
+            $exists->execute([$p['start_date']]);
+            if (!$exists->fetchColumn()) {
+                $stmt = $db->prepare("INSERT INTO roster_periods (tenant_id, name, start_date, end_date, status, notes, created_by) VALUES (1, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$p['name'], $p['start_date'], $p['end_date'], $p['status'], $p['notes'], $adminUser]);
+            }
+        }
+
+        // Seed two demo change requests
+        $crewUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='pilot' LIMIT 1")->fetchColumn();
+        $nextPeriodId = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='draft' LIMIT 1")->fetchColumn();
+        if ($crewUser && $nextPeriodId) {
+            $existing = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? AND roster_period_id=?");
+            $existing->execute([$crewUser, $nextPeriodId]);
+            if (!$existing->fetchColumn()) {
+                $stmt = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'leave_request', 'Requesting 3 days leave from the 12th to 14th for a family event. Thank you.', 'pending')");
+                $stmt->execute([$nextPeriodId, $crewUser, $crewUser]);
+                $stmt2 = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'swap_request', 'Would like to swap my 18th standby with someone. Available to cover flight duty on the 22nd instead.', 'pending')");
+                $stmt2->execute([$nextPeriodId, $crewUser, $crewUser]);
+            }
+        }
+        echo "✓\n";
+    } catch (\Exception $e) {
+        echo "(partial — " . $e->getMessage() . ")\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

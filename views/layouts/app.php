@@ -226,12 +226,17 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager','pilot','cabin_crew','engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Scheduling</div>
-                <a href="/roster" class="sidebar-link <?= ($currentPath === '/roster' || (str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath, '/roster/standby') && !str_starts_with($currentPath, '/roster/suggest'))) ? 'active' : '' ?>">
+                <a href="/roster" class="sidebar-link <?= ($currentPath === '/roster' || $currentPath === '/roster/assign') ? 'active' : '' ?>">
                     <span class="icon">📅</span> Roster
                 </a>
                 <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew'])): ?>
                 <a href="/roster/standby" class="sidebar-link <?= str_starts_with($currentPath, '/roster/standby') ? 'active' : '' ?>">
                     <span class="icon">📋</span> Standby Pool
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew'])): ?>
+                <a href="/roster/changes" class="sidebar-link <?= str_starts_with($currentPath, '/roster/changes') ? 'active' : '' ?>">
+                    <span class="icon">💬</span> Change Requests
                 </a>
                 <?php endif; ?>
             </div>

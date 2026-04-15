@@ -31,13 +31,49 @@ $today = date('Y-m-d');
 .replace-btn:hover { text-decoration:underline; }
 </style>
 
+<!-- Active period banner -->
+<?php if ($activePeriod): ?>
+<?php
+    $periodStatusColor = ['draft' => '#f59e0b', 'published' => '#10b981', 'frozen' => '#3b82f6', 'archived' => '#6b7280'];
+    $pc = $periodStatusColor[$activePeriod['status']] ?? '#6b7280';
+?>
+<div style="background:var(--bg-secondary); border:1px solid <?= $pc ?>; border-left:4px solid <?= $pc ?>; border-radius:8px; padding:10px 16px; margin-bottom:14px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:13px; font-weight:600; color:var(--text-primary);">📅 <?= e($activePeriod['name']) ?></span>
+    <span class="status-badge" style="--badge-color:<?= $pc ?>;"><?= ucfirst($activePeriod['status']) ?></span>
+    <span class="text-xs text-muted"><?= date('d M', strtotime($activePeriod['start_date'])) ?> → <?= date('d M Y', strtotime($activePeriod['end_date'])) ?></span>
+    <?php if ($activePeriod['status'] === 'draft'): ?>
+        <span class="text-xs" style="color:#f59e0b;">Draft — not visible to crew yet</span>
+    <?php elseif ($activePeriod['status'] === 'published'): ?>
+        <span class="text-xs" style="color:#10b981;">Published — crew can view this period</span>
+    <?php elseif ($activePeriod['status'] === 'frozen'): ?>
+        <span class="text-xs" style="color:#3b82f6;">Frozen — roster is locked</span>
+    <?php endif; ?>
+    <?php if (hasAnyRole(['scheduler', 'airline_admin', 'super_admin'])): ?>
+        <a href="/roster/periods" class="btn btn-ghost btn-xs" style="margin-left:auto;">Manage Periods</a>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- Pending change requests badge -->
+<?php if (!empty($pendingChanges) && hasAnyRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew'])): ?>
+<div style="margin-bottom:12px;">
+    <a href="/roster/changes" style="display:inline-flex; align-items:center; gap:8px; background:rgba(245,158,11,.12); border:1px solid #f59e0b; border-radius:6px; padding:8px 14px; text-decoration:none; font-size:13px; color:#f59e0b; font-weight:600;">
+        ⚠ <?= count($pendingChanges) ?> pending change request<?= count($pendingChanges) !== 1 ? 's' : '' ?> — review now
+    </a>
+</div>
+<?php endif; ?>
+
 <!-- Month navigation -->
 <div class="nav-bar">
     <a href="/roster?year=<?= $prevYear ?>&month=<?= $prevMonth ?>" class="btn btn-sm btn-outline">← Prev</a>
     <div class="month-label"><?= date('F Y', mktime(0,0,0,$month,1,$year)) ?></div>
     <a href="/roster?year=<?= $nextYear ?>&month=<?= $nextMonth ?>" class="btn btn-sm btn-outline">Next →</a>
     <?php if (hasAnyRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew'])): ?>
-    <a href="/roster/assign" class="btn btn-sm btn-primary" style="margin-left: auto;">＋ Assign Duty</a>
+    <a href="/roster/assign" class="btn btn-sm btn-primary" style="margin-left: auto;">＋ Assign</a>
+    <?php endif; ?>
+    <?php if (hasAnyRole(['scheduler', 'airline_admin', 'super_admin'])): ?>
+    <a href="/roster/bulk-assign" class="btn btn-sm btn-outline">Bulk Assign</a>
+    <a href="/roster/periods" class="btn btn-sm btn-outline">Periods</a>
     <?php endif; ?>
 </div>
 
