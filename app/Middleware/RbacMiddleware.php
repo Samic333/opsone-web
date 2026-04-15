@@ -55,7 +55,8 @@ class RbacMiddleware {
                 jsonResponse(['error' => 'Platform admins must use the controlled access workflow'], 403);
             }
             flash('error', 'That section is airline-scoped. Use controlled access to enter an airline workspace.');
-            redirect('/tenants');
+            // Redirect super_admin to Airline Registry; all other platform roles to dashboard
+            redirect(hasRole('super_admin') ? '/tenants' : '/dashboard');
         }
 
         if (!empty($roles)) {
@@ -142,7 +143,9 @@ class RbacMiddleware {
             jsonResponse(['error' => 'Insufficient permissions'], 403);
         }
         flash('error', $msg ?: 'You do not have permission to access this resource.');
-        // Route to context-appropriate home to prevent redirect loops
-        redirect(isPlatformOnly() ? '/tenants' : '/dashboard');
+        // Route to a page the user can always access to prevent redirect loops.
+        // /tenants requires super_admin, so platform users without that role
+        // would loop forever — always fall back to /dashboard.
+        redirect('/dashboard');
     }
 }

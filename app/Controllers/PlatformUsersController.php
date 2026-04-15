@@ -18,12 +18,20 @@ class PlatformUsersController {
     public function index(): void {
         RbacMiddleware::requirePlatformSuperAdmin();
 
+        $isSqlite = env('DB_DRIVER', 'mysql') === 'sqlite';
+        $gcSlugs  = $isSqlite
+            ? "GROUP_CONCAT(r.slug, ',')"
+            : "GROUP_CONCAT(r.slug ORDER BY r.slug SEPARATOR ',')";
+        $gcNames  = $isSqlite
+            ? "GROUP_CONCAT(r.name, ',')"
+            : "GROUP_CONCAT(r.name ORDER BY r.slug SEPARATOR ',')";
+
         $db    = Database::getInstance();
         $users = $db->query(
             "SELECT u.id, u.name, u.email, u.employee_id, u.status, u.web_access,
                     u.last_login_at, u.created_at,
-                    GROUP_CONCAT(r.slug ORDER BY r.slug SEPARATOR ',') AS role_slugs,
-                    GROUP_CONCAT(r.name ORDER BY r.slug SEPARATOR ',') AS role_names
+                    $gcSlugs AS role_slugs,
+                    $gcNames AS role_names
              FROM users u
              LEFT JOIN user_roles ur ON ur.user_id = u.id
              LEFT JOIN roles r       ON r.id = ur.role_id
