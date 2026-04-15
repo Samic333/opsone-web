@@ -715,15 +715,9 @@ try {
             $db->exec("DELETE FROM rosters WHERE tenant_id = 1");
 
             $rStmt = $db->prepare(
-                "INSERT OR IGNORE INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
+                "$insertIgnore INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
                  VALUES (1, ?, ?, ?, ?, ?)"
             );
-            if ($driver !== 'sqlite') {
-                $rStmt = $db->prepare(
-                    "INSERT IGNORE INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
-                     VALUES (1, ?, ?, ?, ?, ?)"
-                );
-            }
 
             // Seed ~30 days around today (current month)
             $today    = new DateTime();
@@ -1004,25 +998,32 @@ try {
     echo "Step 20: Seeding qualifications and profile completion... ";
     try {
         // Ensure qualifications table exists (migration 014)
-        $qTables = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='qualifications'")->fetchAll();
-        if (empty($qTables)) {
-            // Create table inline if migration not run
-            $db->exec("
-                CREATE TABLE IF NOT EXISTS qualifications (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id     INTEGER NOT NULL,
-                    tenant_id   INTEGER NOT NULL,
-                    qual_type   TEXT    NOT NULL,
-                    qual_name   TEXT    NOT NULL,
-                    reference_no TEXT,
-                    authority   TEXT,
-                    issue_date  TEXT,
-                    expiry_date TEXT,
-                    status      TEXT    NOT NULL DEFAULT 'active',
-                    notes       TEXT,
-                    created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
-                )
-            ");
+        $hasQual = $driver === 'sqlite'
+            ? !empty($db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='qualifications'")->fetchAll())
+            : (bool) $db->query("SHOW TABLES LIKE 'qualifications'")->fetchColumn();
+        if (!$hasQual) {
+            if ($driver === 'sqlite') {
+                // Create table inline for SQLite if migration not run
+                $db->exec("
+                    CREATE TABLE IF NOT EXISTS qualifications (
+                        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id     INTEGER NOT NULL,
+                        tenant_id   INTEGER NOT NULL,
+                        qual_type   TEXT    NOT NULL,
+                        qual_name   TEXT    NOT NULL,
+                        reference_no TEXT,
+                        authority   TEXT,
+                        issue_date  TEXT,
+                        expiry_date TEXT,
+                        status      TEXT    NOT NULL DEFAULT 'active',
+                        notes       TEXT,
+                        created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+                    )
+                ");
+            } else {
+                echo "qualifications table not found — run migration 014 first.\n";
+                throw new \Exception("qualifications table missing");
+            }
         }
 
         $db->exec("DELETE FROM qualifications WHERE tenant_id = 1");
@@ -1033,7 +1034,7 @@ try {
         $cabinUid   = $db->query("SELECT id FROM users WHERE email = 'demo.cabin@acentoza.com' AND tenant_id = 1")->fetchColumn();
 
         $qStmt = $db->prepare(
-            "INSERT OR IGNORE INTO qualifications (user_id, tenant_id, qual_type, qual_name, reference_no, authority, issue_date, expiry_date, status)
+            "$insertIgnore INTO qualifications (user_id, tenant_id, qual_type, qual_name, reference_no, authority, issue_date, expiry_date, status)
              VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?)"
         );
 
@@ -1097,17 +1098,24 @@ try {
     echo "Step 21: Seeding notice categories... ";
     try {
         // Ensure notice_categories table exists (migration 015)
-        $ncTable = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='notice_categories'")->fetchColumn();
+        $ncTable = $driver === 'sqlite'
+            ? $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='notice_categories'")->fetchColumn()
+            : $db->query("SHOW TABLES LIKE 'notice_categories'")->fetchColumn();
         if (!$ncTable) {
-            $db->exec("CREATE TABLE IF NOT EXISTS notice_categories (
-                id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                tenant_id  INTEGER NOT NULL,
-                name       TEXT    NOT NULL,
-                slug       TEXT    NOT NULL,
-                sort_order INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT    NOT NULL DEFAULT (datetime('now')),
-                UNIQUE (tenant_id, slug)
-            )");
+            if ($driver === 'sqlite') {
+                $db->exec("CREATE TABLE IF NOT EXISTS notice_categories (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tenant_id  INTEGER NOT NULL,
+                    name       TEXT    NOT NULL,
+                    slug       TEXT    NOT NULL,
+                    sort_order INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+                    UNIQUE (tenant_id, slug)
+                )");
+            } else {
+                echo "notice_categories table not found — run migration 015 first.\n";
+                throw new \Exception("notice_categories table missing");
+            }
         }
         // Seed standard categories for tenant 1
         $cats = [
@@ -1120,7 +1128,7 @@ try {
             ['HR Bulletin',   'hr_bulletin',   6],
         ];
         foreach ($cats as [$name, $slug, $order]) {
-            $db->exec("INSERT OR IGNORE INTO notice_categories (tenant_id, name, slug, sort_order) VALUES (1, '$name', '$slug', $order)");
+            $db->exec("$insertIgnore INTO notice_categories (tenant_id, name, slug, sort_order) VALUES (1, '$name', '$slug', $order)");
         }
         echo "✓\n";
     } catch (\Exception $e) {
@@ -1130,98 +1138,102 @@ try {
     // ─── Step 22: Seed roster periods (Phase 5) ───────────
     echo "Step 22: Seeding roster periods... ";
     try {
-        // Ensure tables exist (migration 016)
-        $db->exec("CREATE TABLE IF NOT EXISTS roster_periods (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id   INTEGER NOT NULL,
-            name        TEXT    NOT NULL,
-            start_date  TEXT    NOT NULL,
-            end_date    TEXT    NOT NULL,
-            status      TEXT    NOT NULL DEFAULT 'draft',
-            notes       TEXT    DEFAULT NULL,
-            created_by  INTEGER DEFAULT NULL,
-            created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
-            updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
-        )");
-        $db->exec("CREATE TABLE IF NOT EXISTS roster_changes (
-            id               INTEGER PRIMARY KEY AUTOINCREMENT,
-            tenant_id        INTEGER NOT NULL,
-            roster_period_id INTEGER DEFAULT NULL,
-            roster_id        INTEGER DEFAULT NULL,
-            user_id          INTEGER NOT NULL,
-            requested_by     INTEGER NOT NULL,
-            change_type      TEXT    NOT NULL,
-            status           TEXT    NOT NULL DEFAULT 'pending',
-            message          TEXT    NOT NULL,
-            response         TEXT    DEFAULT NULL,
-            responded_by     INTEGER DEFAULT NULL,
-            responded_at     TEXT    DEFAULT NULL,
-            created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
-            updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
-        )");
-        // Add new columns to rosters if they don't exist
-        $rosterCols = $db->query("PRAGMA table_info(rosters)")->fetchAll(PDO::FETCH_ASSOC);
-        $rosterColNames = array_column($rosterCols, 'name');
-        if (!in_array('roster_period_id', $rosterColNames)) {
-            $db->exec("ALTER TABLE rosters ADD COLUMN roster_period_id INTEGER DEFAULT NULL");
-        }
-        if (!in_array('base_id', $rosterColNames)) {
-            $db->exec("ALTER TABLE rosters ADD COLUMN base_id INTEGER DEFAULT NULL");
-        }
-        if (!in_array('fleet_id', $rosterColNames)) {
-            $db->exec("ALTER TABLE rosters ADD COLUMN fleet_id INTEGER DEFAULT NULL");
-        }
-        if (!in_array('reserve_type', $rosterColNames)) {
-            $db->exec("ALTER TABLE rosters ADD COLUMN reserve_type TEXT DEFAULT NULL");
-        }
-
-        // Find the scheduler or admin user to use as created_by
-        $schedulerUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='scheduler' LIMIT 1")->fetchColumn();
-        $adminUser = $schedulerUser ?: $db->query("SELECT id FROM users WHERE tenant_id=1 LIMIT 1")->fetchColumn();
-
-        // Seed two demo periods for current and next month
-        $thisMonth = date('Y-m');
-        $nextMonth = date('Y-m', strtotime('+1 month'));
-        $periods = [
-            [
-                'name'       => date('F Y') . ' Roster',
-                'start_date' => $thisMonth . '-01',
-                'end_date'   => date('Y-m-t'),
-                'status'     => 'published',
-                'notes'      => 'Current month — published for crew viewing',
-            ],
-            [
-                'name'       => date('F Y', strtotime('+1 month')) . ' Roster',
-                'start_date' => $nextMonth . '-01',
-                'end_date'   => date('Y-m-t', strtotime('+1 month')),
-                'status'     => 'draft',
-                'notes'      => 'Next month — in progress',
-            ],
-        ];
-        foreach ($periods as $p) {
-            $existing = $db->prepare("SELECT id FROM roster_periods WHERE tenant_id=1 AND start_date=?")->execute([$p['start_date']]);
-            $exists = $db->prepare("SELECT id FROM roster_periods WHERE tenant_id=1 AND start_date=?");
-            $exists->execute([$p['start_date']]);
-            if (!$exists->fetchColumn()) {
-                $stmt = $db->prepare("INSERT INTO roster_periods (tenant_id, name, start_date, end_date, status, notes, created_by) VALUES (1, ?, ?, ?, ?, ?, ?)");
-                $stmt->execute([$p['name'], $p['start_date'], $p['end_date'], $p['status'], $p['notes'], $adminUser]);
+        // Ensure tables exist — SQLite: create inline; MySQL: trust migration 016
+        if ($driver === 'sqlite') {
+            $db->exec("CREATE TABLE IF NOT EXISTS roster_periods (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id   INTEGER NOT NULL,
+                name        TEXT    NOT NULL,
+                start_date  TEXT    NOT NULL,
+                end_date    TEXT    NOT NULL,
+                status      TEXT    NOT NULL DEFAULT 'draft',
+                notes       TEXT    DEFAULT NULL,
+                created_by  INTEGER DEFAULT NULL,
+                created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+                updated_at  TEXT    NOT NULL DEFAULT (datetime('now'))
+            )");
+            $db->exec("CREATE TABLE IF NOT EXISTS roster_changes (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id        INTEGER NOT NULL,
+                roster_period_id INTEGER DEFAULT NULL,
+                roster_id        INTEGER DEFAULT NULL,
+                user_id          INTEGER NOT NULL,
+                requested_by     INTEGER NOT NULL,
+                change_type      TEXT    NOT NULL,
+                status           TEXT    NOT NULL DEFAULT 'pending',
+                message          TEXT    NOT NULL,
+                response         TEXT    DEFAULT NULL,
+                responded_by     INTEGER DEFAULT NULL,
+                responded_at     TEXT    DEFAULT NULL,
+                created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
+                updated_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+            )");
+            // Add new columns to rosters if they don't exist (SQLite: one at a time)
+            $rosterColNames = array_column(
+                $db->query("PRAGMA table_info(rosters)")->fetchAll(PDO::FETCH_ASSOC), 'name'
+            );
+            foreach (['roster_period_id', 'base_id', 'fleet_id', 'reserve_type'] as $col) {
+                if (!in_array($col, $rosterColNames)) {
+                    $db->exec("ALTER TABLE rosters ADD COLUMN $col INTEGER DEFAULT NULL");
+                }
+            }
+            $canSeed22 = true;
+        } else {
+            // MySQL: verify migration 016 was run
+            $canSeed22 = (bool) $db->query("SHOW TABLES LIKE 'roster_periods'")->fetchColumn();
+            if (!$canSeed22) {
+                echo "roster_periods table not found — run migration 016 first.\n";
             }
         }
 
-        // Seed two demo change requests
-        $crewUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='pilot' LIMIT 1")->fetchColumn();
-        $nextPeriodId = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='draft' LIMIT 1")->fetchColumn();
-        if ($crewUser && $nextPeriodId) {
-            $existing = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? AND roster_period_id=?");
-            $existing->execute([$crewUser, $nextPeriodId]);
-            if (!$existing->fetchColumn()) {
-                $stmt = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'leave_request', 'Requesting 3 days leave from the 12th to 14th for a family event. Thank you.', 'pending')");
-                $stmt->execute([$nextPeriodId, $crewUser, $crewUser]);
-                $stmt2 = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'swap_request', 'Would like to swap my 18th standby with someone. Available to cover flight duty on the 22nd instead.', 'pending')");
-                $stmt2->execute([$nextPeriodId, $crewUser, $crewUser]);
+        if ($canSeed22) {
+            // Find the scheduler or admin user to use as created_by
+            $schedulerUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='scheduler' LIMIT 1")->fetchColumn();
+            $adminUser = $schedulerUser ?: $db->query("SELECT id FROM users WHERE tenant_id=1 LIMIT 1")->fetchColumn();
+
+            // Seed two demo periods for current and next month
+            $thisMonth = date('Y-m');
+            $nextMonth = date('Y-m', strtotime('+1 month'));
+            $periods = [
+                [
+                    'name'       => date('F Y') . ' Roster',
+                    'start_date' => $thisMonth . '-01',
+                    'end_date'   => date('Y-m-t'),
+                    'status'     => 'published',
+                    'notes'      => 'Current month — published for crew viewing',
+                ],
+                [
+                    'name'       => date('F Y', strtotime('+1 month')) . ' Roster',
+                    'start_date' => $nextMonth . '-01',
+                    'end_date'   => date('Y-m-t', strtotime('+1 month')),
+                    'status'     => 'draft',
+                    'notes'      => 'Next month — in progress',
+                ],
+            ];
+            foreach ($periods as $p) {
+                $exists = $db->prepare("SELECT id FROM roster_periods WHERE tenant_id=1 AND start_date=?");
+                $exists->execute([$p['start_date']]);
+                if (!$exists->fetchColumn()) {
+                    $stmt = $db->prepare("INSERT INTO roster_periods (tenant_id, name, start_date, end_date, status, notes, created_by) VALUES (1, ?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$p['name'], $p['start_date'], $p['end_date'], $p['status'], $p['notes'], $adminUser]);
+                }
             }
+
+            // Seed two demo change requests
+            $crewUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='pilot' LIMIT 1")->fetchColumn();
+            $nextPeriodId = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='draft' LIMIT 1")->fetchColumn();
+            if ($crewUser && $nextPeriodId) {
+                $existing = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? AND roster_period_id=?");
+                $existing->execute([$crewUser, $nextPeriodId]);
+                if (!$existing->fetchColumn()) {
+                    $stmt = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'leave_request', 'Requesting 3 days leave from the 12th to 14th for a family event. Thank you.', 'pending')");
+                    $stmt->execute([$nextPeriodId, $crewUser, $crewUser]);
+                    $stmt2 = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'swap_request', 'Would like to swap my 18th standby with someone. Available to cover flight duty on the 22nd instead.', 'pending')");
+                    $stmt2->execute([$nextPeriodId, $crewUser, $crewUser]);
+                }
+            }
+            echo "✓\n";
         }
-        echo "✓\n";
     } catch (\Exception $e) {
         echo "(partial — " . $e->getMessage() . ")\n";
     }
