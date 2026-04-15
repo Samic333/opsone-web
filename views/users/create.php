@@ -44,6 +44,28 @@
         </div>
         <div class="form-row">
             <div class="form-group">
+                <label for="fleet_id">Fleet</label>
+                <select id="fleet_id" name="fleet_id" class="form-control">
+                    <option value="">— Select —</option>
+                    <?php foreach ($fleets as $f): ?>
+                    <option value="<?= $f['id'] ?>"><?= e($f['name']) ?><?= $f['code'] ? ' (' . e($f['code']) . ')' : '' ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="employment_status">Employment Type</label>
+                <select id="employment_status" name="employment_status" class="form-control">
+                    <option value="">— Select —</option>
+                    <option value="full_time">Full Time</option>
+                    <option value="part_time">Part Time</option>
+                    <option value="contract">Contract</option>
+                    <option value="secondment">Secondment</option>
+                    <option value="trainee">Trainee</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
                 <label for="status">Status</label>
                 <select id="status" name="status" class="form-control">
                     <option value="active">Active</option>

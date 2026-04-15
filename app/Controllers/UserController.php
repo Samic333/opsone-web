@@ -15,10 +15,11 @@ class UserController {
     }
 
     public function create(): void {
-        $tenantId = currentTenantId();
-        $roles = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $tenantId    = currentTenantId();
+        $roles       = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
-        $bases = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $fleets      = Fleet::allForTenant($tenantId);
         require VIEWS_PATH . '/users/create.php';
     }
 
@@ -28,17 +29,24 @@ class UserController {
             redirect('/users/create');
         }
 
-        $tenantId = currentTenantId();
-        $name = trim($_POST['name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $employeeId = trim($_POST['employee_id'] ?? '');
-        $departmentId = (int)($_POST['department_id'] ?? 0);
-        $baseId = (int)($_POST['base_id'] ?? 0);
-        $status = $_POST['status'] ?? 'active';
-        $mobileAccess = isset($_POST['mobile_access']) ? 1 : 0;
-        $webAccess = isset($_POST['web_access']) ? 1 : 0;
-        $roleIds = $_POST['roles'] ?? [];
+        $tenantId         = currentTenantId();
+        $name             = trim($_POST['name'] ?? '');
+        $email            = trim($_POST['email'] ?? '');
+        $password         = $_POST['password'] ?? '';
+        $employeeId       = trim($_POST['employee_id'] ?? '');
+        $departmentId     = (int)($_POST['department_id'] ?? 0);
+        $baseId           = (int)($_POST['base_id'] ?? 0);
+        $fleetId          = (int)($_POST['fleet_id'] ?? 0);
+        $status           = $_POST['status'] ?? 'active';
+        $employmentStatus = $_POST['employment_status'] ?? null;
+        $mobileAccess     = isset($_POST['mobile_access']) ? 1 : 0;
+        $webAccess        = isset($_POST['web_access']) ? 1 : 0;
+        $roleIds          = $_POST['roles'] ?? [];
+
+        $allowedEmpStatus = ['full_time','part_time','contract','secondment','trainee'];
+        if ($employmentStatus && !in_array($employmentStatus, $allowedEmpStatus)) {
+            $employmentStatus = null;
+        }
 
         if (empty($name) || empty($email) || empty($password)) {
             flash('error', 'Name, email, and password are required.');
@@ -53,16 +61,18 @@ class UserController {
         }
 
         $userId = UserModel::create([
-            'tenant_id' => $tenantId,
-            'name' => $name,
-            'email' => $email,
-            'password' => $password,
-            'employee_id' => $employeeId ?: null,
-            'department_id' => $departmentId,
-            'base_id' => $baseId,
-            'status' => $status,
-            'mobile_access' => $mobileAccess,
-            'web_access' => $webAccess,
+            'tenant_id'         => $tenantId,
+            'name'              => $name,
+            'email'             => $email,
+            'password'          => $password,
+            'employee_id'       => $employeeId ?: null,
+            'department_id'     => $departmentId ?: null,
+            'base_id'           => $baseId ?: null,
+            'fleet_id'          => $fleetId ?: null,
+            'employment_status' => $employmentStatus,
+            'status'            => $status,
+            'mobile_access'     => $mobileAccess,
+            'web_access'        => $webAccess,
         ]);
 
         // Assign roles
@@ -81,15 +91,16 @@ class UserController {
             flash('error', 'User not found.');
             redirect('/users');
         }
-        $tenantId = currentTenantId();
-        $roles = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $tenantId    = currentTenantId();
+        $roles       = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
-        $bases = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
-        $userRoles = UserModel::getRoles($id);
+        $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $fleets      = Fleet::allForTenant($tenantId);
+        $userRoles   = UserModel::getRoles($id);
         $userRoleIds = array_column($userRoles, 'id');
-        $devices = Device::forUser($id);
+        $devices     = Device::forUser($id);
         $crewProfile = CrewProfileModel::findByUser($id) ?? [];
-        $licenses = CrewProfileModel::getLicenses($id);
+        $licenses    = CrewProfileModel::getLicenses($id);
         require VIEWS_PATH . '/users/edit.php';
     }
 
@@ -105,17 +116,24 @@ class UserController {
             redirect('/users');
         }
 
-        $tenantId = currentTenantId();
-        $name = trim($_POST['name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $password = $_POST['password'] ?? '';
-        $employeeId = trim($_POST['employee_id'] ?? '');
-        $departmentId = (int)($_POST['department_id'] ?? 0);
-        $baseId = (int)($_POST['base_id'] ?? 0);
-        $status = $_POST['status'] ?? 'active';
-        $mobileAccess = isset($_POST['mobile_access']) ? 1 : 0;
-        $webAccess = isset($_POST['web_access']) ? 1 : 0;
-        $roleIds = $_POST['roles'] ?? [];
+        $tenantId         = currentTenantId();
+        $name             = trim($_POST['name'] ?? '');
+        $email            = trim($_POST['email'] ?? '');
+        $password         = $_POST['password'] ?? '';
+        $employeeId       = trim($_POST['employee_id'] ?? '');
+        $departmentId     = (int)($_POST['department_id'] ?? 0);
+        $baseId           = (int)($_POST['base_id'] ?? 0);
+        $fleetId          = (int)($_POST['fleet_id'] ?? 0);
+        $status           = $_POST['status'] ?? 'active';
+        $employmentStatus = $_POST['employment_status'] ?? null;
+        $mobileAccess     = isset($_POST['mobile_access']) ? 1 : 0;
+        $webAccess        = isset($_POST['web_access']) ? 1 : 0;
+        $roleIds          = $_POST['roles'] ?? [];
+
+        $allowedEmpStatus = ['full_time','part_time','contract','secondment','trainee'];
+        if ($employmentStatus && !in_array($employmentStatus, $allowedEmpStatus)) {
+            $employmentStatus = null;
+        }
 
         if (empty($name) || empty($email)) {
             flash('error', 'Name and email are required.');
@@ -123,15 +141,17 @@ class UserController {
         }
 
         UserModel::update($id, [
-            'name' => $name,
-            'email' => $email,
-            'password' => $password ?: null,
-            'employee_id' => $employeeId ?: null,
-            'department_id' => $departmentId,
-            'base_id' => $baseId,
-            'status' => $status,
-            'mobile_access' => $mobileAccess,
-            'web_access' => $webAccess,
+            'name'              => $name,
+            'email'             => $email,
+            'password'          => $password ?: null,
+            'employee_id'       => $employeeId ?: null,
+            'department_id'     => $departmentId ?: null,
+            'base_id'           => $baseId ?: null,
+            'fleet_id'          => $fleetId ?: null,
+            'employment_status' => $employmentStatus,
+            'status'            => $status,
+            'mobile_access'     => $mobileAccess,
+            'web_access'        => $webAccess,
         ]);
 
         // Re-assign roles

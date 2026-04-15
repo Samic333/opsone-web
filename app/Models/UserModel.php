@@ -14,19 +14,24 @@ class UserModel {
     }
 
     public static function find(int $id): ?array {
-        return Database::fetch("SELECT u.*, d.name as department_name, b.code as base_code 
-            FROM users u 
-            LEFT JOIN departments d ON u.department_id = d.id 
-            LEFT JOIN bases b ON u.base_id = b.id
-            WHERE u.id = ?", [$id]);
+        return Database::fetch(
+            "SELECT u.*, d.name AS department_name, b.code AS base_code, f.name AS fleet_name
+             FROM users u
+             LEFT JOIN departments d ON u.department_id = d.id
+             LEFT JOIN bases b ON u.base_id = b.id
+             LEFT JOIN fleets f ON u.fleet_id = f.id
+             WHERE u.id = ?",
+            [$id]
+        );
     }
 
     public static function allForTenant(int $tenantId, ?string $status = null): array {
-        $sql = "SELECT u.*, d.name as department_name, b.code as base_code,
-                group_concat(r.name, ', ') as role_names
+        $sql = "SELECT u.*, d.name AS department_name, b.code AS base_code, f.name AS fleet_name,
+                group_concat(r.name, ', ') AS role_names
                 FROM users u
                 LEFT JOIN departments d ON u.department_id = d.id
                 LEFT JOIN bases b ON u.base_id = b.id
+                LEFT JOIN fleets f ON u.fleet_id = f.id
                 LEFT JOIN user_roles ur ON ur.user_id = u.id
                 LEFT JOIN roles r ON ur.role_id = r.id
                 WHERE u.tenant_id = ?";
@@ -41,32 +46,50 @@ class UserModel {
 
     public static function create(array $data): int {
         return Database::insert(
-            "INSERT INTO users (tenant_id, name, email, password_hash, employee_id, department_id, base_id, status, mobile_access)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users
+                (tenant_id, name, email, password_hash, employee_id,
+                 department_id, base_id, fleet_id, employment_status,
+                 status, mobile_access, web_access)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                $data['tenant_id'], $data['name'], $data['email'],
+                $data['tenant_id'],
+                $data['name'],
+                $data['email'],
                 password_hash($data['password'], PASSWORD_BCRYPT),
                 $data['employee_id'] ?? null,
                 $data['department_id'] ?: null,
                 $data['base_id'] ?: null,
+                $data['fleet_id'] ?: null,
+                $data['employment_status'] ?? null,
                 $data['status'] ?? 'active',
                 $data['mobile_access'] ?? 1,
+                $data['web_access'] ?? 1,
             ]
         );
     }
 
     public static function update(int $id, array $data): void {
-        $sql = "UPDATE users SET name = ?, email = ?, employee_id = ?, department_id = ?, base_id = ?, status = ?, mobile_access = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?";
-        Database::execute($sql, [
-            $data['name'], $data['email'], $data['employee_id'] ?? null,
-            $data['department_id'] ?: null, $data['base_id'] ?: null,
-            $data['status'], $data['mobile_access'] ?? 1, $id,
-        ]);
-        // Update password if provided
+        Database::execute(
+            "UPDATE users SET
+                name = ?, email = ?, employee_id = ?,
+                department_id = ?, base_id = ?, fleet_id = ?,
+                employment_status = ?, status = ?,
+                mobile_access = ?, web_access = ?,
+                updated_at = CURRENT_TIMESTAMP
+             WHERE id = ?",
+            [
+                $data['name'], $data['email'], $data['employee_id'] ?? null,
+                $data['department_id'] ?: null, $data['base_id'] ?: null,
+                $data['fleet_id'] ?: null, $data['employment_status'] ?? null,
+                $data['status'], $data['mobile_access'] ?? 1,
+                $data['web_access'] ?? 1, $id,
+            ]
+        );
         if (!empty($data['password'])) {
-            Database::execute("UPDATE users SET password_hash = ? WHERE id = ?", [
-                password_hash($data['password'], PASSWORD_BCRYPT), $id
-            ]);
+            Database::execute(
+                "UPDATE users SET password_hash = ? WHERE id = ?",
+                [password_hash($data['password'], PASSWORD_BCRYPT), $id]
+            );
         }
     }
 

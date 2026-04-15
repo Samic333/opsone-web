@@ -65,6 +65,34 @@ return [
     'POST /platform/onboarding/{id}/reject'         => ['OnboardingController', 'reject'],
     'POST /platform/onboarding/{id}/provision'      => ['OnboardingController', 'provision'],
 
+    // ─── Airline Profile / Settings ────
+    'GET /airline/profile'         => ['AirlineProfileController', 'show'],
+    'POST /airline/profile/update' => ['AirlineProfileController', 'update'],
+
+    // ─── Departments ───────────────────
+    'GET /departments'               => ['DepartmentController', 'index'],
+    'GET /departments/create'        => ['DepartmentController', 'create'],
+    'POST /departments/store'        => ['DepartmentController', 'store'],
+    'GET /departments/edit/{id}'     => ['DepartmentController', 'edit'],
+    'POST /departments/update/{id}'  => ['DepartmentController', 'update'],
+    'POST /departments/delete/{id}'  => ['DepartmentController', 'delete'],
+
+    // ─── Bases ─────────────────────────
+    'GET /bases'               => ['BaseController', 'index'],
+    'GET /bases/create'        => ['BaseController', 'create'],
+    'POST /bases/store'        => ['BaseController', 'store'],
+    'GET /bases/edit/{id}'     => ['BaseController', 'edit'],
+    'POST /bases/update/{id}'  => ['BaseController', 'update'],
+    'POST /bases/delete/{id}'  => ['BaseController', 'delete'],
+
+    // ─── Fleets ────────────────────────
+    'GET /fleets'               => ['FleetController', 'index'],
+    'GET /fleets/create'        => ['FleetController', 'create'],
+    'POST /fleets/store'        => ['FleetController', 'store'],
+    'GET /fleets/edit/{id}'     => ['FleetController', 'edit'],
+    'POST /fleets/update/{id}'  => ['FleetController', 'update'],
+    'POST /fleets/delete/{id}'  => ['FleetController', 'delete'],
+
     // ─── Users ─────────────────────────
     'GET /users'              => ['UserController', 'index'],
     'GET /users/create'       => ['UserController', 'create'],

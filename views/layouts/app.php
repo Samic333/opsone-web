@@ -260,6 +260,33 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php endif; ?>
 
+            <!-- ─── Administration ───────────────────────── -->
+            <?php if (hasAnyRole(['airline_admin', 'hr', 'base_manager', 'chief_pilot', 'engineering_manager'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Administration</div>
+                <?php if (hasAnyRole(['airline_admin', 'hr'])): ?>
+                <a href="/departments" class="sidebar-link <?= str_starts_with($currentPath, '/departments') ? 'active' : '' ?>">
+                    <span class="icon">🏢</span> Departments
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin', 'base_manager'])): ?>
+                <a href="/bases" class="sidebar-link <?= str_starts_with($currentPath, '/bases') ? 'active' : '' ?>">
+                    <span class="icon">📍</span> Bases
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin', 'chief_pilot', 'engineering_manager'])): ?>
+                <a href="/fleets" class="sidebar-link <?= str_starts_with($currentPath, '/fleets') ? 'active' : '' ?>">
+                    <span class="icon">✈</span> Fleets
+                </a>
+                <?php endif; ?>
+                <?php if (hasRole('airline_admin')): ?>
+                <a href="/airline/profile" class="sidebar-link <?= str_starts_with($currentPath, '/airline') ? 'active' : '' ?>">
+                    <span class="icon">⚙️</span> Airline Profile
+                </a>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- ─── App Install ───────────────────────────── -->
             <div class="sidebar-section">
                 <div class="sidebar-section-title">App</div>

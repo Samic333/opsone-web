@@ -959,6 +959,47 @@ try {
         echo "modules table not found — run migration 009 first.\n";
     }
 
+    // ─── Step 19: Seed demo fleets ────────────────────────
+    echo "Step 19: Seeding demo fleets... ";
+    try {
+        $fleetCheck = $driver === 'sqlite'
+            ? $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='fleets'")->fetchColumn()
+            : $db->query("SHOW TABLES LIKE 'fleets'")->fetchColumn();
+
+        if ($fleetCheck) {
+            $demoFleets = [
+                ['Narrow-body Fleet', 'NBF', 'Boeing 737-800'],
+                ['Wide-body Fleet',   'WBF', 'Airbus A330-300'],
+                ['Regional Fleet',    'REG', 'ATR 72-600'],
+            ];
+            $fleetStmt = $db->prepare(
+                "$insertIgnore INTO fleets (tenant_id, name, code, aircraft_type) VALUES (1, ?, ?, ?)"
+            );
+            foreach ($demoFleets as [$fname, $fcode, $ftype]) {
+                $fleetStmt->execute([$fname, $fcode, $ftype]);
+            }
+
+            // Patch schema for SQLite: add columns if missing
+            if ($driver === 'sqlite') {
+                $userCols = array_column(
+                    $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC), 'name'
+                );
+                foreach (['fleet_id','employment_status','profile_completion_pct'] as $col) {
+                    if (!in_array($col, $userCols)) {
+                        $default = $col === 'profile_completion_pct' ? 'DEFAULT 0' : 'DEFAULT NULL';
+                        $db->exec("ALTER TABLE users ADD COLUMN $col TEXT $default");
+                    }
+                }
+            }
+
+            echo "✓ (3 fleets)\n";
+        } else {
+            echo "fleets table not found — run migration 013 first.\n";
+        }
+    } catch (\Exception $e) {
+        echo "(partial — " . $e->getMessage() . ")\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

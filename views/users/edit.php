@@ -44,6 +44,28 @@
         </div>
         <div class="form-row">
             <div class="form-group">
+                <label for="fleet_id">Fleet</label>
+                <select id="fleet_id" name="fleet_id" class="form-control">
+                    <option value="">— Select —</option>
+                    <?php foreach ($fleets as $f): ?>
+                    <option value="<?= $f['id'] ?>" <?= ($user['fleet_id'] ?? '') == $f['id'] ? 'selected' : '' ?>>
+                        <?= e($f['name']) ?><?= $f['code'] ? ' (' . e($f['code']) . ')' : '' ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="employment_status">Employment Type</label>
+                <select id="employment_status" name="employment_status" class="form-control">
+                    <option value="">— Select —</option>
+                    <?php foreach (['full_time'=>'Full Time','part_time'=>'Part Time','contract'=>'Contract','secondment'=>'Secondment','trainee'=>'Trainee'] as $val => $label): ?>
+                    <option value="<?= $val ?>" <?= ($user['employment_status'] ?? '') === $val ? 'selected' : '' ?>><?= $label ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
                 <label for="status">Status</label>
                 <select id="status" name="status" class="form-control">
                     <?php foreach (['pending','active','suspended','inactive'] as $s): ?>
