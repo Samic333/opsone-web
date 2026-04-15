@@ -30,7 +30,7 @@ $insertIgnore = ($driver === 'sqlite') ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
 try {
     $db = Database::getInstance();
 
-    // ─── 0. Patch SQLite schema (migrations 004+005) ───────
+    // ─── 0. Patch SQLite schema (migrations 004+005+010+012) ──
     if ($driver === 'sqlite') {
         echo "Patching SQLite schema...\n";
 
@@ -71,6 +71,78 @@ try {
                 // Ignore "already exists" / "duplicate column" errors
             }
         }
+
+        // Migration 010+012 — SQLite cannot ALTER a NOT NULL column to nullable.
+        // Detect whether users.tenant_id is still NOT NULL by inspecting PRAGMA
+        // and recreate the table if needed (SQLite table-swap pattern).
+        $pragmaUsers = $db->query("PRAGMA table_info(users)")->fetchAll(PDO::FETCH_ASSOC);
+        $tenantCol   = array_filter($pragmaUsers, fn($c) => $c['name'] === 'tenant_id');
+        $tenantCol   = reset($tenantCol);
+        if ($tenantCol && (int)$tenantCol['notnull'] === 1) {
+            echo "  Rebuilding users table (nullable tenant_id)...\n";
+            $db->exec("PRAGMA foreign_keys = OFF");
+            $db->exec("
+                CREATE TABLE users_new (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tenant_id     INTEGER DEFAULT NULL,
+                    name          TEXT    NOT NULL,
+                    email         TEXT    NOT NULL,
+                    password_hash TEXT    NOT NULL,
+                    employee_id   TEXT,
+                    department_id INTEGER,
+                    base_id       INTEGER,
+                    status        TEXT    NOT NULL DEFAULT 'pending',
+                    mobile_access INTEGER NOT NULL DEFAULT 1,
+                    avatar_path   TEXT,
+                    last_login_at TEXT,
+                    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+                    updated_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+                    web_access    INTEGER NOT NULL DEFAULT 1,
+                    FOREIGN KEY (tenant_id)     REFERENCES tenants(id)     ON DELETE SET NULL,
+                    FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE SET NULL,
+                    FOREIGN KEY (base_id)       REFERENCES bases(id)       ON DELETE SET NULL
+                )
+            ");
+            $db->exec("INSERT INTO users_new SELECT
+                id, tenant_id, name, email, password_hash, employee_id,
+                department_id, base_id, status, mobile_access, avatar_path,
+                last_login_at, created_at, updated_at,
+                COALESCE(web_access, 1)
+              FROM users");
+            $db->exec("DROP TABLE users");
+            $db->exec("ALTER TABLE users_new RENAME TO users");
+            $db->exec("CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_tenant ON users(email, tenant_id)");
+            $db->exec("PRAGMA foreign_keys = ON");
+            echo "  ✓ users table rebuilt\n";
+        }
+
+        // Migration 012 — make user_roles.tenant_id nullable in SQLite
+        $pragmaUR  = $db->query("PRAGMA table_info(user_roles)")->fetchAll(PDO::FETCH_ASSOC);
+        $urTenantCol = array_filter($pragmaUR, fn($c) => $c['name'] === 'tenant_id');
+        $urTenantCol = reset($urTenantCol);
+        if ($urTenantCol && (int)$urTenantCol['notnull'] === 1) {
+            echo "  Rebuilding user_roles table (nullable tenant_id)...\n";
+            $db->exec("PRAGMA foreign_keys = OFF");
+            $db->exec("
+                CREATE TABLE user_roles_new (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     INTEGER NOT NULL,
+                    role_id     INTEGER NOT NULL,
+                    tenant_id   INTEGER DEFAULT NULL,
+                    assigned_at TEXT    NOT NULL DEFAULT (datetime('now')),
+                    FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
+                    FOREIGN KEY (role_id)   REFERENCES roles(id)   ON DELETE CASCADE,
+                    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE SET NULL,
+                    UNIQUE (user_id, role_id)
+                )
+            ");
+            $db->exec("INSERT OR IGNORE INTO user_roles_new SELECT id, user_id, role_id, tenant_id, assigned_at FROM user_roles");
+            $db->exec("DROP TABLE user_roles");
+            $db->exec("ALTER TABLE user_roles_new RENAME TO user_roles");
+            $db->exec("PRAGMA foreign_keys = ON");
+            echo "  ✓ user_roles table rebuilt\n";
+        }
+
         echo "  ✓ Schema patches applied\n\n";
     }
 
