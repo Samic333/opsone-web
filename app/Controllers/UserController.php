@@ -16,7 +16,7 @@ class UserController {
 
     public function create(): void {
         $tenantId    = currentTenantId();
-        $roles       = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $roles       = Database::fetchAll("SELECT MIN(id) as id, name, slug FROM roles WHERE tenant_id = ? GROUP BY slug ORDER BY name", [$tenantId]);
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $fleets      = Fleet::allForTenant($tenantId);
@@ -92,7 +92,7 @@ class UserController {
             redirect('/users');
         }
         $tenantId    = currentTenantId();
-        $roles       = Database::fetchAll("SELECT * FROM roles WHERE tenant_id = ? ORDER BY name", [$tenantId]);
+        $roles       = Database::fetchAll("SELECT MIN(id) as id, name, slug FROM roles WHERE tenant_id = ? GROUP BY slug ORDER BY name", [$tenantId]);
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $fleets      = Fleet::allForTenant($tenantId);
