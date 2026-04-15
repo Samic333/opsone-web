@@ -44,6 +44,29 @@ class FileModel {
         );
     }
 
+    public static function update(int $id, array $data): void {
+        Database::execute(
+            "UPDATE files SET title = ?, description = ?, category_id = ?, version = ?,
+             status = ?, effective_date = ?, expires_at = ?, requires_ack = ?,
+             updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            [
+                $data['title'], $data['description'] ?: null,
+                $data['category_id'] ?: null, $data['version'] ?? '1.0',
+                $data['status'] ?? 'draft', $data['effective_date'] ?: null,
+                $data['expires_at'] ?: null, $data['requires_ack'] ?? 0,
+                $id,
+            ]
+        );
+    }
+
+    public static function getRoleVisibilityIds(int $fileId): array {
+        $rows = Database::fetchAll(
+            "SELECT role_id FROM file_role_visibility WHERE file_id = ?",
+            [$fileId]
+        );
+        return array_column($rows, 'role_id');
+    }
+
     public static function togglePublish(int $id): void {
         $file = self::find($id);
         if (!$file) return;

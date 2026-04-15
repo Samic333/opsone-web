@@ -1093,6 +1093,40 @@ try {
         echo "(partial — " . $e->getMessage() . ")\n";
     }
 
+    // ─── Step 21: Seed notice_categories ──────────────────
+    echo "Step 21: Seeding notice categories... ";
+    try {
+        // Ensure notice_categories table exists (migration 015)
+        $ncTable = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='notice_categories'")->fetchColumn();
+        if (!$ncTable) {
+            $db->exec("CREATE TABLE IF NOT EXISTS notice_categories (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id  INTEGER NOT NULL,
+                name       TEXT    NOT NULL,
+                slug       TEXT    NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT    NOT NULL DEFAULT (datetime('now')),
+                UNIQUE (tenant_id, slug)
+            )");
+        }
+        // Seed standard categories for tenant 1
+        $cats = [
+            ['General',       'general',       0],
+            ['Operational',   'operational',   1],
+            ['Safety',        'safety',        2],
+            ['Training',      'training',      3],
+            ['Policy',        'policy',        4],
+            ['Schedule',      'schedule',      5],
+            ['HR Bulletin',   'hr_bulletin',   6],
+        ];
+        foreach ($cats as [$name, $slug, $order]) {
+            $db->exec("INSERT OR IGNORE INTO notice_categories (tenant_id, name, slug, sort_order) VALUES (1, '$name', '$slug', $order)");
+        }
+        echo "✓\n";
+    } catch (\Exception $e) {
+        echo "(partial — " . $e->getMessage() . ")\n";
+    }
+
     // ─── Summary ──────────────────────────────────────────
     echo "\n" . str_repeat('─', 55) . "\n";
     echo "✅  Demo environment ready!\n\n";

@@ -207,7 +207,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php endif; ?>
 
-            <!-- ─── My Profile (all logged-in crew) ─────── -->
+            <!-- ─── Me (all logged-in crew) ─────────────── -->
             <?php if (hasAnyRole(['pilot','cabin_crew','engineer','scheduler','chief_pilot',
                                    'head_cabin_crew','engineering_manager','base_manager',
                                    'training_admin','fdm_analyst','document_control','safety_officer'])): ?>
@@ -215,6 +215,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <div class="sidebar-section-title">Me</div>
                 <a href="/my-profile" class="sidebar-link <?= str_starts_with($currentPath, '/my-profile') ? 'active' : '' ?>">
                     <span class="icon">👤</span> My Profile
+                </a>
+                <a href="/my-notices" class="sidebar-link <?= str_starts_with($currentPath, '/my-notices') ? 'active' : '' ?>">
+                    <span class="icon">📬</span> My Notices
                 </a>
             </div>
             <?php endif; ?>
@@ -244,8 +247,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <span class="icon">📄</span> Documents
                 </a>
                 <?php if (hasAnyRole(['airline_admin','safety_officer','document_control','chief_pilot',
-                                       'head_cabin_crew','engineering_manager','hr',
-                                       'pilot','cabin_crew','engineer'])): ?>
+                                       'head_cabin_crew','engineering_manager','hr','training_admin'])): ?>
                 <a href="/notices" class="sidebar-link <?= str_starts_with($currentPath, '/notices') ? 'active' : '' ?>">
                     <span class="icon">📢</span> Notices
                 </a>

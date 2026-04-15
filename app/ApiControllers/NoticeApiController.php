@@ -20,7 +20,10 @@ class NoticeApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
-        $notices  = Notice::allForTenant($tenantId, publishedOnly: true);
+        // Filter by user's roles so role-targeted notices are respected
+        $userRoles = UserModel::getRoles($user['id']);
+        $roleSlugs = array_column($userRoles, 'slug');
+        $notices   = Notice::forUserRoles($tenantId, $roleSlugs);
 
         // Fetch read/ack state for this user in one query
         $readMap = [];

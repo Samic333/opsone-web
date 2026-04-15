@@ -106,6 +106,67 @@ class FileController {
         redirect('/files');
     }
 
+    public function edit(int $id): void {
+        $file = FileModel::find($id);
+        if (!$file || $file['tenant_id'] != currentTenantId()) {
+            flash('error', 'Document not found.');
+            redirect('/files');
+        }
+
+        $tenantId      = currentTenantId();
+        $categories    = FileModel::getCategories($tenantId);
+        $roles         = Database::fetchAll(
+            "SELECT MIN(id) as id, name, slug FROM roles WHERE tenant_id = ? GROUP BY slug ORDER BY name",
+            [$tenantId]
+        );
+        $selectedRoles = FileModel::getRoleVisibilityIds($id);
+
+        $pageTitle    = 'Edit Document';
+        $pageSubtitle = e($file['title']);
+
+        ob_start();
+        require VIEWS_PATH . '/files/edit.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function update(int $id): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/files/edit/$id");
+        }
+
+        $file = FileModel::find($id);
+        if (!$file || $file['tenant_id'] != currentTenantId()) {
+            flash('error', 'Document not found.');
+            redirect('/files');
+        }
+
+        $title = trim($_POST['title'] ?? '');
+        if (empty($title)) {
+            flash('error', 'Document title is required.');
+            redirect("/files/edit/$id");
+        }
+
+        FileModel::update($id, [
+            'title'          => $title,
+            'description'    => trim($_POST['description'] ?? ''),
+            'category_id'    => (int)($_POST['category_id'] ?? 0),
+            'version'        => trim($_POST['version'] ?? '1.0'),
+            'status'         => $_POST['status'] ?? 'draft',
+            'effective_date' => $_POST['effective_date'] ?? null,
+            'expires_at'     => $_POST['expires_at'] ?? null,
+            'requires_ack'   => isset($_POST['requires_ack']) ? 1 : 0,
+        ]);
+
+        $visibleRoles = $_POST['visible_roles'] ?? [];
+        FileModel::setRoleVisibility($id, array_map('intval', $visibleRoles));
+
+        AuditLog::log('Updated File', 'file', $id, "Updated: $title");
+        flash('success', "Document \"$title\" updated.");
+        redirect('/files');
+    }
+
     public function togglePublish(int $id): void {
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');

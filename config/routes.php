@@ -126,18 +126,27 @@ return [
     'GET /files'               => ['FileController', 'index'],
     'GET /files/upload'        => ['FileController', 'showUpload'],
     'POST /files/upload'       => ['FileController', 'upload'],
+    'GET /files/edit/{id}'     => ['FileController', 'edit'],
+    'POST /files/update/{id}'  => ['FileController', 'update'],
     'POST /files/toggle/{id}'  => ['FileController', 'togglePublish'],
     'GET /files/download/{id}' => ['FileController', 'download'],
     'POST /files/delete/{id}'  => ['FileController', 'delete'],
 
     // ─── Notices ───────────────────────
-    'GET /notices'               => ['NoticeController', 'index'],
-    'GET /notices/create'        => ['NoticeController', 'create'],
-    'POST /notices/store'        => ['NoticeController', 'store'],
-    'GET /notices/edit/{id}'     => ['NoticeController', 'edit'],
-    'POST /notices/update/{id}'  => ['NoticeController', 'update'],
-    'POST /notices/toggle/{id}'  => ['NoticeController', 'togglePublish'],
-    'POST /notices/delete/{id}'  => ['NoticeController', 'delete'],
+    'GET /notices'                              => ['NoticeController', 'index'],
+    'GET /notices/create'                       => ['NoticeController', 'create'],
+    'POST /notices/store'                       => ['NoticeController', 'store'],
+    'GET /notices/edit/{id}'                    => ['NoticeController', 'edit'],
+    'POST /notices/update/{id}'                 => ['NoticeController', 'update'],
+    'POST /notices/toggle/{id}'                 => ['NoticeController', 'togglePublish'],
+    'POST /notices/delete/{id}'                 => ['NoticeController', 'delete'],
+    'GET /notices/categories'                   => ['NoticeController', 'categories'],
+    'POST /notices/categories/store'            => ['NoticeController', 'storeCategory'],
+    'POST /notices/categories/delete/{id}'      => ['NoticeController', 'deleteCategory'],
+
+    // ─── Crew Notices Portal ────────────────
+    'GET /my-notices'                           => ['NoticeController', 'myNotices'],
+    'POST /my-notices/acknowledge/{id}'         => ['NoticeController', 'acknowledgeNotice'],
 
     // ─── Roster ────────────────────────
     'GET /roster'                  => ['RosterController', 'index'],
