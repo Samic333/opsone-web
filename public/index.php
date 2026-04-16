@@ -6,7 +6,20 @@
 
 // Error reporting
 error_reporting(E_ALL);
-ini_set('display_errors', '0');
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+
+// Extreme debug catch-all for Namecheap suppressed errors
+set_exception_handler(function($e) {
+    http_response_code(500);
+    echo "<div style='font-family:monospace; padding: 20px; background: #fff1f0; color: #a80000; border: 1px solid #ffa39e;'>";
+    echo "<h2 style='margin-top:0;'>Fatal Application Error</h2>";
+    echo "<strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "<br><br>";
+    echo "<strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "<br><br>";
+    echo "<strong>Trace:</strong><br><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+    echo "</div>";
+    exit;
+});
 
 // Define base paths
 define('BASE_PATH', dirname(__DIR__));
