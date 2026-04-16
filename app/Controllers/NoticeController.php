@@ -258,7 +258,7 @@ class NoticeController {
         // Mark all as read
         foreach ($notices as $notice) {
             Database::execute(
-                "INSERT OR IGNORE INTO notice_reads (notice_id, user_id, tenant_id) VALUES (?, ?, ?)",
+                Database::insertIgnore() . " INTO notice_reads (notice_id, user_id, tenant_id) VALUES (?, ?, ?)",
                 [$notice['id'], $userId, $tenantId]
             );
         }
@@ -281,7 +281,7 @@ class NoticeController {
         $userId   = (int) currentUser()['id'];
         $tenantId = currentTenantId();
         Database::execute(
-            "INSERT OR IGNORE INTO notice_reads (notice_id, user_id, tenant_id) VALUES (?, ?, ?)",
+            Database::insertIgnore() . " INTO notice_reads (notice_id, user_id, tenant_id) VALUES (?, ?, ?)",
             [$id, $userId, $tenantId]
         );
         Database::execute(

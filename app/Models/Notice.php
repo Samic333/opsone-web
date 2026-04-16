@@ -125,7 +125,7 @@ class Notice {
 
     public static function createCategory(int $tenantId, string $name, string $slug): void {
         Database::execute(
-            "INSERT OR IGNORE INTO notice_categories (tenant_id, name, slug) VALUES (?, ?, ?)",
+            Database::insertIgnore() . " INTO notice_categories (tenant_id, name, slug) VALUES (?, ?, ?)",
             [$tenantId, $name, $slug]
         );
     }

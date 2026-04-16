@@ -72,6 +72,14 @@ class Database {
         return self::query($sql, $params)->rowCount();
     }
 
+    /**
+     * Returns the correct INSERT-or-skip keyword for the current driver.
+     * Usage: Database::insertIgnore() . " INTO table ..."
+     */
+    public static function insertIgnore(): string {
+        return env('DB_DRIVER', 'mysql') === 'sqlite' ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
+    }
+
     public static function beginTransaction(): void {
         self::getInstance()->beginTransaction();
     }

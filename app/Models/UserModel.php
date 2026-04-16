@@ -117,7 +117,7 @@ class UserModel {
 
     public static function assignRole(int $userId, int $roleId, int $tenantId): void {
         Database::execute(
-            "INSERT OR IGNORE INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)",
+            Database::insertIgnore() . " INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, ?)",
             [$userId, $roleId, $tenantId]
         );
     }
