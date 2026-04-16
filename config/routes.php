@@ -204,6 +204,17 @@ return [
     'POST /roster/changes/request'          => ['RosterController', 'requestChange'],
     'POST /roster/changes/respond/{id}'     => ['RosterController', 'respondToChange'],
 
+    // ─── Roster: Revisions ─────────────
+    'GET /roster/revisions'                 => ['RosterController', 'revisions'],
+    'GET /roster/revisions/create'          => ['RosterController', 'createRevisionForm'],
+    'POST /roster/revisions/store'          => ['RosterController', 'storeRevision'],
+
+    // ─── Roster: Coverage & Conflicts ──
+    'GET /roster/coverage'                  => ['RosterController', 'coverage'],
+
+    // ─── Personal Roster (crew self-service) ──
+    'GET /my-roster'                        => ['RosterController', 'myRoster'],
+
     // ─── FDM ───────────────────────────
     'GET /fdm'                                       => ['FdmController', 'index'],
     'GET /fdm/upload'                                => ['FdmController', 'uploadForm'],

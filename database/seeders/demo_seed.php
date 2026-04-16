@@ -323,6 +323,17 @@ try {
         ['Eric Mbeki',            'demo.engineer@acentoza.com',    'ENG-007', 'ENG', 'NBO', 1, 1],
         // Optional roles
         ['Ruth Nambozo',          'demo.training@acentoza.com',    'TRN-001', 'HR',  'NBO', 1, 0],
+        // Additional operational crew (roster workbench demo users — mobile optional)
+        ['Capt. Lydia Mumo',      'demo.pilot2@acentoza.com',      'FLT-002', 'FLT', 'NBO', 1, 1],
+        ['FO Daniel Otieno',      'demo.pilot3@acentoza.com',      'FLT-003', 'FLT', 'NBO', 1, 1],
+        ['FO Samuel Bekele',      'demo.pilot4@acentoza.com',      'FLT-004', 'FLT', 'MBA', 1, 1],
+        ['Capt. Fatuma Wangari',  'demo.pilot5@acentoza.com',      'FLT-005', 'FLT', 'MBA', 1, 1],
+        ['FO Amina Osei',         'demo.pilot6@acentoza.com',      'FLT-006', 'FLT', 'EBB', 1, 1],
+        ['Halima Abdi',           'demo.cabin2@acentoza.com',      'CAB-021', 'CAB', 'NBO', 1, 1],
+        ['Kevin Mwangi',          'demo.cabin3@acentoza.com',      'CAB-022', 'CAB', 'NBO', 1, 1],
+        ['Aisha Mwamba',          'demo.cabin4@acentoza.com',      'CAB-023', 'CAB', 'EBB', 1, 1],
+        ['James Ochieng',         'demo.engineer2@acentoza.com',   'ENG-008', 'ENG', 'NBO', 1, 1],
+        ['Wanjiru Kariuki',       'demo.engineer3@acentoza.com',   'ENG-009', 'ENG', 'MBA', 1, 1],
     ];
 
     if ($hasWebAccess) {
@@ -399,6 +410,17 @@ try {
         'demo.cabin@acentoza.com'       => ['cabin_crew'],
         'demo.engineer@acentoza.com'    => ['engineer'],
         'demo.training@acentoza.com'    => ['training_admin'],
+        // Additional operational crew
+        'demo.pilot2@acentoza.com'      => ['chief_pilot'],
+        'demo.pilot3@acentoza.com'      => ['pilot'],
+        'demo.pilot4@acentoza.com'      => ['pilot'],
+        'demo.pilot5@acentoza.com'      => ['chief_pilot'],
+        'demo.pilot6@acentoza.com'      => ['pilot'],
+        'demo.cabin2@acentoza.com'      => ['cabin_crew'],
+        'demo.cabin3@acentoza.com'      => ['cabin_crew'],
+        'demo.cabin4@acentoza.com'      => ['cabin_crew'],
+        'demo.engineer2@acentoza.com'   => ['engineer'],
+        'demo.engineer3@acentoza.com'   => ['engineer'],
     ];
 
     $airAssignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, 1)");
@@ -725,40 +747,105 @@ try {
             $month    = (int) $today->format('n');
             $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
-            $pilotPattern   = ['flight','flight','flight','off','off','standby','flight','flight','rest','off','flight','sim','off','off','flight','flight','standby','off','leave','flight','flight','off','flight','rest','off','flight','flight','off','standby','flight','flight'];
-            $cabinPattern   = ['flight','flight','flight','off','off','flight','flight','standby','off','off','flight','flight','rest','off','flight','flight','off','standby','leave','flight','flight','off','off','flight','rest','off','flight','flight','off','standby','flight'];
-            $chiefPattern   = ['flight','off','off','flight','flight','training','off','flight','flight','off','off','sim','off','flight','flight','off','off','flight','flight','off','off','flight','training','off','flight','flight','off','off','flight','off','off'];
-            $engPattern     = ['off','off','training','off','off','off','training','off','off','off','off','sim','off','off','training','off','off','off','off','off','training','off','off','off','off','off','training','off','off','off','off'];
-            $headCabinPat   = ['off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off','flight','flight','off','off','standby','off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off'];
-
+            // Duty type codes for realistic display
+            $dutyCodes = [
+                'flight'   => ['NBO-DXB','NBO-ADD','NBO-MBA','NBO-KGL','NBO-EBB','NBO-DAR','MBA-NBO','EBB-NBO'],
+                'standby'  => ['ASBY','HSBY','RSBY'],
+                'reserve'  => ['RES','POOL'],
+                'sim'      => ['OPC','LPC','SIM-EM','LOFT'],
+                'training' => ['CRM','SMS','SEC','FA-REF','LDR'],
+                'check'    => ['OPC-CHK','LPC-CHK','LINE-CHK'],
+                'leave'    => ['AL','SL',''],
+                'off'      => [''],
+                'rest'     => [''],
+                'admin'    => ['ADMIN','BRF'],
+                'pos'      => ['POS-EBB','POS-MBA','POS-KGL'],
+                'maint'    => ['MNT-A','MNT-B','RTB'],
+            ];
             $dutyNotes = [
-                'flight'   => ['Route NBO-DXB','Route NBO-ADD','Route NBO-LHR','Route NBO-DAR','Route NBO-LOS','', ''],
-                'sim'      => ['B737-800 OPC','B737-800 LPC','Emergency procedures','LOFT session'],
-                'training' => ['CRM training','CFIT awareness','SMS induction','Leadership workshop','First aid refresher'],
-                'standby'  => ['Airport standby','Home standby','', ''],
+                'flight'   => ['Q400 service NBO-DXB','Q400 service NBO-ADD','ATR72 NBO-MBA','Q400 NBO-EBB','Q400 NBO-KGL','Caravan NBO-WIL','',''],
+                'sim'      => ['Q400 OPC — NBO','ATR72 LPC simulator','Emergency procedures sim','LOFT / threat & error'],
+                'training' => ['CRM annual','CFIT awareness briefing','SMS / hazard reporting','First aid refresher','Leadership workshop'],
+                'standby'  => ['Airport standby NBO','Home standby — contactable','Crew control reserve pool'],
+                'reserve'  => ['Reserve pool — airport','Home reserve'],
                 'leave'    => ['Annual leave','Sick leave',''],
                 'off'      => ['','',''],
                 'rest'     => ['',''],
+                'check'    => ['Annual OPC','Line check','LPC check'],
+                'admin'    => ['Admin day','Briefing day'],
+                'pos'      => ['Position to MBA for pairing','Position to EBB for pairing'],
+                'maint'    => ['A-check NBO hangar','Component change','RTB inspection'],
             ];
 
+            // Captain/FO patterns (staggered offsets so grid looks realistic)
+            $captPattern = ['flight','flight','flight','off','off','standby','flight','flight','rest','off','flight','sim','off','off','flight','flight','reserve','off','leave','flight','flight','off','flight','rest','off','flight','flight','off','standby','flight','flight'];
+            $foPattern   = ['off','flight','flight','flight','off','flight','flight','standby','rest','off','off','flight','flight','off','flight','flight','off','standby','flight','flight','off','rest','flight','flight','off','off','flight','flight','standby','off','flight'];
+            $foPattern2  = ['flight','off','off','flight','flight','flight','off','off','flight','sim','off','flight','flight','off','off','flight','flight','off','rest','flight','standby','off','flight','flight','off','flight','off','off','flight','training','off'];
+            $captPattern2= ['off','flight','flight','off','flight','flight','training','off','flight','flight','off','sim','off','flight','flight','off','off','standby','flight','flight','off','off','flight','flight','rest','off','flight','flight','off','flight','off'];
+            $foPattern3  = ['standby','flight','flight','off','off','flight','flight','off','rest','flight','flight','off','off','standby','flight','flight','off','flight','flight','off','off','rest','flight','off','flight','flight','off','off','training','flight','off'];
+
+            // Cabin crew patterns
+            $cabinPat1 = ['flight','flight','flight','off','off','flight','flight','standby','off','off','flight','flight','rest','off','flight','flight','off','standby','leave','flight','flight','off','off','flight','rest','off','flight','flight','off','standby','flight'];
+            $cabinPat2 = ['off','off','flight','flight','flight','off','flight','flight','off','standby','flight','flight','off','off','flight','flight','rest','flight','flight','off','standby','off','off','flight','flight','off','flight','flight','off','off','flight'];
+            $cabinPat3 = ['flight','off','flight','flight','off','off','flight','flight','rest','flight','off','standby','flight','flight','off','off','flight','flight','off','off','flight','rest','off','flight','training','flight','off','off','flight','flight','off'];
+            $headCabinPat = ['off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off','flight','flight','off','off','standby','off','flight','flight','off','off','flight','training','off','off','flight','flight','off','off'];
+
+            // Engineering patterns
+            $engPat1 = ['maint','maint','off','off','maint','maint','off','off','training','maint','maint','off','off','maint','maint','off','off','sim','off','maint','maint','off','off','maint','maint','off','off','training','maint','maint','off'];
+            $engPat2 = ['off','maint','maint','off','off','training','maint','maint','off','off','maint','maint','off','off','sim','maint','off','off','maint','maint','off','off','training','maint','maint','off','off','maint','off','off','maint'];
+            $engPat3 = ['maint','off','off','maint','maint','off','off','maint','training','off','maint','maint','off','off','maint','off','sim','maint','maint','off','off','maint','maint','off','off','training','maint','off','off','maint','maint'];
+
+            $airUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+
             $userPatterns = [];
-            if ($pilotId)       $userPatterns[$pilotId]      = $pilotPattern;
-            if ($cabinId)       $userPatterns[$cabinId]      = $cabinPattern;
-            if ($chiefPilotId)  $userPatterns[$chiefPilotId] = $chiefPattern;
-            if ($engId)         $userPatterns[$engId]        = $engPattern;
-            $headCabinId = $uids['demo.headcabin@acentoza.com'] ?? null;
-            if ($headCabinId) $userPatterns[$headCabinId] = $headCabinPat;
+            $pid = $airUserIds['demo.pilot@acentoza.com']      ?? null;  // Capt. Rashid Hussein
+            $p2  = $airUserIds['demo.pilot2@acentoza.com']     ?? null;  // Capt. Lydia Mumo
+            $p3  = $airUserIds['demo.pilot3@acentoza.com']     ?? null;  // FO Daniel Otieno
+            $p4  = $airUserIds['demo.pilot4@acentoza.com']     ?? null;  // FO Samuel Bekele
+            $p5  = $airUserIds['demo.pilot5@acentoza.com']     ?? null;  // Capt. Fatuma Wangari
+            $p6  = $airUserIds['demo.pilot6@acentoza.com']     ?? null;  // FO Amina Osei
+            $cpId= $airUserIds['demo.chiefpilot@acentoza.com'] ?? null;  // Capt. Ahmed Mansoori
+            $c1  = $airUserIds['demo.cabin@acentoza.com']      ?? null;  // Noor Al-Rashidi
+            $c2  = $airUserIds['demo.cabin2@acentoza.com']     ?? null;  // Halima Abdi
+            $c3  = $airUserIds['demo.cabin3@acentoza.com']     ?? null;  // Kevin Mwangi
+            $c4  = $airUserIds['demo.cabin4@acentoza.com']     ?? null;  // Aisha Mwamba
+            $hcId= $airUserIds['demo.headcabin@acentoza.com']  ?? null;  // Grace Okonkwo
+            $e1  = $airUserIds['demo.engineer@acentoza.com']   ?? null;  // Eric Mbeki
+            $e2  = $airUserIds['demo.engineer2@acentoza.com']  ?? null;  // James Ochieng
+            $e3  = $airUserIds['demo.engineer3@acentoza.com']  ?? null;  // Wanjiru Kariuki
+
+            if ($pid)  $userPatterns[$pid]  = $captPattern;
+            if ($p2)   $userPatterns[$p2]   = $captPattern2;
+            if ($p3)   $userPatterns[$p3]   = $foPattern;
+            if ($p4)   $userPatterns[$p4]   = $foPattern2;
+            if ($p5)   $userPatterns[$p5]   = $captPattern;   // shifted below
+            if ($p6)   $userPatterns[$p6]   = $foPattern3;
+            if ($cpId) $userPatterns[$cpId] = $captPattern2;
+            if ($c1)   $userPatterns[$c1]   = $cabinPat1;
+            if ($c2)   $userPatterns[$c2]   = $cabinPat2;
+            if ($c3)   $userPatterns[$c3]   = $cabinPat3;
+            if ($c4)   $userPatterns[$c4]   = $cabinPat1;   // offset below
+            if ($hcId) $userPatterns[$hcId] = $headCabinPat;
+            if ($e1)   $userPatterns[$e1]   = $engPat1;
+            if ($e2)   $userPatterns[$e2]   = $engPat2;
+            if ($e3)   $userPatterns[$e3]   = $engPat3;
+
+            // Offsets for users sharing a base pattern (shift by N days so grid varies)
+            $offsets = [$p5 => 5, $c4 => 3];
 
             foreach ($userPatterns as $uid => $pattern) {
+                $offset = $offsets[$uid] ?? 0;
                 for ($d = 1; $d <= $daysInMonth; $d++) {
-                    $idx      = ($d - 1) % count($pattern);
+                    $idx      = ($d - 1 + $offset) % count($pattern);
                     $dutyType = $pattern[$idx];
                     $dateStr  = sprintf('%04d-%02d-%02d', $year, $month, $d);
 
-                    $notesPool = $dutyNotes[$dutyType] ?? [''];
-                    $note = $notesPool[array_rand($notesPool)];
+                    $codePool  = $dutyCodes[$dutyType]  ?? [''];
+                    $notesPool = $dutyNotes[$dutyType]  ?? [''];
+                    $code      = $codePool[array_rand($codePool)] ?: null;
+                    $note      = $notesPool[array_rand($notesPool)] ?: null;
 
-                    $rStmt->execute([$uid, $dateStr, $dutyType, null, $note ?: null]);
+                    $rStmt->execute([$uid, $dateStr, $dutyType, $code, $note]);
                 }
             }
             echo "✓\n";
@@ -1186,6 +1273,55 @@ try {
             }
         }
 
+        // Also create revision tables for SQLite dev
+        if ($driver === 'sqlite') {
+            $db->exec("CREATE TABLE IF NOT EXISTS roster_revisions (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id        INTEGER NOT NULL,
+                roster_period_id INTEGER DEFAULT NULL,
+                revision_ref     TEXT NOT NULL,
+                reason           TEXT NOT NULL,
+                change_source    TEXT NOT NULL DEFAULT 'scheduler',
+                status           TEXT NOT NULL DEFAULT 'draft',
+                requested_by     INTEGER DEFAULT NULL,
+                approved_by      INTEGER DEFAULT NULL,
+                approved_at      TEXT DEFAULT NULL,
+                issued_at        TEXT DEFAULT NULL,
+                notes            TEXT DEFAULT NULL,
+                created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+                updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+            )");
+            $db->exec("CREATE TABLE IF NOT EXISTS roster_revision_items (
+                id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+                roster_revision_id  INTEGER NOT NULL,
+                tenant_id           INTEGER NOT NULL,
+                user_id             INTEGER NOT NULL,
+                roster_date         TEXT NOT NULL,
+                old_duty_type       TEXT DEFAULT NULL,
+                old_duty_code       TEXT DEFAULT NULL,
+                new_duty_type       TEXT DEFAULT NULL,
+                new_duty_code       TEXT DEFAULT NULL,
+                change_note         TEXT DEFAULT NULL,
+                acknowledged_at     TEXT DEFAULT NULL,
+                created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+            )");
+            // Extend roster_periods if columns missing
+            $rpCols = array_column($db->query("PRAGMA table_info(roster_periods)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+            foreach (['crew_group','fleet_id','published_by','published_at','frozen_at','revision_number'] as $c) {
+                if (!in_array($c, $rpCols)) {
+                    $default = ($c === 'revision_number') ? '0' : 'NULL';
+                    $db->exec("ALTER TABLE roster_periods ADD COLUMN $c TEXT DEFAULT $default");
+                }
+            }
+            // Extend rosters if columns missing
+            $rCols = array_column($db->query("PRAGMA table_info(rosters)")->fetchAll(PDO::FETCH_ASSOC), 'name');
+            foreach (['acknowledged_at','revision_id','is_revision'] as $c) {
+                if (!in_array($c, $rCols)) {
+                    $db->exec("ALTER TABLE rosters ADD COLUMN $c " . ($c === 'is_revision' ? "INTEGER NOT NULL DEFAULT 0" : "TEXT DEFAULT NULL"));
+                }
+            }
+        }
+
         if ($canSeed22) {
             // Find the scheduler or admin user to use as created_by
             $schedulerUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='scheduler' LIMIT 1")->fetchColumn();
@@ -1219,19 +1355,44 @@ try {
                 }
             }
 
-            // Seed two demo change requests
-            $crewUser = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='pilot' LIMIT 1")->fetchColumn();
-            $nextPeriodId = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='draft' LIMIT 1")->fetchColumn();
-            if ($crewUser && $nextPeriodId) {
-                $existing = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? AND roster_period_id=?");
-                $existing->execute([$crewUser, $nextPeriodId]);
-                if (!$existing->fetchColumn()) {
-                    $stmt = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'leave_request', 'Requesting 3 days leave from the 12th to 14th for a family event. Thank you.', 'pending')");
-                    $stmt->execute([$nextPeriodId, $crewUser, $crewUser]);
-                    $stmt2 = $db->prepare("INSERT INTO roster_changes (tenant_id, roster_period_id, user_id, requested_by, change_type, message, status) VALUES (1, ?, ?, ?, 'swap_request', 'Would like to swap my 18th standby with someone. Available to cover flight duty on the 22nd instead.', 'pending')");
-                    $stmt2->execute([$nextPeriodId, $crewUser, $crewUser]);
+            // Seed realistic change requests from multiple crew
+            $pilotUid  = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='pilot' LIMIT 1")->fetchColumn();
+            $cabinUid  = $db->query("SELECT u.id FROM users u JOIN user_roles ur ON ur.user_id=u.id JOIN roles r ON r.id=ur.role_id WHERE u.tenant_id=1 AND r.slug='cabin_crew' LIMIT 1")->fetchColumn();
+            $nextPId   = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='draft' LIMIT 1")->fetchColumn();
+            $pubPId    = $db->query("SELECT id FROM roster_periods WHERE tenant_id=1 AND status='published' LIMIT 1")->fetchColumn();
+
+            if ($pilotUid) {
+                $existCk = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? LIMIT 1");
+                $existCk->execute([$pilotUid]);
+                if (!$existCk->fetchColumn()) {
+                    $db->prepare("INSERT INTO roster_changes (tenant_id,roster_period_id,user_id,requested_by,change_type,message,status) VALUES (1,?,?,?,'leave_request','Requesting 3 days leave from the 12th to 14th — family event in Mombasa. Happy to cover a standby on the 20th in exchange. Thank you.','pending')")->execute([$nextPId, $pilotUid, $pilotUid]);
+                    $db->prepare("INSERT INTO roster_changes (tenant_id,roster_period_id,user_id,requested_by,change_type,message,status) VALUES (1,?,?,?,'swap_request','Would like to swap my 18th standby duty with FO Bekele. He has confirmed he can cover. Please advise.','pending')")->execute([$nextPId, $pilotUid, $pilotUid]);
+                    if ($pubPId) {
+                        $db->prepare("INSERT INTO roster_changes (tenant_id,roster_period_id,user_id,requested_by,change_type,message,status) VALUES (1,?,?,?,'correction','My flight duty on the 5th shows NBO-DXB but this was changed to NBO-ADD at short notice. Please update the roster to reflect actual routing.','pending')")->execute([$pubPId, $pilotUid, $pilotUid]);
+                    }
                 }
             }
+            if ($cabinUid) {
+                $existCk2 = $db->prepare("SELECT id FROM roster_changes WHERE tenant_id=1 AND user_id=? LIMIT 1");
+                $existCk2->execute([$cabinUid]);
+                if (!$existCk2->fetchColumn()) {
+                    $db->prepare("INSERT INTO roster_changes (tenant_id,roster_period_id,user_id,requested_by,change_type,message,status) VALUES (1,?,?,?,'leave_request','Requesting sick leave for 3 days from the 8th — medical certificate to follow.','pending')")->execute([$nextPId, $cabinUid, $cabinUid]);
+                }
+            }
+
+            // Seed a sample issued revision (for current published period)
+            if ($pubPId && $adminUser && $pilotUid) {
+                $existRev = $db->query("SELECT id FROM roster_revisions WHERE tenant_id=1 LIMIT 1")->fetchColumn();
+                if (!$existRev) {
+                    $thisDay = date('Y-m-') . '10';
+                    $db->prepare("INSERT INTO roster_revisions (tenant_id,roster_period_id,revision_ref,reason,change_source,status,requested_by,approved_by,issued_at,notes) VALUES (1,?,?,?,?,?,?,?,datetime('now'),?)")
+                       ->execute([$pubPId,'REV-001','Operational change — crew reassignment due to medical standdown','operational','issued',$adminUser,$adminUser,'Capt. Hussein reassigned from NBO-DXB flight on '.date('d M').' to airport standby. FO Bekele upgraded to act as Captain under supervision.']);
+                    $revId = $db->lastInsertId();
+                    $db->prepare("INSERT INTO roster_revision_items (roster_revision_id,tenant_id,user_id,roster_date,old_duty_type,old_duty_code,new_duty_type,new_duty_code,change_note) VALUES (?,1,?,?,?,?,?,?,?)")
+                       ->execute([$revId,$pilotUid,$thisDay,'flight','NBO-DXB','standby','ASBY','Medical standdown — doctor clearance pending']);
+                }
+            }
+
             echo "✓\n";
         }
     } catch (\Exception $e) {
@@ -1259,11 +1420,21 @@ try {
         ['FDM Analyst',                 'demo.fdm@acentoza.com'],
         ['Document Control Manager',    'demo.doccontrol@acentoza.com'],
         ['Base Manager',                'demo.basemanager@acentoza.com'],
-        ['Pilot',                       'demo.pilot@acentoza.com'],
-        ['Cabin Crew',                  'demo.cabin@acentoza.com'],
-        ['Engineer',                    'demo.engineer@acentoza.com'],
-        ['Training Admin',              'demo.training@acentoza.com'],
-        ['System Monitoring Admin',     'demo.sysmonitor@acentoza.com'],
+        ['Pilot (Capt. Rashid Hussein)',    'demo.pilot@acentoza.com'],
+        ['Captain (Capt. Lydia Mumo)',      'demo.pilot2@acentoza.com'],
+        ['FO (Daniel Otieno)',              'demo.pilot3@acentoza.com'],
+        ['FO (Samuel Bekele)',              'demo.pilot4@acentoza.com'],
+        ['Captain (Capt. Fatuma Wangari)', 'demo.pilot5@acentoza.com'],
+        ['FO (Amina Osei)',                 'demo.pilot6@acentoza.com'],
+        ['Cabin Crew (Noor Al-Rashidi)',    'demo.cabin@acentoza.com'],
+        ['Cabin Crew (Halima Abdi)',        'demo.cabin2@acentoza.com'],
+        ['Cabin Crew (Kevin Mwangi)',       'demo.cabin3@acentoza.com'],
+        ['Cabin Crew (Aisha Mwamba)',       'demo.cabin4@acentoza.com'],
+        ['Engineer (Eric Mbeki)',           'demo.engineer@acentoza.com'],
+        ['Engineer (James Ochieng)',        'demo.engineer2@acentoza.com'],
+        ['Engineer (Wanjiru Kariuki)',      'demo.engineer3@acentoza.com'],
+        ['Training Admin',                  'demo.training@acentoza.com'],
+        ['System Monitoring Admin',         'demo.sysmonitor@acentoza.com'],
     ];
     foreach ($summary as [$role, $email]) {
         printf("  %-34s  %s\n", $role, $email);

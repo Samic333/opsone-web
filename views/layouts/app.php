@@ -229,17 +229,46 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager','pilot','cabin_crew','engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Scheduling</div>
-                <a href="/roster" class="sidebar-link <?= ($currentPath === '/roster' || $currentPath === '/roster/assign') ? 'active' : '' ?>">
-                    <span class="icon">📅</span> Roster
+
+                <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'])): ?>
+                <!-- Scheduler workbench -->
+                <a href="/roster" class="sidebar-link <?= str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath,'/roster/standby') && !str_starts_with($currentPath,'/roster/changes') && !str_starts_with($currentPath,'/roster/revisions') && !str_starts_with($currentPath,'/roster/coverage') ? 'active' : '' ?>">
+                    <span class="icon">🗓</span> Roster Workbench
                 </a>
-                <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew'])): ?>
+                <a href="/roster/periods" class="sidebar-link <?= str_starts_with($currentPath, '/roster/periods') ? 'active' : '' ?>">
+                    <span class="icon">📅</span> Roster Periods
+                </a>
+                <a href="/roster/revisions" class="sidebar-link <?= str_starts_with($currentPath, '/roster/revisions') ? 'active' : '' ?>">
+                    <span class="icon">✏️</span> Revisions
+                    <?php
+                    // Show pending indicator if draft revisions exist
+                    $draftRevCount = 0;
+                    try { $draftRevCount = (int)(Database::fetch("SELECT COUNT(*) AS c FROM roster_revisions WHERE tenant_id = ? AND status = 'draft'", [currentTenantId()])['c'] ?? 0); } catch(\Exception $e) {}
+                    if ($draftRevCount > 0): ?>
+                        <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $draftRevCount ?></span>
+                    <?php endif; ?>
+                </a>
                 <a href="/roster/standby" class="sidebar-link <?= str_starts_with($currentPath, '/roster/standby') ? 'active' : '' ?>">
-                    <span class="icon">📋</span> Standby Pool
+                    <span class="icon">🛡</span> Reserve / Standby
                 </a>
-                <?php endif; ?>
-                <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew'])): ?>
+                <a href="/roster/coverage" class="sidebar-link <?= str_starts_with($currentPath, '/roster/coverage') ? 'active' : '' ?>">
+                    <span class="icon">📊</span> Coverage &amp; Conflicts
+                </a>
                 <a href="/roster/changes" class="sidebar-link <?= str_starts_with($currentPath, '/roster/changes') ? 'active' : '' ?>">
                     <span class="icon">💬</span> Change Requests
+                    <?php
+                    $pendingCrCount = 0;
+                    try { $pendingCrCount = (int)(Database::fetch("SELECT COUNT(*) AS c FROM roster_changes WHERE tenant_id = ? AND status = 'pending'", [currentTenantId()])['c'] ?? 0); } catch(\Exception $e) {}
+                    if ($pendingCrCount > 0): ?>
+                        <span style="margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $pendingCrCount ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php endif; ?>
+
+                <?php if (hasAnyRole(['pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew','base_manager'])): ?>
+                <!-- Crew personal roster -->
+                <a href="/my-roster" class="sidebar-link <?= str_starts_with($currentPath, '/my-roster') ? 'active' : '' ?>">
+                    <span class="icon">📋</span> My Roster
                 </a>
                 <?php endif; ?>
             </div>

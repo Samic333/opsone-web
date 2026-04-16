@@ -220,7 +220,7 @@ class RosterController {
         }
 
         $tenantId  = currentTenantId();
-        $userId    = currentUserId();
+        $userId    = (int)(currentUser()['id'] ?? 0);
         $name      = trim($_POST['name'] ?? '');
         $startDate = trim($_POST['start_date'] ?? '');
         $endDate   = trim($_POST['end_date'] ?? '');
@@ -320,7 +320,7 @@ class RosterController {
         }
 
         $tenantId   = currentTenantId();
-        $userId     = currentUserId();
+        $userId     = (int)(currentUser()['id'] ?? 0);
         $changeType = trim($_POST['change_type'] ?? 'comment');
         $message    = trim($_POST['message'] ?? '');
         $periodId   = (int)($_POST['roster_period_id'] ?? 0) ?: null;
@@ -349,7 +349,7 @@ class RosterController {
         }
 
         $tenantId   = currentTenantId();
-        $responderId = currentUserId();
+        $responderId = (int)(currentUser()['id'] ?? 0);
         $status     = trim($_POST['status'] ?? 'noted');
         $response   = trim($_POST['response'] ?? '');
 
@@ -487,7 +487,7 @@ class RosterController {
         }
 
         $tenantId = currentTenantId();
-        $userId   = currentUserId();
+        $userId   = (int)(currentUser()['id'] ?? 0);
         $periodId = (int)($_POST['roster_period_id'] ?? 0) ?: null;
         $reason   = trim($_POST['reason'] ?? '');
         $source   = trim($_POST['change_source'] ?? 'scheduler');
@@ -587,10 +587,10 @@ class RosterController {
     // ─── Personal Roster (crew self-service) ──────────────────────────────────
 
     public function myRoster(): void {
-        RbacMiddleware::requireAuth();
+        requireAuth();
 
         $tenantId = currentTenantId();
-        $userId   = currentUserId();
+        $userId   = (int)(currentUser()['id'] ?? 0);
         $year     = (int) ($_GET['year']  ?? date('Y'));
         $month    = (int) ($_GET['month'] ?? date('n'));
         if ($month < 1) { $month = 12; $year--; }
