@@ -8,14 +8,33 @@ class RosterModel {
 
     public static function dutyTypes(): array {
         return [
-            'flight'   => ['label' => 'Flight',    'color' => '#3b82f6', 'code' => 'FLT'],
-            'standby'  => ['label' => 'Standby',   'color' => '#f59e0b', 'code' => 'SBY'],
-            'off'      => ['label' => 'Day Off',   'color' => '#6b7280', 'code' => 'OFF'],
-            'training' => ['label' => 'Training',  'color' => '#8b5cf6', 'code' => 'TRN'],
-            'sim'      => ['label' => 'Simulator', 'color' => '#06b6d4', 'code' => 'SIM'],
-            'leave'    => ['label' => 'Leave',     'color' => '#10b981', 'code' => 'LVE'],
-            'rest'     => ['label' => 'Rest',      'color' => '#9ca3af', 'code' => 'RST'],
+            'flight'    => ['label' => 'Flight',       'color' => '#2563eb', 'bg' => '#dbeafe', 'code' => 'FLT', 'group' => 'flying'],
+            'standby'   => ['label' => 'Standby',      'color' => '#d97706', 'bg' => '#fef3c7', 'code' => 'SBY', 'group' => 'standby'],
+            'reserve'   => ['label' => 'Reserve',      'color' => '#b45309', 'bg' => '#fde68a', 'code' => 'RES', 'group' => 'standby'],
+            'off'       => ['label' => 'Day Off',      'color' => '#6b7280', 'bg' => '#f3f4f6', 'code' => 'OFF', 'group' => 'off'],
+            'training'  => ['label' => 'Training',     'color' => '#7c3aed', 'bg' => '#ede9fe', 'code' => 'TRN', 'group' => 'training'],
+            'sim'       => ['label' => 'Simulator',    'color' => '#0891b2', 'bg' => '#cffafe', 'code' => 'SIM', 'group' => 'training'],
+            'check'     => ['label' => 'Check',        'color' => '#be185d', 'bg' => '#fce7f3', 'code' => 'CHK', 'group' => 'training'],
+            'leave'     => ['label' => 'Leave',        'color' => '#059669', 'bg' => '#d1fae5', 'code' => 'LVE', 'group' => 'leave'],
+            'sick'      => ['label' => 'Sick Leave',   'color' => '#dc2626', 'bg' => '#fee2e2', 'code' => 'SCK', 'group' => 'leave'],
+            'rest'      => ['label' => 'Rest Day',     'color' => '#9ca3af', 'bg' => '#f9fafb', 'code' => 'RST', 'group' => 'off'],
+            'admin'     => ['label' => 'Admin Duty',   'color' => '#64748b', 'bg' => '#f1f5f9', 'code' => 'ADM', 'group' => 'ground'],
+            'pos'       => ['label' => 'Positioning',  'color' => '#0284c7', 'bg' => '#e0f2fe', 'code' => 'POS', 'group' => 'flying'],
+            'deadhead'  => ['label' => 'Deadhead',     'color' => '#0369a1', 'bg' => '#bae6fd', 'code' => 'DH',  'group' => 'flying'],
+            'maint'     => ['label' => 'Maint Duty',   'color' => '#92400e', 'bg' => '#fef9c3', 'code' => 'MNT', 'group' => 'ground'],
+            'base_duty' => ['label' => 'Base Duty',    'color' => '#065f46', 'bg' => '#d1fae5', 'code' => 'BASE','group' => 'ground'],
         ];
+    }
+
+    /**
+     * Duty types grouped for UI selector display.
+     */
+    public static function dutyTypeGroups(): array {
+        $groups = [];
+        foreach (self::dutyTypes() as $key => $dt) {
+            $groups[$dt['group']][$key] = $dt;
+        }
+        return $groups;
     }
 
     // ─── Queries ──────────────────────────────────────────────────────────────
@@ -493,6 +512,319 @@ class RosterModel {
              WHERE rc.id = ? AND rc.tenant_id = ?",
             [$id, $tenantId]
         ) ?: null;
+    }
+
+    // ─── Roster Revisions ────────────────────────────────────────────────────
+
+    /**
+     * Create a new revision bundle.
+     */
+    public static function createRevision(
+        int $tenantId,
+        ?int $periodId,
+        string $revisionRef,
+        string $reason,
+        string $changeSource,
+        int $requestedBy,
+        ?string $notes = null
+    ): int {
+        Database::execute(
+            "INSERT INTO roster_revisions
+             (tenant_id, roster_period_id, revision_ref, reason, change_source, requested_by, notes)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [$tenantId, $periodId, $revisionRef, $reason, $changeSource, $requestedBy, $notes]
+        );
+        return (int)Database::lastInsertId();
+    }
+
+    /**
+     * Add individual duty change items to a revision.
+     */
+    public static function addRevisionItem(
+        int $revisionId,
+        int $tenantId,
+        int $userId,
+        string $date,
+        ?string $oldDuty,
+        ?string $oldCode,
+        ?string $newDuty,
+        ?string $newCode,
+        ?string $note = null
+    ): void {
+        Database::execute(
+            "INSERT INTO roster_revision_items
+             (roster_revision_id, tenant_id, user_id, roster_date,
+              old_duty_type, old_duty_code, new_duty_type, new_duty_code, change_note)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [$revisionId, $tenantId, $userId, $date, $oldDuty, $oldCode, $newDuty, $newCode, $note]
+        );
+    }
+
+    /**
+     * Issue (publish) a revision, marking it as sent to crew.
+     */
+    public static function issueRevision(int $id, int $tenantId, int $approvedBy): void {
+        Database::execute(
+            "UPDATE roster_revisions
+             SET status = 'issued', approved_by = ?, approved_at = " . self::nowExpr() . ",
+                 issued_at = " . self::nowExpr() . ", updated_at = " . self::nowExpr() . "
+             WHERE id = ? AND tenant_id = ?",
+            [$approvedBy, $id, $tenantId]
+        );
+    }
+
+    /**
+     * Get all revisions for a tenant, with period name and creator.
+     */
+    public static function getRevisions(int $tenantId, ?int $periodId = null): array {
+        $sql = "SELECT rv.*, rp.name AS period_name,
+                       u.name AS requested_by_name, ua.name AS approved_by_name,
+                       COUNT(rvi.id) AS item_count
+                FROM roster_revisions rv
+                LEFT JOIN roster_periods rp ON rp.id = rv.roster_period_id
+                LEFT JOIN users u  ON u.id  = rv.requested_by
+                LEFT JOIN users ua ON ua.id = rv.approved_by
+                LEFT JOIN roster_revision_items rvi ON rvi.roster_revision_id = rv.id
+                WHERE rv.tenant_id = ?";
+        $params = [$tenantId];
+        if ($periodId) {
+            $sql .= " AND rv.roster_period_id = ?";
+            $params[] = $periodId;
+        }
+        $sql .= " GROUP BY rv.id ORDER BY rv.created_at DESC";
+        return Database::fetchAll($sql, $params);
+    }
+
+    /**
+     * Get a single revision with its items.
+     */
+    public static function getRevision(int $id, int $tenantId): ?array {
+        $rev = Database::fetch(
+            "SELECT rv.*, rp.name AS period_name, u.name AS requested_by_name
+             FROM roster_revisions rv
+             LEFT JOIN roster_periods rp ON rp.id = rv.roster_period_id
+             LEFT JOIN users u ON u.id = rv.requested_by
+             WHERE rv.id = ? AND rv.tenant_id = ?",
+            [$id, $tenantId]
+        );
+        if (!$rev) return null;
+
+        $rev['items'] = Database::fetchAll(
+            "SELECT rvi.*, u.name AS user_name, u.employee_id
+             FROM roster_revision_items rvi
+             JOIN users u ON u.id = rvi.user_id
+             WHERE rvi.roster_revision_id = ?
+             ORDER BY rvi.roster_date, u.name",
+            [$id]
+        );
+        return $rev;
+    }
+
+    /**
+     * Next revision reference number for a tenant (e.g. REV-001).
+     */
+    public static function nextRevisionRef(int $tenantId, ?int $periodId): string {
+        $count = (int)Database::fetch(
+            "SELECT COUNT(*) AS cnt FROM roster_revisions WHERE tenant_id = ?",
+            [$tenantId]
+        )['cnt'];
+        return 'REV-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+    }
+
+    // ─── Coverage & Conflicts ─────────────────────────────────────────────────
+
+    /**
+     * Analyse roster coverage gaps and conflicts for a given month.
+     *
+     * Returns:
+     * - uncovered_dates : dates in the month with zero rostered crew
+     * - understaffed    : dates with fewer than 2 flight/standby crew
+     * - conflicts       : per-user compliance/expiry issues
+     * - leave_overlaps  : dates where 3+ crew are on leave simultaneously
+     * - reserve_gaps    : dates with no reserve/standby crew
+     * - heatmap         : [date => ['count' => n, 'level' => 'ok|warn|critical']]
+     */
+    public static function getCoverage(int $tenantId, int $year, int $month): array {
+        $from = sprintf('%04d-%02d-01', $year, $month);
+        $days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
+
+        // All entries for the month
+        $entries = Database::fetchAll(
+            "SELECT r.roster_date, r.duty_type, r.user_id,
+                    u.name AS user_name, ro.slug AS role_slug
+             FROM rosters r
+             JOIN users u ON u.id = r.user_id
+             JOIN user_roles ur ON ur.user_id = u.id
+             JOIN roles ro ON ro.id = ur.role_id
+             WHERE r.tenant_id = ? AND r.roster_date BETWEEN ? AND ?
+               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
+             ORDER BY r.roster_date",
+            [$tenantId, $from, $to]
+        );
+
+        // Build per-date stats
+        $byDate = [];
+        for ($d = 1; $d <= $days; $d++) {
+            $dt = sprintf('%04d-%02d-%02d', $year, $month, $d);
+            $byDate[$dt] = ['flight' => 0, 'standby' => 0, 'reserve' => 0,
+                            'leave' => 0, 'off' => 0, 'total' => 0,
+                            'users' => []];
+        }
+
+        foreach ($entries as $e) {
+            $dt = $e['roster_date'];
+            if (!isset($byDate[$dt])) continue;
+            $byDate[$dt]['total']++;
+            $duty = $e['duty_type'];
+            if (in_array($duty, ['flight', 'pos', 'deadhead'])) $byDate[$dt]['flight']++;
+            elseif (in_array($duty, ['standby', 'reserve']))    $byDate[$dt]['standby']++;
+            elseif ($duty === 'leave' || $duty === 'sick')       $byDate[$dt]['leave']++;
+            elseif ($duty === 'off' || $duty === 'rest')         $byDate[$dt]['off']++;
+            $byDate[$dt]['users'][] = ['id' => $e['user_id'], 'name' => $e['user_name'], 'duty' => $duty];
+        }
+
+        // Heatmap levels
+        $heatmap = [];
+        $uncoveredDates = [];
+        $reserveGaps    = [];
+        $understaffed   = [];
+        $leaveOverlaps  = [];
+
+        foreach ($byDate as $dt => $stats) {
+            if ($stats['total'] === 0) {
+                $level = 'empty';
+                $uncoveredDates[] = $dt;
+            } elseif ($stats['flight'] === 0 && $stats['standby'] === 0) {
+                $level = 'critical';
+            } elseif ($stats['flight'] < 2) {
+                $level = 'warn';
+                $understaffed[] = $dt;
+            } else {
+                $level = 'ok';
+            }
+            if ($stats['standby'] === 0) $reserveGaps[] = $dt;
+            if ($stats['leave'] >= 3)    $leaveOverlaps[] = $dt;
+            $heatmap[$dt] = ['count' => $stats['total'], 'flight' => $stats['flight'],
+                             'standby' => $stats['standby'], 'leave' => $stats['leave'],
+                             'level' => $level];
+        }
+
+        // Compliance conflicts
+        $conflicts = self::getComplianceIssues($tenantId);
+
+        return [
+            'heatmap'         => $heatmap,
+            'uncovered_dates' => $uncoveredDates,
+            'understaffed'    => $understaffed,
+            'reserve_gaps'    => $reserveGaps,
+            'leave_overlaps'  => $leaveOverlaps,
+            'conflicts'       => $conflicts,
+            'by_date'         => $byDate,
+        ];
+    }
+
+    // ─── Personal Roster (crew self-service) ──────────────────────────────────
+
+    /**
+     * Get personal roster for a user — only published/frozen period entries,
+     * or entries with no period restriction.
+     */
+    public static function getPersonalMonth(int $userId, int $tenantId, int $year, int $month): array {
+        $from = sprintf('%04d-%02d-01', $year, $month);
+        $days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
+
+        return Database::fetchAll(
+            "SELECT r.*
+             FROM rosters r
+             LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+             WHERE r.user_id = ? AND r.tenant_id = ?
+               AND r.roster_date BETWEEN ? AND ?
+               AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))
+             ORDER BY r.roster_date",
+            [$userId, $tenantId, $from, $to]
+        );
+    }
+
+    /**
+     * Get upcoming 14-day window for personal roster.
+     */
+    public static function getPersonalUpcoming(int $userId, int $tenantId, int $days = 14): array {
+        $today = self::isSqlite() ? "DATE('now')" : 'CURDATE()';
+        $until = self::isSqlite()
+            ? "DATE('now', '+{$days} days')"
+            : "DATE_ADD(CURDATE(), INTERVAL {$days} DAY)";
+
+        return Database::fetchAll(
+            "SELECT r.*
+             FROM rosters r
+             LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+             WHERE r.user_id = ? AND r.tenant_id = ?
+               AND r.roster_date BETWEEN $today AND $until
+               AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))
+             ORDER BY r.roster_date",
+            [$userId, $tenantId]
+        );
+    }
+
+    /**
+     * Summary stats for a user's month (flight count, leave days, standby days, etc).
+     */
+    public static function getPersonalMonthlySummary(int $userId, int $tenantId, int $year, int $month): array {
+        $entries = self::getPersonalMonth($userId, $tenantId, $year, $month);
+        $summary = ['flight' => 0, 'standby' => 0, 'reserve' => 0,
+                    'training' => 0, 'leave' => 0, 'off' => 0, 'rest' => 0, 'total' => 0];
+        foreach ($entries as $e) {
+            $summary['total']++;
+            $t = $e['duty_type'];
+            if ($t === 'flight' || $t === 'pos' || $t === 'deadhead') $summary['flight']++;
+            elseif ($t === 'standby')  $summary['standby']++;
+            elseif ($t === 'reserve')  $summary['reserve']++;
+            elseif (in_array($t, ['training','sim','check'])) $summary['training']++;
+            elseif ($t === 'leave' || $t === 'sick') $summary['leave']++;
+            elseif ($t === 'off')   $summary['off']++;
+            elseif ($t === 'rest')  $summary['rest']++;
+        }
+        return $summary;
+    }
+
+    // ─── Row summary for workbench ─────────────────────────────────────────────
+
+    /**
+     * Per-user duty summary for a month (used for row stats in the grid).
+     * Returns [ user_id => [flight=>n, standby=>n, training=>n, leave=>n, ...] ]
+     */
+    public static function getMonthSummary(int $tenantId, int $year, int $month): array {
+        $from = sprintf('%04d-%02d-01', $year, $month);
+        $days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
+
+        $rows = Database::fetchAll(
+            "SELECT user_id, duty_type, COUNT(*) AS cnt
+             FROM rosters
+             WHERE tenant_id = ? AND roster_date BETWEEN ? AND ?
+             GROUP BY user_id, duty_type",
+            [$tenantId, $from, $to]
+        );
+
+        $summary = [];
+        foreach ($rows as $row) {
+            $uid = $row['user_id'];
+            $t   = $row['duty_type'];
+            if (!isset($summary[$uid])) {
+                $summary[$uid] = ['flight'=>0,'standby'=>0,'reserve'=>0,'training'=>0,'leave'=>0,'off'=>0,'rest'=>0,'total'=>0];
+            }
+            $summary[$uid]['total'] += $row['cnt'];
+            if (in_array($t, ['flight','pos','deadhead']))         $summary[$uid]['flight']   += $row['cnt'];
+            elseif (in_array($t, ['standby']))                     $summary[$uid]['standby']  += $row['cnt'];
+            elseif ($t === 'reserve')                              $summary[$uid]['reserve']  += $row['cnt'];
+            elseif (in_array($t, ['training','sim','check']))      $summary[$uid]['training'] += $row['cnt'];
+            elseif (in_array($t, ['leave','sick']))                $summary[$uid]['leave']    += $row['cnt'];
+            elseif ($t === 'off')                                  $summary[$uid]['off']      += $row['cnt'];
+            elseif ($t === 'rest')                                 $summary[$uid]['rest']     += $row['cnt'];
+        }
+        return $summary;
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

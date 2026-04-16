@@ -1,357 +1,387 @@
 -- -----------------------------------------------------
--- MySQL Missing Tables Patch for Namecheap
+-- MySQL Missing Tables Patch for Namecheap (Robust Version)
 -- -----------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
 
-ALTER TABLE `audit_logs` 
-  ADD COLUMN `actor_role` VARCHAR(50) DEFAULT NULL,
-  ADD COLUMN `result` VARCHAR(50) NOT NULL DEFAULT 'success',
-  ADD COLUMN `reason` TEXT DEFAULT NULL,
-  ADD COLUMN `user_agent` TEXT DEFAULT NULL;
-
+-- Notice Reads (Track who read what)
 CREATE TABLE IF NOT EXISTS `notice_reads` (
-                id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                notice_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                tenant_id INTEGER NOT NULL,
-                read_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-                acknowledged_at TEXT DEFAULT NULL,
-                FOREIGN KEY (notice_id) REFERENCES notices(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE,
-                UNIQUE (notice_id, user_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `notice_id`       INT UNSIGNED NOT NULL,
+    `user_id`         INT UNSIGNED NOT NULL,
+    `tenant_id`       INT UNSIGNED NOT NULL,
+    `read_at`         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `acknowledged_at` TIMESTAMP NULL DEFAULT NULL,
+    FOREIGN KEY (`notice_id`) REFERENCES `notices`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`)   ON DELETE CASCADE,
+    UNIQUE KEY `uq_notice_user` (`notice_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- File Acknowledgements
 CREATE TABLE IF NOT EXISTS `file_acknowledgements` (
-                id INTEGER PRIMARY KEY AUTO_INCREMENT,
-                file_id INTEGER NOT NULL,
-                user_id INTEGER NOT NULL,
-                tenant_id INTEGER NOT NULL,
-                version TEXT DEFAULT NULL,
-                device_id INTEGER DEFAULT NULL,
-                acknowledged_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-                UNIQUE (file_id, user_id)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `file_id`         INT UNSIGNED NOT NULL,
+    `user_id`         INT UNSIGNED NOT NULL,
+    `tenant_id`       INT UNSIGNED NOT NULL,
+    `version`         VARCHAR(50) DEFAULT NULL,
+    `device_id`       INT UNSIGNED DEFAULT NULL,
+    `acknowledged_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_file_user` (`file_id`, `user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Crew Profiles
 CREATE TABLE IF NOT EXISTS `crew_profiles` (
-    `id`                  INTEGER PRIMARY KEY AUTO_INCREMENT,
-    `user_id`             INTEGER NOT NULL UNIQUE,
-    `tenant_id`           INTEGER NOT NULL,
-    `date_of_birth`       TEXT    DEFAULT NULL,
-    `nationality`         TEXT    DEFAULT NULL,
-    `phone`               TEXT    DEFAULT NULL,
-    `emergency_name`      TEXT    DEFAULT NULL,
-    `emergency_phone`     TEXT    DEFAULT NULL,
-    `emergency_relation`  TEXT    DEFAULT NULL,
-    `passport_number`     TEXT    DEFAULT NULL,
-    `passport_country`    TEXT    DEFAULT NULL,
-    `passport_expiry`     TEXT    DEFAULT NULL,
-    `medical_class`       TEXT    DEFAULT NULL,
-    `medical_expiry`      TEXT    DEFAULT NULL,
-    `contract_type`       TEXT    DEFAULT NULL,
-    `contract_expiry`     TEXT    DEFAULT NULL,
-    `created_at`          TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    `updated_at`          TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    `id`                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`             INT UNSIGNED NOT NULL UNIQUE,
+    `tenant_id`           INT UNSIGNED NOT NULL,
+    `date_of_birth`       DATE DEFAULT NULL,
+    `nationality`         VARCHAR(100) DEFAULT NULL,
+    `phone`               VARCHAR(50) DEFAULT NULL,
+    `emergency_name`      VARCHAR(255) DEFAULT NULL,
+    `emergency_phone`     VARCHAR(50) DEFAULT NULL,
+    `emergency_relation`  VARCHAR(100) DEFAULT NULL,
+    `passport_number`     VARCHAR(50) DEFAULT NULL,
+    `passport_country`    VARCHAR(100) DEFAULT NULL,
+    `passport_expiry`     DATE DEFAULT NULL,
+    `medical_class`       VARCHAR(50) DEFAULT NULL,
+    `medical_expiry`      DATE DEFAULT NULL,
+    `contract_type`       VARCHAR(50) DEFAULT NULL,
+    `contract_expiry`     DATE DEFAULT NULL,
+    `created_at`          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`          TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Licenses
 CREATE TABLE IF NOT EXISTS `licenses` (
-    `id`                INTEGER PRIMARY KEY AUTO_INCREMENT,
-    `user_id`           INTEGER NOT NULL,
-    `tenant_id`         INTEGER NOT NULL,
-    `license_type`      TEXT    NOT NULL,
-    `license_number`    TEXT    DEFAULT NULL,
-    `issuing_authority` TEXT    DEFAULT NULL,
-    `issue_date`        TEXT    DEFAULT NULL,
-    `expiry_date`       TEXT    DEFAULT NULL,
-    `notes`             TEXT    DEFAULT NULL,
-    `created_at`        TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    `updated_at`        TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+    `id`                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`           INT UNSIGNED NOT NULL,
+    `tenant_id`         INT UNSIGNED NOT NULL,
+    `license_type`      VARCHAR(100) NOT NULL,
+    `license_number`    VARCHAR(100) DEFAULT NULL,
+    `issuing_authority` VARCHAR(255) DEFAULT NULL,
+    `issue_date`        DATE DEFAULT NULL,
+    `expiry_date`       DATE DEFAULT NULL,
+    `notes`             TEXT DEFAULT NULL,
+    `created_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
     FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Rosters
 CREATE TABLE IF NOT EXISTS `rosters` (
-    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id   INTEGER NOT NULL,
-    user_id     INTEGER NOT NULL,
-    roster_date TEXT    NOT NULL,
-    duty_type   TEXT    NOT NULL DEFAULT 'off',
-    duty_code   TEXT,
-    notes       TEXT,
-    created_at  TEXT DEFAULT (CURRENT_TIMESTAMP),
-    updated_at  TEXT DEFAULT (CURRENT_TIMESTAMP), roster_period_id INTEGER DEFAULT NULL, base_id          INTEGER DEFAULT NULL, fleet_id         INTEGER DEFAULT NULL, reserve_type     TEXT    DEFAULT NULL,
-    UNIQUE (user_id, roster_date)
+    `id`               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`        INT UNSIGNED NOT NULL,
+    `user_id`          INT UNSIGNED NOT NULL,
+    `roster_date`      DATE NOT NULL,
+    `duty_type`        VARCHAR(50) NOT NULL DEFAULT 'off',
+    `duty_code`        VARCHAR(50) DEFAULT NULL,
+    `notes`            TEXT DEFAULT NULL,
+    `roster_period_id` INT UNSIGNED DEFAULT NULL,
+    `base_id`          INT UNSIGNED DEFAULT NULL,
+    `fleet_id`         INT UNSIGNED DEFAULT NULL,
+    `reserve_type`     VARCHAR(50) DEFAULT NULL,
+    `created_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_user_date` (`user_id`, `roster_date`),
+    INDEX `idx_roster_tenant` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- FDM Uploads
 CREATE TABLE IF NOT EXISTS `fdm_uploads` (
-    id            INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id     INTEGER NOT NULL,
-    uploaded_by   INTEGER NOT NULL,
-    filename      TEXT NOT NULL,
-    original_name TEXT NOT NULL,
-    flight_date   TEXT,
-    aircraft_reg  TEXT,
-    flight_number TEXT,
-    event_count   INTEGER NOT NULL DEFAULT 0,
-    status        TEXT NOT NULL DEFAULT 'pending',
-    notes         TEXT,
-    created_at    TEXT DEFAULT (CURRENT_TIMESTAMP)
+    `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`     INT UNSIGNED NOT NULL,
+    `uploaded_by`   INT UNSIGNED NOT NULL,
+    `filename`      VARCHAR(255) NOT NULL,
+    `original_name` VARCHAR(255) NOT NULL,
+    `flight_date`   DATE DEFAULT NULL,
+    `aircraft_reg`  VARCHAR(20) DEFAULT NULL,
+    `flight_number` VARCHAR(20) DEFAULT NULL,
+    `event_count`   INT DEFAULT 0,
+    `status`        VARCHAR(50) NOT NULL DEFAULT 'pending',
+    `notes`         TEXT DEFAULT NULL,
+    `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- FDM Events
 CREATE TABLE IF NOT EXISTS `fdm_events` (
-    id             INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id      INTEGER NOT NULL,
-    fdm_upload_id  INTEGER,
-    event_type     TEXT NOT NULL DEFAULT 'other',
-    severity       TEXT NOT NULL DEFAULT 'medium',
-    flight_date    TEXT,
-    aircraft_reg   TEXT,
-    flight_number  TEXT,
-    flight_phase   TEXT,
-    parameter      TEXT,
-    value_recorded REAL,
-    threshold      REAL,
-    notes          TEXT,
-    created_at     TEXT DEFAULT (CURRENT_TIMESTAMP)
+    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`      INT UNSIGNED NOT NULL,
+    `fdm_upload_id`  INT UNSIGNED DEFAULT NULL,
+    `event_type`     VARCHAR(100) NOT NULL DEFAULT 'other',
+    `severity`       VARCHAR(20) NOT NULL DEFAULT 'medium',
+    `flight_date`    DATE DEFAULT NULL,
+    `aircraft_reg`   VARCHAR(20) DEFAULT NULL,
+    `flight_number`  VARCHAR(20) DEFAULT NULL,
+    `flight_phase`   VARCHAR(100) DEFAULT NULL,
+    `parameter`      VARCHAR(255) DEFAULT NULL,
+    `value_recorded` DOUBLE DEFAULT NULL,
+    `threshold`      DOUBLE DEFAULT NULL,
+    `notes`          TEXT DEFAULT NULL,
+    `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Modules
 CREATE TABLE IF NOT EXISTS `modules` (
-    id               INTEGER PRIMARY KEY AUTO_INCREMENT,
-    code             TEXT    NOT NULL UNIQUE,
-    name             TEXT    NOT NULL,
-    description      TEXT    DEFAULT NULL,
-    icon             TEXT    DEFAULT NULL,
-    platform_status  TEXT    NOT NULL DEFAULT 'available',
-    visibility       TEXT    NOT NULL DEFAULT 'visible',
-    mobile_capable   INTEGER NOT NULL DEFAULT 0,
-    requires_platform_enable INTEGER NOT NULL DEFAULT 1,
-    sort_order       INTEGER NOT NULL DEFAULT 100,
-    created_at       TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at       TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    `id`               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `code`             VARCHAR(100) NOT NULL UNIQUE,
+    `name`             VARCHAR(255) NOT NULL,
+    `description`      TEXT DEFAULT NULL,
+    `icon`             VARCHAR(100) DEFAULT NULL,
+    `platform_status`  VARCHAR(50) NOT NULL DEFAULT 'available',
+    `visibility`       VARCHAR(50) NOT NULL DEFAULT 'visible',
+    `mobile_capable`   TINYINT(1) NOT NULL DEFAULT 0,
+    `requires_platform_enable` TINYINT(1) NOT NULL DEFAULT 1,
+    `sort_order`       INT NOT NULL DEFAULT 100,
+    `created_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Module Capabilities
 CREATE TABLE IF NOT EXISTS `module_capabilities` (
-    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-    module_id   INTEGER NOT NULL,
-    capability  TEXT    NOT NULL,
-    description TEXT    DEFAULT NULL,
-    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
-    UNIQUE (module_id, capability)
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `module_id`   INT UNSIGNED NOT NULL,
+    `capability`  VARCHAR(100) NOT NULL,
+    `description` TEXT DEFAULT NULL,
+    FOREIGN KEY (`module_id`) REFERENCES `modules`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_module_cap` (`module_id`, `capability`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tenant Modules
 CREATE TABLE IF NOT EXISTS `tenant_modules` (
-    id                 INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id          INTEGER NOT NULL,
-    module_id          INTEGER NOT NULL,
-    is_enabled         INTEGER NOT NULL DEFAULT 1,
-    tenant_can_disable INTEGER NOT NULL DEFAULT 0,
-    enabled_by         INTEGER DEFAULT NULL,
-    enabled_at         TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    notes              TEXT    DEFAULT NULL,
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
-    UNIQUE (tenant_id, module_id)
+    `id`                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`          INT UNSIGNED NOT NULL,
+    `module_id`          INT UNSIGNED NOT NULL,
+    `is_enabled`         TINYINT(1) NOT NULL DEFAULT 1,
+    `tenant_can_disable` TINYINT(1) NOT NULL DEFAULT 0,
+    `enabled_by`         INT UNSIGNED DEFAULT NULL,
+    `enabled_at`         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `notes`              TEXT DEFAULT NULL,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`module_id`) REFERENCES `modules`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_tenant_module` (`tenant_id`, `module_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Role Capability Templates
 CREATE TABLE IF NOT EXISTS `role_capability_templates` (
-    id                   INTEGER PRIMARY KEY AUTO_INCREMENT,
-    role_slug            TEXT    NOT NULL,
-    module_capability_id INTEGER NOT NULL,
-    FOREIGN KEY (module_capability_id) REFERENCES module_capabilities(id) ON DELETE CASCADE,
-    UNIQUE (role_slug, module_capability_id)
+    `id`                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `role_slug`            VARCHAR(100) NOT NULL,
+    `module_capability_id` INT UNSIGNED NOT NULL,
+    FOREIGN KEY (`module_capability_id`) REFERENCES `module_capabilities`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_role_cap` (`role_slug`, `module_capability_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- User Capability Overrides
 CREATE TABLE IF NOT EXISTS `user_capability_overrides` (
-    id                   INTEGER PRIMARY KEY AUTO_INCREMENT,
-    user_id              INTEGER NOT NULL,
-    tenant_id            INTEGER NOT NULL,
-    module_capability_id INTEGER NOT NULL,
-    granted              INTEGER NOT NULL DEFAULT 1,
-    reason               TEXT    DEFAULT NULL,
-    set_by               INTEGER DEFAULT NULL,
-    created_at           TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (user_id)    REFERENCES users(id)   ON DELETE CASCADE,
-    FOREIGN KEY (tenant_id)  REFERENCES tenants(id) ON DELETE CASCADE,
-    FOREIGN KEY (module_capability_id) REFERENCES module_capabilities(id) ON DELETE CASCADE,
-    UNIQUE (user_id, module_capability_id)
+    `id`                   INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`              INT UNSIGNED NOT NULL,
+    `tenant_id`            INT UNSIGNED NOT NULL,
+    `module_capability_id` INT UNSIGNED NOT NULL,
+    `granted`              TINYINT(1) NOT NULL DEFAULT 1,
+    `reason`               TEXT DEFAULT NULL,
+    `set_by`               INT UNSIGNED DEFAULT NULL,
+    `created_at`           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`)    REFERENCES `users`(`id`)   ON DELETE CASCADE,
+    FOREIGN KEY (`tenant_id`)  REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`module_capability_id`) REFERENCES `module_capabilities`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_user_cap` (`user_id`, `module_capability_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tenant Settings
 CREATE TABLE IF NOT EXISTS `tenant_settings` (
-    id              INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id       INTEGER NOT NULL UNIQUE,
-    timezone        TEXT    NOT NULL DEFAULT 'UTC',
-    date_format     TEXT    NOT NULL DEFAULT 'Y-m-d',
-    language        TEXT    NOT NULL DEFAULT 'en',
-    mobile_sync_interval_minutes INTEGER NOT NULL DEFAULT 60,
-    require_device_approval      INTEGER NOT NULL DEFAULT 1,
-    allow_self_registration      INTEGER NOT NULL DEFAULT 0,
-    custom_fields   TEXT    DEFAULT NULL,
-    updated_at      TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`       INT UNSIGNED NOT NULL UNIQUE,
+    `timezone`        VARCHAR(100) NOT NULL DEFAULT 'UTC',
+    `date_format`     VARCHAR(50) NOT NULL DEFAULT 'Y-m-d',
+    `language`        VARCHAR(10) NOT NULL DEFAULT 'en',
+    `mobile_sync_interval_minutes` INT NOT NULL DEFAULT 60,
+    `require_device_approval`      TINYINT(1) NOT NULL DEFAULT 1,
+    `allow_self_registration`      TINYINT(1) NOT NULL DEFAULT 0,
+    `custom_fields`   JSON DEFAULT NULL,
+    `updated_at`      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tenant Contacts
 CREATE TABLE IF NOT EXISTS `tenant_contacts` (
-    id           INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id    INTEGER NOT NULL,
-    contact_type TEXT    NOT NULL DEFAULT 'primary_admin',
-    name         TEXT    NOT NULL,
-    email        TEXT    NOT NULL,
-    phone        TEXT    DEFAULT NULL,
-    title        TEXT    DEFAULT NULL,
-    is_primary   INTEGER NOT NULL DEFAULT 0,
-    created_at   TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`    INT UNSIGNED NOT NULL,
+    `contact_type` VARCHAR(50) NOT NULL DEFAULT 'primary_admin',
+    `name`         VARCHAR(255) NOT NULL,
+    `email`        VARCHAR(255) NOT NULL,
+    `phone`        VARCHAR(50) DEFAULT NULL,
+    `title`        VARCHAR(100) DEFAULT NULL,
+    `is_primary`   TINYINT(1) NOT NULL DEFAULT 0,
+    `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tenant Access Policies
 CREATE TABLE IF NOT EXISTS `tenant_access_policies` (
-    id                       INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id                INTEGER NOT NULL UNIQUE,
-    mfa_required             INTEGER NOT NULL DEFAULT 0,
-    ip_whitelist             TEXT    DEFAULT NULL,
-    session_timeout_minutes  INTEGER NOT NULL DEFAULT 120,
-    api_access_enabled       INTEGER NOT NULL DEFAULT 1,
-    mobile_access_enabled    INTEGER NOT NULL DEFAULT 1,
-    platform_support_access  TEXT    NOT NULL DEFAULT 'readonly',
-    updated_at               TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    `id`                       INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`                INT UNSIGNED NOT NULL UNIQUE,
+    `mfa_required`             TINYINT(1) NOT NULL DEFAULT 0,
+    `ip_whitelist`             TEXT DEFAULT NULL,
+    `session_timeout_minutes`  INT NOT NULL DEFAULT 120,
+    `api_access_enabled`       TINYINT(1) NOT NULL DEFAULT 1,
+    `mobile_access_enabled`    TINYINT(1) NOT NULL DEFAULT 1,
+    `platform_support_access`  VARCHAR(20) NOT NULL DEFAULT 'readonly',
+    `updated_at`               TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Platform Access Log
 CREATE TABLE IF NOT EXISTS `platform_access_log` (
-    id                INTEGER PRIMARY KEY AUTO_INCREMENT,
-    platform_user_id  INTEGER NOT NULL,
-    tenant_id         INTEGER NOT NULL,
-    module_area       TEXT    DEFAULT NULL,
-    reason            TEXT    NOT NULL,
-    ticket_ref        TEXT    DEFAULT NULL,
-    ip_address        TEXT    DEFAULT NULL,
-    user_agent        TEXT    DEFAULT NULL,
-    access_started_at TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    access_ended_at   TEXT    DEFAULT NULL,
-    status            TEXT    NOT NULL DEFAULT 'active'
+    `id`                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `platform_user_id`  INT UNSIGNED NOT NULL,
+    `tenant_id`         INT UNSIGNED NOT NULL,
+    `module_area`       VARCHAR(100) DEFAULT NULL,
+    `reason`            TEXT NOT NULL,
+    `ticket_ref`        VARCHAR(50) DEFAULT NULL,
+    `ip_address`        VARCHAR(45) DEFAULT NULL,
+    `user_agent`        TEXT DEFAULT NULL,
+    `access_started_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `access_ended_at`   TIMESTAMP NULL DEFAULT NULL,
+    `status`            VARCHAR(20) NOT NULL DEFAULT 'active'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Tenant Onboarding Requests
 CREATE TABLE IF NOT EXISTS `tenant_onboarding_requests` (
-    id                 INTEGER PRIMARY KEY AUTO_INCREMENT,
-    legal_name         TEXT    NOT NULL,
-    display_name       TEXT    DEFAULT NULL,
-    icao_code          TEXT    DEFAULT NULL,
-    iata_code          TEXT    DEFAULT NULL,
-    primary_country    TEXT    DEFAULT NULL,
-    contact_name       TEXT    NOT NULL,
-    contact_email      TEXT    NOT NULL,
-    contact_phone      TEXT    DEFAULT NULL,
-    expected_headcount INTEGER DEFAULT NULL,
-    support_tier       TEXT    NOT NULL DEFAULT 'standard',
-    requested_modules  TEXT    DEFAULT NULL,
-    notes              TEXT    DEFAULT NULL,
-    status             TEXT    NOT NULL DEFAULT 'pending'
-                       CHECK(status IN ('pending','in_review','approved','rejected','provisioned')),
-    reviewed_by        INTEGER DEFAULT NULL,
-    reviewed_at        TEXT    DEFAULT NULL,
-    review_notes       TEXT    DEFAULT NULL,
-    tenant_id          INTEGER DEFAULT NULL,
-    created_at         TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at         TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    `id`                 INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `legal_name`         VARCHAR(255) NOT NULL,
+    `display_name`       VARCHAR(255) DEFAULT NULL,
+    `icao_code`          VARCHAR(10) DEFAULT NULL,
+    `iata_code`          VARCHAR(10) DEFAULT NULL,
+    `primary_country`    VARCHAR(100) DEFAULT NULL,
+    `contact_name`       VARCHAR(255) NOT NULL,
+    `contact_email`      VARCHAR(255) NOT NULL,
+    `contact_phone`      VARCHAR(50) DEFAULT NULL,
+    `expected_headcount` INT DEFAULT NULL,
+    `support_tier`       VARCHAR(50) NOT NULL DEFAULT 'standard',
+    `requested_modules`  TEXT DEFAULT NULL,
+    `notes`              TEXT DEFAULT NULL,
+    `status`             VARCHAR(50) NOT NULL DEFAULT 'pending',
+    `reviewed_by`        INT UNSIGNED DEFAULT NULL,
+    `reviewed_at`        TIMESTAMP NULL DEFAULT NULL,
+    `review_notes`       TEXT DEFAULT NULL,
+    `tenant_id`          INT UNSIGNED DEFAULT NULL,
+    `created_at`         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`         TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Invitation Tokens
 CREATE TABLE IF NOT EXISTS `invitation_tokens` (
-    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id   INTEGER NOT NULL,
-    email       TEXT    NOT NULL,
-    name        TEXT    DEFAULT NULL,
-    role_slug   TEXT    NOT NULL DEFAULT 'airline_admin',
-    token       TEXT    NOT NULL UNIQUE,
-    expires_at  TEXT    NOT NULL,
-    accepted_at TEXT    DEFAULT NULL,
-    created_by  INTEGER DEFAULT NULL,
-    created_at  TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`   INT UNSIGNED NOT NULL,
+    `email`       VARCHAR(255) NOT NULL,
+    `name`        VARCHAR(255) DEFAULT NULL,
+    `role_slug`   VARCHAR(100) NOT NULL DEFAULT 'airline_admin',
+    `token`       VARCHAR(255) NOT NULL UNIQUE,
+    `expires_at`  TIMESTAMP NOT NULL,
+    `accepted_at` TIMESTAMP NULL DEFAULT NULL,
+    `created_by`  INT UNSIGNED DEFAULT NULL,
+    `created_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Mobile Sync Meta
 CREATE TABLE IF NOT EXISTS `mobile_sync_meta` (
-    id                INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id         INTEGER NOT NULL,
-    module_code       TEXT    NOT NULL,
-    last_published_at TEXT    DEFAULT NULL,
-    version_hash      TEXT    DEFAULT NULL,
-    updated_at        TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    UNIQUE (tenant_id, module_code)
+    `id`                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`         INT UNSIGNED NOT NULL,
+    `module_code`       VARCHAR(100) NOT NULL,
+    `last_published_at` TIMESTAMP NULL DEFAULT NULL,
+    `version_hash`      VARCHAR(255) DEFAULT NULL,
+    `updated_at`        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_sync` (`tenant_id`, `module_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Fleets
 CREATE TABLE IF NOT EXISTS `fleets` (
-    id            INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id     INTEGER NOT NULL,
-    name          TEXT    NOT NULL,
-    code          TEXT    DEFAULT NULL,
-    aircraft_type TEXT    DEFAULT NULL,
-    created_at    TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+    `id`            INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`     INT UNSIGNED NOT NULL,
+    `name`          VARCHAR(255) NOT NULL,
+    `code`          VARCHAR(50) DEFAULT NULL,
+    `aircraft_type` VARCHAR(100) DEFAULT NULL,
+    `created_at`    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Qualifications
 CREATE TABLE IF NOT EXISTS `qualifications` (
-                    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-                    user_id     INTEGER NOT NULL,
-                    tenant_id   INTEGER NOT NULL,
-                    qual_type   TEXT    NOT NULL,
-                    qual_name   TEXT    NOT NULL,
-                    reference_no TEXT,
-                    authority   TEXT,
-                    issue_date  TEXT,
-                    expiry_date TEXT,
-                    status      TEXT    NOT NULL DEFAULT 'active',
-                    notes       TEXT,
-                    created_at  TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP)
-                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    `id`           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id`      INT UNSIGNED NOT NULL,
+    `tenant_id`    INT UNSIGNED NOT NULL,
+    `qual_type`    VARCHAR(100) NOT NULL,
+    `qual_name`    VARCHAR(255) NOT NULL,
+    `reference_no` VARCHAR(100) DEFAULT NULL,
+    `authority`    VARCHAR(255) DEFAULT NULL,
+    `issue_date`   DATE DEFAULT NULL,
+    `expiry_date`  DATE DEFAULT NULL,
+    `status`       VARCHAR(20) NOT NULL DEFAULT 'active',
+    `notes`        TEXT DEFAULT NULL,
+    `created_at`   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    INDEX `idx_qual_user` (`user_id`),
+    INDEX `idx_qual_tenant` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Notice Categories
 CREATE TABLE IF NOT EXISTS `notice_categories` (
-    id         INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id  INTEGER NOT NULL,
-    name       TEXT    NOT NULL,
-    slug       TEXT    NOT NULL,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
-    UNIQUE (tenant_id, slug)
+    `id`         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`  INT UNSIGNED NOT NULL,
+    `name`       VARCHAR(255) NOT NULL,
+    `slug`       VARCHAR(100) NOT NULL,
+    `sort_order` INT NOT NULL DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uq_notice_cat` (`tenant_id`, `slug`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Notice Role Visibility
 CREATE TABLE IF NOT EXISTS `notice_role_visibility` (
-    notice_id INTEGER NOT NULL,
-    role_id   INTEGER NOT NULL,
-    PRIMARY KEY (notice_id, role_id),
-    FOREIGN KEY (notice_id) REFERENCES notices(id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id)   REFERENCES roles(id)   ON DELETE CASCADE
+    `notice_id` INT UNSIGNED NOT NULL,
+    `role_id`   INT UNSIGNED NOT NULL,
+    PRIMARY KEY (`notice_id`, `role_id`),
+    FOREIGN KEY (`notice_id`) REFERENCES `notices`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`role_id`)   REFERENCES `roles`(`id`)   ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Roster Periods
 CREATE TABLE IF NOT EXISTS `roster_periods` (
-    id          INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id   INTEGER NOT NULL,
-    name        TEXT    NOT NULL,                          -- e.g. `April 2026`
-    start_date  TEXT    NOT NULL,                          -- YYYY-MM-DD
-    end_date    TEXT    NOT NULL,                          -- YYYY-MM-DD
-    status      TEXT    NOT NULL DEFAULT 'draft',          -- draft | published | frozen | archived
-    notes       TEXT    DEFAULT NULL,
-    created_by  INTEGER DEFAULT NULL,
-    created_at  TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at  TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    `id`          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`   INT UNSIGNED NOT NULL,
+    `name`        VARCHAR(255) NOT NULL,
+    `start_date`  DATE NOT NULL,
+    `end_date`    DATE NOT NULL,
+    `status`      VARCHAR(50) NOT NULL DEFAULT 'draft',
+    `notes`       TEXT DEFAULT NULL,
+    `created_by`  INT UNSIGNED DEFAULT NULL,
+    `created_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Roster Changes
 CREATE TABLE IF NOT EXISTS `roster_changes` (
-    id               INTEGER PRIMARY KEY AUTO_INCREMENT,
-    tenant_id        INTEGER NOT NULL,
-    roster_period_id INTEGER DEFAULT NULL,    -- period-level comment
-    roster_id        INTEGER DEFAULT NULL,    -- entry-level comment (specific day)
-    user_id          INTEGER NOT NULL,        -- crew member making the request
-    requested_by     INTEGER NOT NULL,        -- user submitting this record (may differ for manager comments)
-    change_type      TEXT    NOT NULL,        -- comment | leave_request | swap_request | correction
-    status           TEXT    NOT NULL DEFAULT 'pending',  -- pending | approved | rejected | noted
-    message          TEXT    NOT NULL,
-    response         TEXT    DEFAULT NULL,    -- manager/scheduler response
-    responded_by     INTEGER DEFAULT NULL,
-    responded_at     TEXT    DEFAULT NULL,
-    created_at       TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
-    updated_at       TEXT    NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    `id`               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`        INT UNSIGNED NOT NULL,
+    `roster_period_id` INT UNSIGNED DEFAULT NULL,
+    `roster_id`        INT UNSIGNED DEFAULT NULL,
+    `user_id`          INT UNSIGNED NOT NULL,
+    `requested_by`     INT UNSIGNED NOT NULL,
+    `change_type`      VARCHAR(50) NOT NULL,
+    `status`           VARCHAR(50) NOT NULL DEFAULT 'pending',
+    `message`          TEXT NOT NULL,
+    `response`         TEXT DEFAULT NULL,
+    `responded_by`     INT UNSIGNED DEFAULT NULL,
+    `responded_at`     TIMESTAMP NULL DEFAULT NULL,
+    `created_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`)   ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

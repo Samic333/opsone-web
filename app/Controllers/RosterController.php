@@ -28,6 +28,7 @@ class RosterController {
         $bases            = Base::allForTenant($tenantId);
         $periods          = RosterModel::getPeriods($tenantId);
         $pendingChanges   = RosterModel::getPendingChanges($tenantId);
+        $monthlySummary   = RosterModel::getMonthSummary($tenantId, $year, $month);
 
         // Find any period overlapping this month
         $monthStart = sprintf('%04d-%02d-01', $year, $month);
@@ -439,5 +440,194 @@ class RosterController {
 
         $ref = $_SERVER['HTTP_REFERER'] ?? '/roster';
         redirect($ref);
+    }
+
+    // ─── Revision Center ──────────────────────────────────────────────────────
+
+    public function revisions(): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew']);
+
+        $tenantId  = currentTenantId();
+        $periodId  = !empty($_GET['period_id']) ? (int)$_GET['period_id'] : null;
+        $revisions = RosterModel::getRevisions($tenantId, $periodId);
+        $periods   = RosterModel::getPeriods($tenantId);
+
+        $pageTitle    = 'Revision Center';
+        $pageSubtitle = 'Post-publication roster change tracking';
+
+        ob_start();
+        require VIEWS_PATH . '/roster/revisions.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function createRevisionForm(): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin']);
+
+        $tenantId  = currentTenantId();
+        $periods   = RosterModel::getPeriods($tenantId);
+        $crewList  = RosterModel::getCrewList($tenantId);
+        $dutyTypes = RosterModel::dutyTypes();
+
+        $pageTitle    = 'Create Revision';
+        $pageSubtitle = 'Record a post-publication duty change';
+
+        ob_start();
+        require VIEWS_PATH . '/roster/revision_create.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function storeRevision(): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin']);
+
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid security token.');
+            redirect('/roster/revisions/create');
+        }
+
+        $tenantId = currentTenantId();
+        $userId   = currentUserId();
+        $periodId = (int)($_POST['roster_period_id'] ?? 0) ?: null;
+        $reason   = trim($_POST['reason'] ?? '');
+        $source   = trim($_POST['change_source'] ?? 'scheduler');
+        $notes    = trim($_POST['notes'] ?? '') ?: null;
+
+        $itemUserIds = $_POST['item_user_id']  ?? [];
+        $itemDates   = $_POST['item_date']     ?? [];
+        $itemNewDuty = $_POST['item_new_duty'] ?? [];
+        $itemNewCode = $_POST['item_new_code'] ?? [];
+        $itemNote    = $_POST['item_note']     ?? [];
+
+        if (!$reason) {
+            flash('error', 'Reason is required.');
+            redirect('/roster/revisions/create');
+        }
+        if (empty($itemUserIds)) {
+            flash('error', 'At least one change item is required.');
+            redirect('/roster/revisions/create');
+        }
+
+        $validSources = ['scheduler','manager_request','crew_request','operational','system'];
+        if (!in_array($source, $validSources)) $source = 'scheduler';
+
+        $ref   = RosterModel::nextRevisionRef($tenantId, $periodId);
+        $revId = RosterModel::createRevision($tenantId, $periodId, $ref, $reason, $source, $userId, $notes);
+
+        $dbNow = (getenv('DB_DRIVER') === 'sqlite') ? "datetime('now')" : 'NOW()';
+        foreach ($itemUserIds as $i => $itemUserId) {
+            $itemUserId = (int)$itemUserId;
+            $date       = trim($itemDates[$i]   ?? '');
+            $newDuty    = trim($itemNewDuty[$i] ?? '');
+            $newCode    = trim($itemNewCode[$i] ?? '') ?: null;
+            $note       = trim($itemNote[$i]    ?? '') ?: null;
+            if (!$itemUserId || !$date || !$newDuty) continue;
+
+            $existing = Database::fetch(
+                "SELECT duty_type, duty_code FROM rosters WHERE user_id = ? AND roster_date = ? AND tenant_id = ?",
+                [$itemUserId, $date, $tenantId]
+            );
+
+            RosterModel::addRevisionItem(
+                $revId, $tenantId, $itemUserId, $date,
+                $existing['duty_type'] ?? null, $existing['duty_code'] ?? null,
+                $newDuty, $newCode, $note
+            );
+
+            if ($existing) {
+                Database::execute(
+                    "UPDATE rosters SET duty_type = ?, duty_code = ?, revision_id = ?, is_revision = 1, updated_at = $dbNow
+                     WHERE user_id = ? AND roster_date = ? AND tenant_id = ?",
+                    [$newDuty, $newCode, $revId, $itemUserId, $date, $tenantId]
+                );
+            } else {
+                Database::execute(
+                    "INSERT INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, revision_id, is_revision)
+                     VALUES (?, ?, ?, ?, ?, ?, 1)",
+                    [$tenantId, $itemUserId, $date, $newDuty, $newCode, $revId]
+                );
+            }
+        }
+
+        RosterModel::issueRevision($revId, $tenantId, $userId);
+        AuditLog::log('roster_revision_created', 'roster_revision', $revId, "Created revision {$ref}: {$reason}");
+        flash('success', "Revision {$ref} created and issued.");
+        redirect('/roster/revisions');
+    }
+
+    // ─── Coverage & Conflicts ─────────────────────────────────────────────────
+
+    public function coverage(): void {
+        RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew']);
+
+        $tenantId = currentTenantId();
+        $year  = (int) ($_GET['year']  ?? date('Y'));
+        $month = (int) ($_GET['month'] ?? date('n'));
+        if ($month < 1) { $month = 12; $year--; }
+        if ($month > 12) { $month = 1;  $year++; }
+
+        $coverage    = RosterModel::getCoverage($tenantId, $year, $month);
+        $periods     = RosterModel::getPeriods($tenantId);
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+
+        $prevMonth = $month - 1 < 1  ? 12 : $month - 1;
+        $prevYear  = $month - 1 < 1  ? $year - 1 : $year;
+        $nextMonth = $month + 1 > 12 ? 1  : $month + 1;
+        $nextYear  = $month + 1 > 12 ? $year + 1 : $year;
+
+        $pageTitle    = 'Coverage & Conflicts';
+        $pageSubtitle = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+
+        ob_start();
+        require VIEWS_PATH . '/roster/coverage.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    // ─── Personal Roster (crew self-service) ──────────────────────────────────
+
+    public function myRoster(): void {
+        RbacMiddleware::requireAuth();
+
+        $tenantId = currentTenantId();
+        $userId   = currentUserId();
+        $year     = (int) ($_GET['year']  ?? date('Y'));
+        $month    = (int) ($_GET['month'] ?? date('n'));
+        if ($month < 1) { $month = 12; $year--; }
+        if ($month > 12) { $month = 1;  $year++; }
+
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $entries     = RosterModel::getPersonalMonth($userId, $tenantId, $year, $month);
+        $upcoming    = RosterModel::getPersonalUpcoming($userId, $tenantId, 14);
+        $summary     = RosterModel::getPersonalMonthlySummary($userId, $tenantId, $year, $month);
+        $dutyTypes   = RosterModel::dutyTypes();
+
+        $byDate = [];
+        foreach ($entries as $e) {
+            $byDate[$e['roster_date']] = $e;
+        }
+
+        $prevMonth = $month - 1 < 1  ? 12 : $month - 1;
+        $prevYear  = $month - 1 < 1  ? $year - 1 : $year;
+        $nextMonth = $month + 1 > 12 ? 1  : $month + 1;
+        $nextYear  = $month + 1 > 12 ? $year + 1 : $year;
+
+        $activePeriod = RosterModel::getActivePeriod($tenantId);
+        $myChanges    = Database::fetchAll(
+            "SELECT rc.*, p.name AS period_name
+             FROM roster_changes rc
+             LEFT JOIN roster_periods p ON p.id = rc.roster_period_id
+             WHERE rc.user_id = ? AND rc.tenant_id = ?
+             ORDER BY rc.created_at DESC LIMIT 5",
+            [$userId, $tenantId]
+        );
+
+        $pageTitle    = 'My Roster';
+        $pageSubtitle = date('F Y', mktime(0, 0, 0, $month, 1, $year));
+
+        ob_start();
+        require VIEWS_PATH . '/roster/my_roster.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
     }
 }
