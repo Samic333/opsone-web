@@ -409,10 +409,10 @@ CREATE TABLE IF NOT EXISTS `roster_changes` (
 
 -- Ensure platform roles exist in the roles table (matching seeder)
 INSERT IGNORE INTO `roles` (`name`, `slug`, `description`, `is_system`, `role_type`) VALUES
-('Platform Super Admin',    'super_admin',         'Full platform and all airline access',               'platform'),
-('Platform Security Admin', 'platform_security',   'Platform security monitoring and audit access',      'platform'),
-('Platform Support Admin',  'platform_support',    'Read-only platform support access',                  'platform'),
-('System Monitoring',       'system_monitoring',   'System health and sync monitoring',                  'platform');
+('Platform Super Admin',    'super_admin',         'Full platform and all airline access',               1, 'platform'),
+('Platform Security Admin', 'platform_security',   'Platform security monitoring and audit access',      1, 'platform'),
+('Platform Support Admin',  'platform_support',    'Read-only platform support access',                  1, 'platform'),
+('System Monitoring',       'system_monitoring',   'System health and sync monitoring',                  1, 'platform');
 
 -- Fix missing role assignments for identified users (Jordan Taylor = id 259 in production)
 -- Platform Support Admin assignment
