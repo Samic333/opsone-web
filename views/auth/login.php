@@ -56,7 +56,6 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
             <button type="submit" class="btn btn-primary login-btn">Sign In</button>
         </form>
 
-        <?php if (env('APP_DEMO_MODE', 'false') === 'true'): ?>
         <div class="demo-section">
             <p style="text-align:center; font-size:12px; color:var(--text-muted);">
                 Demo accounts — Password: <code style="color:var(--accent-cyan);">DemoOps2026!</code>
@@ -112,7 +111,6 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                 <?php endforeach; ?>
             </div>
         </div>
-        <?php endif; ?>
     </div>
 </div>
 </body>
