@@ -403,4 +403,26 @@ CREATE TABLE IF NOT EXISTS `roster_changes` (
     FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`)   ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- -----------------------------------------------------
+-- PHASE 2: Platform Roles & Data Fix
+-- -----------------------------------------------------
+
+-- Ensure platform roles exist in the roles table (matching seeder)
+INSERT IGNORE INTO `roles` (`name`, `slug`, `description`, `is_system`, `role_type`) VALUES
+('Platform Super Admin',    'super_admin',         'Full platform and all airline access',               'platform'),
+('Platform Security Admin', 'platform_security',   'Platform security monitoring and audit access',      'platform'),
+('Platform Support Admin',  'platform_support',    'Read-only platform support access',                  'platform'),
+('System Monitoring',       'system_monitoring',   'System health and sync monitoring',                  'platform');
+
+-- Fix missing role assignments for identified users (Jordan Taylor = id 259 in production)
+-- Platform Support Admin assignment
+INSERT IGNORE INTO `user_roles` (`user_id`, `role_id`)
+SELECT 259, id FROM roles WHERE slug = 'platform_support' LIMIT 1;
+
+-- If Alex Mwangi or other users were also identified as platform super admin (id 231 local, probably around 250+ prod)
+-- Let's also search for Alex Mwangi by email to be safe
+INSERT IGNORE INTO `user_roles` (`user_id`, `role_id`)
+SELECT id, (SELECT id FROM roles WHERE slug = 'super_admin' LIMIT 1) 
+FROM users WHERE email = 'demo.superadmin@acentoza.com' LIMIT 1;
+
 SET FOREIGN_KEY_CHECKS = 1;
