@@ -3,10 +3,10 @@
  * Diagnostic Page — check session and roles
  * To be run on Namecheap to debug Alex Mwangi's sidebar issue.
  */
-require_once __DIR__ . '/config/app.php';
-loadEnv(__DIR__ . '/.env');
-require_once __DIR__ . '/app/Helpers/functions.php';
-require_once __DIR__ . '/config/database.php';
+require_once dirname(__DIR__) . '/config/app.php';
+loadEnv(dirname(__DIR__) . '/.env');
+require_once dirname(__DIR__) . '/app/Helpers/functions.php';
+require_once dirname(__DIR__) . '/config/database.php';
 
 session_start();
 
