@@ -13,12 +13,10 @@ ini_set('display_errors', 1);
 echo "<h1>Deep Dive Diagnostic</h1>";
 
 try {
-    $db = Database::getInstance();
-    
     echo "<h2>Checking Tables Structure</h2>";
     foreach (['roles', 'users', 'user_roles'] as $table) {
         try {
-            $cols = $db->fetchAll("DESCRIBE `$table` ");
+            $cols = Database::fetchAll("DESCRIBE `$table` ");
             echo "<h3>$table Structure</h3><pre>";
             foreach($cols as $c) echo "{$c['Field']} - {$c['Type']}\n";
             echo "</pre>";
@@ -29,7 +27,7 @@ try {
 
     echo "<h2>System Roles Table</h2>";
     try {
-        $roles = $db->fetchAll("SELECT * FROM roles ORDER BY id ASC");
+        $roles = Database::fetchAll("SELECT * FROM roles ORDER BY id ASC");
         echo "<table border='1'><tr><th>ID</th><th>Name</th><th>Slug</th><th>Type</th><th>Tenant</th></tr>";
         foreach($roles as $r) {
             echo "<tr><td>{$r['id']}</td><td>{$r['name']}</td><td>{$r['slug']}</td><td>" . ($r['role_type'] ?? 'N/A') . "</td><td>{$r['tenant_id']}</td></tr>";
@@ -41,7 +39,7 @@ try {
 
     echo "<h2>Demo Users & Assignments</h2>";
     try {
-        $users = $db->fetchAll("
+        $users = Database::fetchAll("
             SELECT u.id, u.name, u.email, u.tenant_id, GROUP_CONCAT(r.slug) as roles
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
