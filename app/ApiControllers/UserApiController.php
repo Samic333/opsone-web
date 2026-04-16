@@ -18,6 +18,7 @@ class UserApiController {
         $tenant = \Tenant::find($tenantId);
         $profile = \CrewProfileModel::findByUser($user['user_id']) ?? [];
         $licenses = \CrewProfileModel::getLicenses($user['user_id']);
+        $qualifications = \QualificationModel::forUser($user['user_id']);
 
         jsonResponse([
             'success' => true,
@@ -54,6 +55,17 @@ class UserApiController {
                 'issue_date'        => $l['issue_date'] ?? null,
                 'expiry_date'       => $l['expiry_date'] ?? null,
             ], $licenses),
+            'qualifications' => array_map(fn($q) => [
+                'id'           => $q['id'],
+                'qual_type'    => $q['qual_type'],
+                'qual_name'    => $q['qual_name'],
+                'reference_no' => $q['reference_no'] ?? null,
+                'authority'    => $q['authority'] ?? null,
+                'issue_date'   => $q['issue_date'] ?? null,
+                'expiry_date'  => $q['expiry_date'] ?? null,
+                'status'       => $q['status'],
+                'notes'        => $q['notes'] ?? null,
+            ], $qualifications),
             'tenant' => [
                 'id'   => $tenant['id'],
                 'name' => $tenant['name'],

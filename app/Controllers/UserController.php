@@ -101,6 +101,36 @@ class UserController {
         $devices     = Device::forUser($id);
         $crewProfile = CrewProfileModel::findByUser($id) ?? [];
         $licenses    = CrewProfileModel::getLicenses($id);
+        
+        // Capabilities & Overrides
+        $allCapabilities = Database::fetchAll(
+            "SELECT mc.id, mc.capability, mc.description, m.name as module_name, m.code as module_code
+             FROM module_capabilities mc
+             JOIN modules m ON m.id = mc.module_id
+             JOIN tenant_modules tm ON tm.module_id = m.id
+             WHERE tm.tenant_id = ? AND tm.is_enabled = 1
+             ORDER BY m.sort_order, mc.capability",
+            [$tenantId]
+        );
+        
+        $roleCaps = [];
+        if (!empty($userRoles)) {
+            $placeholders = implode(',', array_fill(0, count($userRoles), '?'));
+            $roleCapsRaw = Database::fetchAll(
+                "SELECT module_capability_id 
+                 FROM role_capability_templates 
+                 WHERE role_slug IN ($placeholders)",
+                array_column($userRoles, 'slug')
+            );
+            $roleCaps = array_column($roleCapsRaw, 'module_capability_id');
+        }
+        
+        $overridesRaw = Database::fetchAll("SELECT module_capability_id, granted FROM user_capability_overrides WHERE user_id = ? AND tenant_id = ?", [$id, $tenantId]);
+        $overrides = [];
+        foreach ($overridesRaw as $ov) {
+            $overrides[$ov['module_capability_id']] = (bool)$ov['granted'];
+        }
+        
         require VIEWS_PATH . '/users/edit.php';
     }
 
@@ -163,6 +193,39 @@ class UserController {
         AuditLog::log('Updated User', 'user', $id, "Updated user: $name ($email)");
         flash('success', "User \"$name\" updated successfully.");
         redirect('/users');
+    }
+
+    // ─── Capability Overrides ────────────────────────────
+
+    public function updateCapabilities(int $id): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect("/users/edit/$id#capabilities");
+        }
+        $user = UserModel::find($id);
+        if (!$user || $user['tenant_id'] != currentTenantId()) {
+            flash('error', 'User not found.');
+            redirect('/users');
+        }
+        
+        $tenantId = currentTenantId();
+        
+        Database::execute("DELETE FROM user_capability_overrides WHERE user_id = ? AND tenant_id = ?", [$id, $tenantId]);
+        
+        $overridesPost = $_POST['overrides'] ?? [];
+        $currentUser = currentUser();
+        
+        foreach ($overridesPost as $capId => $val) {
+            if ($val === 'grant') {
+                Database::execute("INSERT INTO user_capability_overrides (user_id, tenant_id, module_capability_id, granted, set_by) VALUES (?, ?, ?, 1, ?)", [$id, $tenantId, $capId, $currentUser['id']]);
+            } elseif ($val === 'revoke') {
+                Database::execute("INSERT INTO user_capability_overrides (user_id, tenant_id, module_capability_id, granted, set_by) VALUES (?, ?, ?, 0, ?)", [$id, $tenantId, $capId, $currentUser['id']]);
+            }
+        }
+        
+        AuditLog::log('Updated Capabilities', 'user', $id, "Updated capability overrides for {$user['name']}");
+        flash('success', 'User capability overrides updated successfully.');
+        redirect("/users/edit/$id#capabilities");
     }
 
     // ─── Crew Profile ────────────────────────────────────

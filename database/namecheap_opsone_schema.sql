@@ -332,4 +332,40 @@ SELECT `id`, 'Company Documents', 'company_docs' FROM `tenants`;
 INSERT IGNORE INTO `file_categories` (`tenant_id`, `name`, `slug`)
 SELECT `id`, 'Forms', 'forms' FROM `tenants`;
 
+-- ─── Safety Reporting ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS `safety_reports` (
+    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`      INT UNSIGNED NOT NULL,
+    `reference_no`   VARCHAR(50) NOT NULL,
+    `report_type`    VARCHAR(50) NOT NULL,
+    `reporter_id`    INT UNSIGNED DEFAULT NULL,
+    `is_anonymous`   TINYINT(1) DEFAULT 0,
+    `event_date`     DATE DEFAULT NULL,
+    `title`          VARCHAR(255) NOT NULL,
+    `description`    TEXT NOT NULL,
+    `severity`       VARCHAR(20) DEFAULT 'unassigned',
+    `status`         VARCHAR(50) DEFAULT 'submitted',
+    `assigned_to`    INT UNSIGNED DEFAULT NULL,
+    `created_at`     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`tenant_id`)   REFERENCES `tenants`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`reporter_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    FOREIGN KEY (`assigned_to`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+    INDEX `idx_safety_reports_tenant` (`tenant_id`),
+    INDEX `idx_safety_reports_ref` (`reference_no`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `safety_report_updates` (
+    `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `report_id`       INT UNSIGNED NOT NULL,
+    `user_id`         INT UNSIGNED NOT NULL,
+    `status_change`   VARCHAR(50) DEFAULT NULL,
+    `severity_change` VARCHAR(50) DEFAULT NULL,
+    `comment`         TEXT DEFAULT NULL,
+    `created_at`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`report_id`) REFERENCES `safety_reports`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
+    INDEX `idx_safety_updates_report` (`report_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

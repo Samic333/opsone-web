@@ -80,9 +80,27 @@
                 <span class="text-muted text-sm" style="font-weight:400;">— <?= count($crewList) ?> active crew members</span>
             </h3>
 
-            <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-                <button type="button" onclick="selectAll(true)" class="btn btn-ghost btn-xs">Select All</button>
-                <button type="button" onclick="selectAll(false)" class="btn btn-ghost btn-xs">Deselect All</button>
+            <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+                <button type="button" onclick="selectAll(true)" class="btn btn-ghost btn-xs">Select All Visibile</button>
+                <button type="button" onclick="selectAll(false)" class="btn btn-ghost btn-xs">Deselect All Visible</button>
+
+                <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                    <span class="text-xs text-muted" style="font-weight:600;">Filter:</span>
+                    <select id="bulkFilterBase" class="form-control" style="width:140px; padding:2px 8px; font-size:12px; min-height:26px;" onchange="applyCrewFilter()">
+                        <option value="">— All Bases —</option>
+                        <?php foreach ($bases as $b): ?>
+                            <option value="<?= $b['id'] ?>"><?= e($b['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <select id="bulkFilterRole" class="form-control" style="width:140px; padding:2px 8px; font-size:12px; min-height:26px;" onchange="applyCrewFilter()">
+                        <option value="">— All Roles —</option>
+                        <option value="pilot">Pilots</option>
+                        <option value="chief_pilot">Chief Pilots</option>
+                        <option value="cabin_crew">Cabin Crew</option>
+                        <option value="head_cabin_crew">Head Cabin Crew</option>
+                        <option value="engineer">Engineers</option>
+                    </select>
+                </div>
             </div>
 
             <?php
@@ -98,9 +116,9 @@
                 <p class="text-xs text-muted" style="margin:0 0 8px; text-transform:uppercase; letter-spacing:.05em; font-weight:600;">
                     <?= e($roleName) ?>
                 </p>
-                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:6px;">
+                <div class="crew-role-group" data-role-group="<?= e($roleName) ?>" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:6px;">
                     <?php foreach ($members as $c): ?>
-                    <label style="display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:13px;" class="crew-checkbox-label">
+                    <label class="crew-checkbox-label" data-base-id="<?= $c['base_id'] ?>" data-role-slug="<?= $c['role_slug'] ?>" style="display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:6px; cursor:pointer; font-size:13px;">
                         <input type="checkbox" name="user_ids[]" value="<?= $c['id'] ?>"
                                class="crew-check"
                                <?= in_array($c['id'], $_POST['user_ids'] ?? []) ? 'checked' : '' ?>>
@@ -132,6 +150,26 @@
 
 <script>
 function selectAll(state) {
-    document.querySelectorAll('.crew-check').forEach(cb => cb.checked = state);
+    document.querySelectorAll('.crew-check').forEach(cb => {
+        let parent = cb.closest('.crew-checkbox-label');
+        if (parent.style.display !== 'none') {
+            cb.checked = state;
+        }
+    });
+}
+
+function applyCrewFilter() {
+    let baseId = document.getElementById('bulkFilterBase').value;
+    let roleSlug = document.getElementById('bulkFilterRole').value;
+    
+    document.querySelectorAll('.crew-checkbox-label').forEach(lbl => {
+        let matchBase = !baseId || lbl.getAttribute('data-base-id') === baseId;
+        let matchRole = !roleSlug || lbl.getAttribute('data-role-slug') === roleSlug;
+        if (matchBase && matchRole) {
+            lbl.style.display = 'flex';
+        } else {
+            lbl.style.display = 'none';
+        }
+    });
 }
 </script>

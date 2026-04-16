@@ -20,6 +20,10 @@ class NoticeApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
+        if (!AuthorizationService::isModuleEnabledForTenant('notices', $tenantId)) {
+            jsonResponse(['notices' => [], 'module_disabled' => true]);
+        }
+
         // Filter by user's roles so role-targeted notices are respected
         $userRoles = UserModel::getRoles($user['id']);
         $roleSlugs = array_column($userRoles, 'slug');
@@ -73,6 +77,11 @@ class NoticeApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
+        if (!AuthorizationService::isModuleEnabledForTenant('notices', $tenantId)) {
+            jsonResponse(['error' => 'Module disabled'], 403);
+            return;
+        }
+
         // Verify notice belongs to tenant and is published
         $notice = Notice::find($noticeId);
         if (!$notice || (int)$notice['tenant_id'] !== $tenantId) {
@@ -109,6 +118,11 @@ class NoticeApiController {
     public function acknowledge(int $noticeId): void {
         $user     = apiUser();
         $tenantId = apiTenantId();
+
+        if (!AuthorizationService::isModuleEnabledForTenant('notices', $tenantId)) {
+            jsonResponse(['error' => 'Module disabled'], 403);
+            return;
+        }
 
         $notice = Notice::find($noticeId);
         if (!$notice || (int)$notice['tenant_id'] !== $tenantId) {

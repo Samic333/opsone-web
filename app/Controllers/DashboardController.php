@@ -26,7 +26,11 @@ class DashboardController {
         // Must be checked BEFORE role-based routing to prevent the fallback else-branch
         // from running airlineAdminDashboard(null) → redirect('/dashboard') → loop.
         if (isPlatformOnly()) {
-            $this->superAdminDashboard();
+            if (hasRole('super_admin')) {
+                $this->superAdminDashboard();
+            } else {
+                $this->platformSupportDashboard();
+            }
             return;
         }
 
@@ -213,6 +217,7 @@ class DashboardController {
             'compliance'         => $compliance,
             'expiring_licenses'  => CrewProfileModel::expiringLicenses($tenantId, 90),
             'expiring_medicals'  => CrewProfileModel::expiringMedicals($tenantId, 90),
+            'expiring_qualifications' => QualificationModel::expiringForTenant($tenantId, 90),
         ];
 
         $isHr = hasRole('hr') && !hasRole('airline_admin') && !hasRole('super_admin');
@@ -237,6 +242,7 @@ class DashboardController {
             'recent_activity'   => AuditLog::recent($tenantId, 6),
             'expiring_licenses' => CrewProfileModel::expiringLicenses($tenantId, 90),
             'expiring_medicals' => CrewProfileModel::expiringMedicals($tenantId, 90),
+            'expiring_qualifications' => QualificationModel::expiringForTenant($tenantId, 90),
         ];
         require VIEWS_PATH . '/dashboard/chief_pilot.php';
     }
@@ -408,8 +414,10 @@ class DashboardController {
     private function pilotDashboard(?int $tenantId): void {
         if (!$tenantId) { redirect('/login'); }
         $user = currentUser();
+        $roleSlugs = array_column(UserModel::getRoles($user['id']), 'slug');
         $data = [
             'recent_notices' => Notice::recent($tenantId, 5),
+            'recent_files'   => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
             'sync_status'    => Device::getLatestSync($user['id']),
             'last_login'     => $user['last_login'] ?? 'Never',
         ];
@@ -419,8 +427,10 @@ class DashboardController {
     private function engineerDashboard(?int $tenantId): void {
         if (!$tenantId) { redirect('/login'); }
         $user = currentUser();
+        $roleSlugs = array_column(UserModel::getRoles($user['id']), 'slug');
         $data = [
             'recent_notices' => Notice::recent($tenantId, 5),
+            'recent_files'   => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
             'sync_status'    => Device::getLatestSync($user['id']),
             'total_files'    => FileModel::countByTenant($tenantId),
         ];

@@ -222,4 +222,84 @@ class FileController {
         flash('success', "Document \"$title\" deleted.");
         redirect('/files');
     }
+
+    // ─── Crew Portal: My Files ──────────────────────────────
+
+    public function myFiles(): void {
+        requireAuth();
+        AuthorizationService::requireModuleAccess('documents', 'view');
+        
+        $tenantId  = currentTenantId();
+        $userId    = (int) currentUser()['id'];
+        $userRoles = UserModel::getRoles($userId);
+        $roleSlugs = array_column($userRoles, 'slug');
+        $files     = FileModel::forUserRoles($tenantId, $roleSlugs);
+
+        // Fetch user's acknowledgements to pass to the view
+        $acks = Database::fetchAll(
+            "SELECT file_id, version, acknowledged_at FROM file_acknowledgements WHERE user_id = ? AND tenant_id = ?",
+            [$userId, $tenantId]
+        );
+        $acknowledgedVersions = [];
+        foreach ($acks as $ack) {
+            $acknowledgedVersions[$ack['file_id']] = $ack;
+        }
+
+        $pageTitle    = 'My Documents';
+        $pageSubtitle = 'Active manuals and documents for your role';
+
+        ob_start();
+        require VIEWS_PATH . '/files/my_files.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function acknowledgeFile(int $id): void {
+        requireAuth();
+        AuthorizationService::requireModuleAccess('documents', 'view');
+        
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect('/my-files');
+        }
+
+        $userId   = (int) currentUser()['id'];
+        $tenantId = currentTenantId();
+        $file = FileModel::find($id);
+
+        if (!$file || (int)$file['tenant_id'] !== $tenantId || $file['status'] !== 'published') {
+            flash('error', 'File not found or unavailable.');
+            redirect('/my-files');
+        }
+
+        if (empty($file['requires_ack'])) {
+            flash('error', 'This file does not require acknowledgement.');
+            redirect('/my-files');
+        }
+
+        $now = dbNow();
+
+        $existing = Database::fetch(
+            "SELECT id FROM file_acknowledgements WHERE file_id = ? AND user_id = ?",
+            [$id, $userId]
+        );
+
+        if (!$existing) {
+            Database::insert(
+                "INSERT INTO file_acknowledgements
+                    (file_id, user_id, tenant_id, version, device_id, acknowledged_at)
+                 VALUES (?, ?, ?, ?, NULL, ?)",
+                [$id, $userId, $tenantId, $file['version'], $now]
+            );
+        } else {
+            Database::execute(
+                "UPDATE file_acknowledgements SET acknowledged_at = ?, version = ? WHERE file_id = ? AND user_id = ?",
+                [$now, $file['version'], $id, $userId]
+            );
+        }
+
+        AuditLog::log('file_acknowledged', 'file', $id, "File '{$file['title']}' v{$file['version']} acknowledged via web");
+        flash('success', 'Document acknowledged successfully.');
+        redirect('/my-files');
+    }
 }

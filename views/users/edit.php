@@ -210,6 +210,76 @@
     </form>
 </div>
 
+<!-- ─── Capabilities Override ─────────────────────────────────── -->
+<div class="card mt-3" style="max-width: 700px;" id="capabilities">
+    <div class="card-header">
+        <div class="card-title">🔐 Capabilities Override</div>
+        <p style="font-size: 12px; color: var(--text-muted); margin: 0;">Explicitly grant or revoke specific module capabilities for this user, overriding their base role permissions.</p>
+    </div>
+    <div style="padding: 1rem;">
+        <form method="POST" action="/users/capabilities/<?= $user['id'] ?>">
+            <?= csrfField() ?>
+            <div class="table-wrap mb-3">
+                <table style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="padding: 8px;">Module &amp; Capability</th>
+                            <th style="padding: 8px; width: 100px;">Role Default</th>
+                            <th style="padding: 8px; width: 180px;">User Override</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($allCapabilities)): ?>
+                        <tr><td colspan="3" class="empty-state" style="padding: 16px;">No modular capabilities available.</td></tr>
+                    <?php else: ?>
+                        <?php 
+                        $currentModule = null;
+                        foreach ($allCapabilities as $cap): 
+                            if ($currentModule !== $cap['module_name']):
+                                $currentModule = $cap['module_name'];
+                        ?>
+                        <tr><td colspan="3" style="background: var(--bg-body); font-weight: 600; font-size: 11px; text-transform: uppercase; padding: 6px 12px; color: var(--accent-magenta);">■ <?= e($currentModule) ?></td></tr>
+                        <?php endif; ?>
+                        
+                        <?php 
+                            $isGrantedByRole = in_array($cap['id'], $roleCaps);
+                            $override = isset($overrides[$cap['id']]) ? $overrides[$cap['id']] : null;
+                        ?>
+                        <tr>
+                            <td style="padding: 8px 12px;">
+                                <div style="font-size: 13px; font-weight: 500; font-family: monospace; color: var(--text);"><?= e($cap['capability']) ?></div>
+                                <?php if ($cap['description']): ?>
+                                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"><?= e($cap['description']) ?></div>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 8px 12px;">
+                                <?php if ($isGrantedByRole): ?>
+                                    <span style="display:inline-block; padding: 2px 6px; background-color: rgba(16, 185, 129, 0.1); color: var(--accent-green); border-radius: 4px; font-size: 11px; font-weight: 600;">Granted</span>
+                                <?php else: ?>
+                                    <span style="font-size: 11px; color: var(--text-muted);">None</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="padding: 8px 12px;">
+                                <select name="overrides[<?= $cap['id'] ?>]" class="form-control" style="font-size: 12px; padding: 4px 8px;">
+                                    <option value="default" <?= $override === null ? 'selected' : '' ?>>Inherit from Role</option>
+                                    <option value="grant" <?= $override === true ? 'selected' : '' ?>>Explicitly GRANT</option>
+                                    <option value="revoke" <?= $override === false ? 'selected' : '' ?>>Explicitly DENY</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="flex gap-1">
+                <button type="submit" class="btn btn-primary">Save Overrides</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- ─── Licences & Ratings ──────────────────────────── -->
 <div class="card mt-3" style="max-width: 700px;" id="licenses">
     <div class="card-header"><div class="card-title">🪪 Licences &amp; Ratings</div></div>

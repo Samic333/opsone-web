@@ -64,6 +64,29 @@ $today = date('Y-m-d');
 <?php endif; ?>
 
 <!-- Month navigation -->
+<form method="GET" action="/roster" style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+    <input type="hidden" name="year" value="<?= $year ?>">
+    <input type="hidden" name="month" value="<?= $month ?>">
+    <span class="text-sm text-muted" style="font-weight:600; margin-right:4px;">Filter Crew:</span>
+    <select name="base_id" class="form-control" style="width:180px; padding:4px 10px;" onchange="this.form.submit()">
+        <option value="">— All Bases —</option>
+        <?php foreach ($bases as $b): ?>
+            <option value="<?= $b['id'] ?>" <?= (($_GET['base_id']??'') == $b['id']) ? 'selected' : '' ?>><?= e($b['name']) ?></option>
+        <?php endforeach; ?>
+    </select>
+    <select name="role" class="form-control" style="width:180px; padding:4px 10px;" onchange="this.form.submit()">
+        <option value="">— All Roles —</option>
+        <option value="pilot" <?= (($_GET['role']??'') == 'pilot') ? 'selected' : '' ?>>Pilots</option>
+        <option value="chief_pilot" <?= (($_GET['role']??'') == 'chief_pilot') ? 'selected' : '' ?>>Chief Pilots</option>
+        <option value="cabin_crew" <?= (($_GET['role']??'') == 'cabin_crew') ? 'selected' : '' ?>>Cabin Crew</option>
+        <option value="head_cabin_crew" <?= (($_GET['role']??'') == 'head_cabin_crew') ? 'selected' : '' ?>>Head Cabin Crew</option>
+        <option value="engineer" <?= (($_GET['role']??'') == 'engineer') ? 'selected' : '' ?>>Engineers</option>
+    </select>
+    <?php if (!empty($_GET['base_id']) || !empty($_GET['role'])): ?>
+        <a href="/roster?year=<?= $year ?>&month=<?= $month ?>" class="btn btn-sm btn-ghost" style="color:var(--text-muted); font-weight:normal;">Clear Filters</a>
+    <?php endif; ?>
+</form>
+
 <div class="nav-bar">
     <a href="/roster?year=<?= $prevYear ?>&month=<?= $prevMonth ?>" class="btn btn-sm btn-outline">← Prev</a>
     <div class="month-label"><?= date('F Y', mktime(0,0,0,$month,1,$year)) ?></div>

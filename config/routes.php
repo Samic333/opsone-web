@@ -25,6 +25,8 @@ return [
     'GET /login'      => ['AuthController', 'showLogin'],
     'POST /login'     => ['AuthController', 'login'],
     'GET /logout'     => ['AuthController', 'logout'],
+    'GET /activate'   => ['ActivationController', 'show'],
+    'POST /activate'  => ['ActivationController', 'process'],
 
     // ─── Dashboard ─────────────────────
     'GET /'           => ['PublicController', 'home'],
@@ -113,14 +115,39 @@ return [
     'POST /users/update/{id}' => ['UserController', 'update'],
     'POST /users/toggle/{id}'                   => ['UserController', 'toggleStatus'],
     'POST /users/profile/{id}'                  => ['UserController', 'saveProfile'],
+    'POST /users/capabilities/{id}'             => ['UserController', 'updateCapabilities'],
     'POST /users/licenses/add/{id}'             => ['UserController', 'addLicense'],
     'POST /users/licenses/delete/{id}/{lid}'    => ['UserController', 'deleteLicense'],
+
+    // ─── Roles ─────────────────────────
+    'GET /roles'                          => ['RoleController', 'index'],
+    'GET /roles/{id}'                     => ['RoleController', 'show'],
+    'POST /roles/capabilities/{id}'       => ['RoleController', 'updateCapabilities'],
 
     // ─── Devices ───────────────────────
     'GET /devices'               => ['DeviceController', 'index'],
     'POST /devices/approve/{id}' => ['DeviceController', 'approve'],
     'POST /devices/reject/{id}'  => ['DeviceController', 'reject'],
     'POST /devices/revoke/{id}'  => ['DeviceController', 'revoke'],
+
+    // Phase 4 - Docs & Manuals
+    'GET /documents'                => [FileController::class, 'index'],
+    'GET /documents/upload'         => [FileController::class, 'uploadForm'],
+    'POST /documents/upload'        => [FileController::class, 'upload'],
+    'GET /documents/(\d+)/download' => [FileController::class, 'download'],
+    'GET /documents/(\d+)/edit'     => [FileController::class, 'editForm'],
+    'POST /documents/(\d+)/edit'    => [FileController::class, 'edit'],
+    'POST /documents/(\d+)/delete'  => [FileController::class, 'delete'],
+    'GET /my-files'                 => [FileController::class, 'myFiles'],
+    'POST /my-files/(\d+)/ack'      => [FileController::class, 'acknowledge'],
+
+    // Phase 6 - Safety & Reporting
+    'GET /safety'                   => [SafetyController::class, 'index'],
+    'GET /safety/report/(\d+)'      => [SafetyController::class, 'view'],
+    'POST /safety/report/(\d+)/update'=>[SafetyController::class, 'update'],
+    'GET /safety/my-reports'        => [SafetyController::class, 'myReports'],
+    'GET /safety/submit'            => [SafetyController::class, 'submitForm'],
+    'POST /safety/submit'           => [SafetyController::class, 'submit'],
 
     // ─── Files ─────────────────────────
     'GET /files'               => ['FileController', 'index'],
@@ -131,6 +158,10 @@ return [
     'POST /files/toggle/{id}'  => ['FileController', 'togglePublish'],
     'GET /files/download/{id}' => ['FileController', 'download'],
     'POST /files/delete/{id}'  => ['FileController', 'delete'],
+
+    // ─── Crew Files Portal ──────────────────
+    'GET /my-files'                             => ['FileController', 'myFiles'],
+    'POST /my-files/acknowledge/{id}'           => ['FileController', 'acknowledgeFile'],
 
     // ─── Notices ───────────────────────
     'GET /notices'                              => ['NoticeController', 'index'],

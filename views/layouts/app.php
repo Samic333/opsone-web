@@ -219,6 +219,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <a href="/my-notices" class="sidebar-link <?= str_starts_with($currentPath, '/my-notices') ? 'active' : '' ?>">
                     <span class="icon">📬</span> My Notices
                 </a>
+                <a href="/safety/my-reports" class="sidebar-link <?= str_starts_with($currentPath, '/safety/my-reports') || str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
+                    <span class="icon">🛡️</span> My Reports
+                </a>
             </div>
             <?php endif; ?>
 
@@ -269,6 +272,11 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <span class="icon">📊</span> FDM Data
                 </a>
                 <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
+                <a href="/safety" class="sidebar-link <?= str_starts_with($currentPath, '/safety') && !str_starts_with($currentPath, '/safety/my') && !str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
+                    <span class="icon">🚨</span> Investigations
+                </a>
+                <?php endif; ?>
                 <a href="/compliance" class="sidebar-link <?= str_starts_with($currentPath, '/compliance') ? 'active' : '' ?>">
                     <span class="icon">✅</span> Compliance
                 </a>
@@ -305,6 +313,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 </a>
                 <?php endif; ?>
                 <?php if (hasRole('airline_admin')): ?>
+                <a href="/roles" class="sidebar-link <?= str_starts_with($currentPath, '/roles') ? 'active' : '' ?>">
+                    <span class="icon">🛡</span> Roles & Permissions
+                </a>
                 <a href="/airline/profile" class="sidebar-link <?= str_starts_with($currentPath, '/airline') ? 'active' : '' ?>">
                     <span class="icon">⚙️</span> Airline Profile
                 </a>

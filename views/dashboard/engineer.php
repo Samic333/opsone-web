@@ -46,14 +46,24 @@ ob_start();
     <!-- Documents -->
     <div class="card">
         <div class="card-header">
-            <div class="card-title">Documents</div>
-            <a href="/files" class="btn btn-sm btn-outline">Browse →</a>
+            <div class="card-title">Assigned Documents</div>
+            <a href="/my-files" class="btn btn-sm btn-outline">Browse All →</a>
         </div>
-        <div class="empty-state" style="padding: 16px 0;">
-            <div class="icon">📄</div>
-            <p><?= $data['total_files'] ?> published manual<?= $data['total_files'] !== 1 ? 's' : '' ?> available.</p>
-            <a href="/files" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Documents →</a>
-        </div>
+        <?php if (empty($data['recent_files'])): ?>
+            <div class="empty-state"><p>No assigned documents.</p></div>
+        <?php else: ?>
+        <ul class="activity-list">
+            <?php foreach ($data['recent_files'] as $f): ?>
+            <li class="activity-item">
+                <div class="activity-dot" style="background: var(--accent-blue);"></div>
+                <div>
+                    <div><strong><?= e($f['title']) ?></strong></div>
+                    <div class="activity-time">v<?= e($f['version']) ?> · <?= formatDateTime($f['created_at']) ?></div>
+                </div>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
     </div>
 </div>
 

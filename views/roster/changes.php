@@ -2,10 +2,11 @@
 
 <?php
 $typeLabels = [
-    'comment'      => ['label' => 'Comment',       'color' => '#6b7280'],
-    'leave_request'=> ['label' => 'Leave Request',  'color' => '#8b5cf6'],
-    'swap_request' => ['label' => 'Swap Request',   'color' => '#f59e0b'],
-    'correction'   => ['label' => 'Correction',     'color' => '#3b82f6'],
+    'comment'          => ['label' => 'Comment',       'color' => '#6b7280'],
+    'leave_request'    => ['label' => 'Leave Request', 'color' => '#8b5cf6'],
+    'swap_request'     => ['label' => 'Swap Request',  'color' => '#f59e0b'],
+    'correction'       => ['label' => 'Correction',    'color' => '#3b82f6'],
+    'training_request' => ['label' => 'Training Req.', 'color' => '#06b6d4'],
 ];
 $statusColors = [
     'pending'  => '#f59e0b',

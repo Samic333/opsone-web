@@ -10,6 +10,10 @@ class FileApiController {
         $tenantId = apiTenantId();
         $roles = apiUserRoles();
 
+        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+            jsonResponse(['success' => true, 'files' => [], 'count' => 0, 'module_disabled' => true]);
+        }
+
         // Check device approval
         $deviceUuid = $_GET['device_uuid'] ?? '';
         if ($deviceUuid) {
@@ -44,6 +48,10 @@ class FileApiController {
         $user = apiUser();
         $tenantId = apiTenantId();
 
+        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+            jsonResponse(['error' => 'Module disabled'], 403);
+        }
+
         $file = \FileModel::find($id);
         if (!$file || $file['tenant_id'] != $tenantId) {
             jsonResponse(['error' => 'File not found'], 404);
@@ -75,6 +83,11 @@ class FileApiController {
     public function acknowledge(int $id): void {
         $user     = apiUser();
         $tenantId = apiTenantId();
+
+        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+            jsonResponse(['error' => 'Module disabled'], 403);
+            return;
+        }
 
         $file = \FileModel::find($id);
         if (!$file || (int)$file['tenant_id'] !== $tenantId) {

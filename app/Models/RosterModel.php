@@ -24,19 +24,35 @@ class RosterModel {
      * All roster entries for a given tenant + month, joined with user name.
      * Returns rows keyed by user_id and date for easy grid rendering.
      */
-    public static function getMonth(int $tenantId, int $year, int $month): array {
+    public static function getMonth(int $tenantId, int $year, int $month, ?int $baseId = null, ?string $roleSlug = null): array {
         $from = sprintf('%04d-%02d-01', $year, $month);
         $days = cal_days_in_month(CAL_GREGORIAN, $month, $year);
         $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
 
-        $rows = Database::fetchAll(
-            "SELECT r.*, u.name AS user_name, u.employee_id
-             FROM rosters r
-             JOIN users u ON u.id = r.user_id
-             WHERE r.tenant_id = ? AND r.roster_date BETWEEN ? AND ?
-             ORDER BY u.name, r.roster_date",
-            [$tenantId, $from, $to]
-        );
+        $sql = "SELECT r.*, u.name AS user_name, u.employee_id
+                FROM rosters r
+                JOIN users u ON u.id = r.user_id ";
+                
+        if ($roleSlug) {
+            $sql .= " JOIN user_roles ur ON ur.user_id = u.id JOIN roles rl ON rl.id = ur.role_id ";
+        }
+        
+        $sql .= " WHERE r.tenant_id = ? AND r.roster_date BETWEEN ? AND ? ";
+        $params = [$tenantId, $from, $to];
+        
+        if ($baseId) {
+            $sql .= " AND u.base_id = ? ";
+            $params[] = $baseId;
+        }
+        
+        if ($roleSlug) {
+            $sql .= " AND rl.slug = ? ";
+            $params[] = $roleSlug;
+        }
+        
+        $sql .= " ORDER BY u.name, r.roster_date";
+
+        $rows = Database::fetchAll($sql, $params);
 
         // Index by [user_id][date]
         $grid = [];
@@ -59,9 +75,11 @@ class RosterModel {
         $to   = sprintf('%04d-%02d-%02d', $year, $month, $days);
 
         return Database::fetchAll(
-            "SELECT * FROM rosters
-             WHERE user_id = ? AND roster_date BETWEEN ? AND ?
-             ORDER BY roster_date",
+            "SELECT r.* FROM rosters r
+             LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+             WHERE r.user_id = ? AND r.roster_date BETWEEN ? AND ?
+               AND (r.roster_period_id IS NULL OR p.status != 'draft')
+             ORDER BY r.roster_date",
             [$userId, $from, $to]
         );
     }
@@ -70,18 +88,29 @@ class RosterModel {
      * All crew who have ANY roster entry for this tenant (for the crew list in grid).
      * Also returns crew with NO entries so the scheduler can assign them.
      */
-    public static function getCrewList(int $tenantId): array {
-        return Database::fetchAll(
-            "SELECT DISTINCT u.id, u.name AS user_name,
-                    u.employee_id, r.name AS role_name
+    public static function getCrewList(int $tenantId, ?int $baseId = null, ?string $roleSlug = null): array {
+        $sql = "SELECT DISTINCT u.id, u.name AS user_name,
+                    u.employee_id, u.base_id, r.name AS role_name, r.slug AS role_slug
              FROM users u
              JOIN user_roles ur ON ur.user_id = u.id
              JOIN roles r ON r.id = ur.role_id
              WHERE u.tenant_id = ? AND u.status = 'active'
-               AND r.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
-             ORDER BY u.name",
-            [$tenantId]
-        );
+               AND r.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')";
+               
+        $params = [$tenantId];
+
+        if ($baseId) {
+            $sql .= " AND u.base_id = ?";
+            $params[] = $baseId;
+        }
+
+        if ($roleSlug) {
+            $sql .= " AND r.slug = ?";
+            $params[] = $roleSlug;
+        }
+
+        $sql .= " ORDER BY u.name";
+        return Database::fetchAll($sql, $params);
     }
 
     // ─── CRUD ─────────────────────────────────────────────────────────────────
@@ -182,6 +211,29 @@ class RosterModel {
                 $flags[$uid]['issues']   = [];
             }
             $flags[$uid]['issues'][] = "Medical expiring ({$row['medical_expiry']})";
+        }
+
+        // Expired Qualifications (Training/Checks)
+        $expiredQuals = QualificationModel::expiredForTenant($tenantId, 1000);
+        foreach ($expiredQuals as $row) {
+            $uid = $row['user_id'];
+            $flags[$uid]['severity'] = 'critical';
+            $flags[$uid]['issues'][] = "Expired Training/Check: {$row['qual_name']} ({$row['expiry_date']})";
+        }
+
+        // Qualifications expiring within 30 days
+        $soonQuals = QualificationModel::expiringForTenant($tenantId, 30);
+        foreach ($soonQuals as $row) {
+            $uid = $row['user_id'];
+            if (!isset($flags[$uid])) {
+                $flags[$uid]['severity'] = 'warning';
+                $flags[$uid]['issues']   = [];
+            }
+            // avoid appending if already marked critical (though severity would upgrade if we re-assign, but here we just append info)
+            if (($flags[$uid]['severity'] ?? '') !== 'critical') {
+                $flags[$uid]['severity'] = 'warning';
+            }
+            $flags[$uid]['issues'][] = "Training/Check Expiring: {$row['qual_name']} ({$row['expiry_date']})";
         }
 
         return $flags;

@@ -13,16 +13,19 @@ class RosterController {
 
         $year  = (int) ($_GET['year']  ?? date('Y'));
         $month = (int) ($_GET['month'] ?? date('n'));
+        $baseId = !empty($_GET['base_id']) ? (int) $_GET['base_id'] : null;
+        $roleSlug = !empty($_GET['role']) ? $_GET['role'] : null;
 
         // Clamp month
         if ($month < 1) { $month = 12; $year--; }
         if ($month > 12) { $month = 1;  $year++; }
 
         $daysInMonth      = cal_days_in_month(CAL_GREGORIAN, $month, $year);
-        $grid             = RosterModel::getMonth($tenantId, $year, $month);
-        $crewList         = RosterModel::getCrewList($tenantId);
+        $grid             = RosterModel::getMonth($tenantId, $year, $month, $baseId, $roleSlug);
+        $crewList         = RosterModel::getCrewList($tenantId, $baseId, $roleSlug);
         $dutyTypes        = RosterModel::dutyTypes();
         $complianceIssues = RosterModel::getComplianceIssues($tenantId);
+        $bases            = Base::allForTenant($tenantId);
         $periods          = RosterModel::getPeriods($tenantId);
         $pendingChanges   = RosterModel::getPendingChanges($tenantId);
 
@@ -119,6 +122,7 @@ class RosterController {
         $crewList  = RosterModel::getCrewList($tenantId);
         $dutyTypes = RosterModel::dutyTypes();
         $periods   = RosterModel::getPeriods($tenantId);
+        $bases     = Base::allForTenant($tenantId);
 
         $pageTitle    = 'Bulk Assign';
         $pageSubtitle = 'Assign duty across a date range for multiple crew';
@@ -326,7 +330,7 @@ class RosterController {
             redirect('/roster');
         }
 
-        $validTypes = ['comment', 'leave_request', 'swap_request', 'correction'];
+        $validTypes = ['comment', 'leave_request', 'swap_request', 'correction', 'training_request'];
         if (!in_array($changeType, $validTypes)) $changeType = 'comment';
 
         RosterModel::createChangeRequest($tenantId, $userId, $userId, $changeType, $message, $periodId, $rosterId);

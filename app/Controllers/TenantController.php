@@ -7,7 +7,7 @@
  */
 class TenantController {
     public function __construct() {
-        RbacMiddleware::requirePlatformSuperAdmin();
+        RbacMiddleware::requirePlatformRole(['super_admin', 'platform_support', 'platform_security', 'system_monitoring']);
         if (isSingleTenant()) {
             flash('error', 'Tenant management is not available in single-tenant mode.');
             redirect('/dashboard');
@@ -37,11 +37,13 @@ class TenantController {
     }
 
     public function create(): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         $allModules = Module::all();
         require VIEWS_PATH . '/tenants/create.php';
     }
 
     public function store(): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
             redirect('/tenants/create');
@@ -156,6 +158,7 @@ class TenantController {
     }
 
     public function edit(int $id): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         $tenant     = Tenant::find($id);
         if (!$tenant) {
             flash('error', 'Tenant not found.');
@@ -166,6 +169,7 @@ class TenantController {
     }
 
     public function update(int $id): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
             redirect("/tenants/edit/$id");
@@ -208,6 +212,7 @@ class TenantController {
     }
 
     public function toggle(int $id): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
             redirect('/tenants');
@@ -228,6 +233,7 @@ class TenantController {
      * Toggle a module on/off for a specific tenant (AJAX-friendly POST).
      */
     public function toggleModule(int $tenantId, int $moduleId): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             jsonResponse(['error' => 'Invalid CSRF token'], 400);
         }
@@ -248,6 +254,7 @@ class TenantController {
      * Create an invitation token for a new airline admin.
      */
     public function createInvitation(int $tenantId): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
             redirect("/tenants/$tenantId");
@@ -267,10 +274,11 @@ class TenantController {
 
         AuditService::log('invitation.created', 'tenant', $tenantId,
             "Invited $name ($email) as $roleSlug — token expires 72h");
-        // TODO Phase 1: send activation email with $token
 
-        flash('success', "Invitation created for {$name} ({$email}). " .
-                         "Phase 1 will wire up email delivery. Token: " . substr($token, 0, 8) . "...");
+        $appUrl = rtrim(env('APP_URL', 'http://localhost:8080'), '/');
+        $activationUrl = "{$appUrl}/activate?token={$token}";
+
+        flash('success', "Invitation created for {$name} ({$email}). <br><br><b>Activation Link (Local Testing):</b> <a href=\"{$activationUrl}\" target=\"_blank\">{$activationUrl}</a>");
         redirect("/tenants/$tenantId");
     }
 
@@ -278,6 +286,7 @@ class TenantController {
      * Log a platform admin's controlled access into a tenant area.
      */
     public function logAccess(int $tenantId): void {
+        RbacMiddleware::requirePlatformSuperAdmin();
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission.');
             redirect("/tenants/$tenantId");

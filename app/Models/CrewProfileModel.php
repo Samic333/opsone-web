@@ -164,10 +164,11 @@ class CrewProfileModel {
     /** Summary counts for dashboard widgets. */
     public static function complianceSummary(int $tenantId): array {
         return [
-            'expiring_licenses' => count(self::expiringLicenses($tenantId, 90)),
-            'expired_licenses'  => count(self::expiredLicenses($tenantId, 50)),
-            'expiring_medicals' => count(self::expiringMedicals($tenantId, 90)),
-            'expiring_passports'=> count(self::expiringPassports($tenantId, 180)),
+            'expiring_licenses'      => count(self::expiringLicenses($tenantId, 90)),
+            'expired_licenses'       => count(self::expiredLicenses($tenantId, 50)),
+            'expiring_medicals'      => count(self::expiringMedicals($tenantId, 90)),
+            'expiring_passports'     => count(self::expiringPassports($tenantId, 180)),
+            'expiring_qualifications'=> count(QualificationModel::expiringForTenant($tenantId, 90)),
         ];
     }
 
