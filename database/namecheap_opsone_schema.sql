@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `base_id`       INT UNSIGNED DEFAULT NULL,
     `status`        ENUM('pending','active','suspended','inactive') NOT NULL DEFAULT 'pending',
     `mobile_access` TINYINT(1) NOT NULL DEFAULT 1,
+    `web_access`    TINYINT(1) NOT NULL DEFAULT 1,
     `avatar_path`   VARCHAR(500) DEFAULT NULL,
     `last_login_at` TIMESTAMP    NULL,
     `created_at`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -285,8 +286,7 @@ CREATE TABLE IF NOT EXISTS `notices` (
     FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add explicit web_access to users table
-ALTER TABLE `users` ADD COLUMN `web_access` TINYINT(1) DEFAULT 1;
+
 
 -- App Builds — tracks enterprise build versions
 CREATE TABLE IF NOT EXISTS `app_builds` (
