@@ -3,6 +3,25 @@
 -- -----------------------------------------------------
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Notices Table
+CREATE TABLE IF NOT EXISTS `notices` (
+    `id`             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `tenant_id`      INT UNSIGNED NOT NULL,
+    `title`          VARCHAR(255) NOT NULL,
+    `body`           TEXT NOT NULL,
+    `priority`       VARCHAR(20) NOT NULL DEFAULT 'normal',
+    `category`       VARCHAR(100) DEFAULT 'general',
+    `published`      TINYINT(1) NOT NULL DEFAULT 0,
+    `published_at`   TIMESTAMP NULL DEFAULT NULL,
+    `expires_at`     TIMESTAMP NULL DEFAULT NULL,
+    `created_by`     INT UNSIGNED DEFAULT NULL,
+    `created_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `requires_ack`   TINYINT(1) NOT NULL DEFAULT 0,
+    `target_roles`   TEXT DEFAULT NULL,
+    FOREIGN KEY (`tenant_id`) REFERENCES `tenants`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Notice Reads (Track who read what)
 CREATE TABLE IF NOT EXISTS `notice_reads` (
     `id`              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
