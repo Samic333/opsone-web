@@ -31,8 +31,12 @@ if ($user) {
             WHERE ur.user_id = ?", 
             [$user['id']]
         );
-        echo "<h2>Database Roles</h2>";
+        echo "<h2>My Assigned Roles (Database)</h2>";
         echo "<pre>" . print_r($dbRoles, true) . "</pre>";
+
+        $allPlatformRoles = $db->fetchAll("SELECT * FROM roles WHERE role_type = 'platform' OR tenant_id IS NULL");
+        echo "<h2>All Platform Roles in System</h2>";
+        echo "<pre>" . print_r($allPlatformRoles, true) . "</pre>";
     } catch (\Exception $e) {
         echo "Error: " . $e->getMessage();
     }
