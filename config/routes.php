@@ -246,7 +246,8 @@ return [
     'GET /api/devices/status'    => ['DeviceApiController', 'status'],
 
     // ─── API: User ─────────────────────
-    'GET /api/user/profile' => ['UserApiController', 'profile'],
+    'GET /api/user/profile'  => ['UserApiController', 'profile'],
+    'GET /api/user/modules'  => ['UserApiController', 'modules'],
 
     // ─── API: Roster ───────────────────
     'GET /api/roster' => ['RosterApiController', 'index'],

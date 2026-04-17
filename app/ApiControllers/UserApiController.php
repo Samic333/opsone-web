@@ -27,6 +27,7 @@ class UserApiController {
                 'name'          => $fullUser['name'],
                 'email'         => $fullUser['email'],
                 'employee_id'   => $fullUser['employee_id'],
+                'tenant_id'     => $tenantId,
                 'status'        => $fullUser['status'],
                 'department'    => $fullUser['department_name'] ?? null,
                 'base'          => $fullUser['base_code'] ?? null,
@@ -71,6 +72,32 @@ class UserApiController {
                 'name' => $tenant['name'],
                 'code' => $tenant['code'],
             ],
+        ]);
+    }
+
+    // ─── GET /api/user/modules ─────────────────────────────────────────────────
+    // Returns the module codes enabled for the current user's tenant.
+    // The iPad app uses these slugs to filter its sidebar/navigation at runtime,
+    // replacing the hardcoded RoleConfig when a server response is available.
+    public function modules(): void {
+        $tenantId = apiTenantId();
+
+        $rows = \Database::fetchAll(
+            "SELECT m.code
+             FROM modules m
+             JOIN tenant_modules tm ON tm.module_id = m.id
+             WHERE tm.tenant_id = ? AND tm.is_enabled = 1
+               AND m.platform_status = 'available'
+             ORDER BY m.sort_order",
+            [$tenantId]
+        );
+
+        $codes = array_column($rows, 'code');
+
+        jsonResponse([
+            'success' => true,
+            'tenant_id' => $tenantId,
+            'modules' => $codes,
         ]);
     }
 }
