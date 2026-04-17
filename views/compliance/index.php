@@ -152,13 +152,64 @@
 </div>
 <?php endif; ?>
 
+<!-- ─── Pending Document Acknowledgements ─── -->
+<?php if (!empty($pendingAcks)): ?>
+<div class="card" style="border-left:3px solid #6366f1;">
+    <div class="card-header">
+        <div class="card-title" style="color:#6366f1;">📋 Documents Awaiting Acknowledgement</div>
+        <a href="/files" class="btn btn-sm btn-outline">Manage Documents →</a>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
+        These documents require acknowledgement from mobile crew but have outstanding sign-offs.
+    </p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Document</th>
+                    <th>Category</th>
+                    <th>Version</th>
+                    <th>Required</th>
+                    <th>Acknowledged</th>
+                    <th>Outstanding</th>
+                    <th>Progress</th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($pendingAcks as $ack):
+                $pct = $ack['total_required'] > 0
+                    ? round(($ack['total_acked'] / $ack['total_required']) * 100)
+                    : 0;
+                $barColor = $pct >= 75 ? '#10b981' : ($pct >= 40 ? '#f59e0b' : '#ef4444');
+            ?>
+            <tr>
+                <td><strong><?= e($ack['title']) ?></strong></td>
+                <td style="font-size:12px;color:var(--text-muted);"><?= e($ack['category_name'] ?? '—') ?></td>
+                <td><code><?= e($ack['version'] ?? '—') ?></code></td>
+                <td style="text-align:center;"><?= (int)$ack['total_required'] ?></td>
+                <td style="text-align:center;color:#10b981;font-weight:600;"><?= (int)$ack['total_acked'] ?></td>
+                <td style="text-align:center;color:#ef4444;font-weight:700;"><?= (int)$ack['pending_count'] ?></td>
+                <td style="min-width:100px;">
+                    <div style="background:var(--bg-secondary);border-radius:4px;height:8px;overflow:hidden;">
+                        <div style="width:<?= $pct ?>%;height:100%;background:<?= $barColor ?>;border-radius:4px;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;text-align:right;"><?= $pct ?>%</div>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- All clear state -->
-<?php if (empty($expiredLicenses) && empty($expiringLicenses) && empty($expiringMedicals) && empty($expiringPassports)): ?>
+<?php if (empty($expiredLicenses) && empty($expiringLicenses) && empty($expiringMedicals) && empty($expiringPassports) && empty($pendingAcks)): ?>
 <div class="card">
     <div class="empty-state">
         <div class="icon">✅</div>
         <h3>All Crew Compliant</h3>
-        <p>No licences, medicals, or passports expiring within the next 180 days.</p>
+        <p>No licences, medicals, passports, or outstanding document acknowledgements.</p>
     </div>
 </div>
 <?php endif; ?>

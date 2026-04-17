@@ -103,6 +103,74 @@ class AuditLogController {
         require VIEWS_PATH . '/layouts/app.php';
     }
 
+    public function exportCsv(): void {
+        RbacMiddleware::requireRole(['super_admin', 'platform_security', 'airline_admin', 'safety_officer']);
+
+        $sessionUser        = currentUser();
+        $tenantId           = $sessionUser['tenant_id'] ?? currentTenantId();
+        $isPlatformSecurity = hasAnyRole(['super_admin', 'platform_security']);
+
+        $filterAction   = trim($_GET['action']    ?? '');
+        $filterUser     = trim($_GET['user']      ?? '');
+        $filterEntity   = trim($_GET['entity']    ?? '');
+        $filterDateFrom = trim($_GET['date_from'] ?? '');
+        $filterDateTo   = trim($_GET['date_to']   ?? '');
+        $filterTenantId = $isPlatformSecurity ? (int)($_GET['tenant_id'] ?? 0) : 0;
+
+        $where  = [];
+        $params = [];
+
+        if (!$isPlatformSecurity) {
+            $where[]  = 'al.tenant_id = ?';
+            $params[] = $tenantId;
+        } elseif ($filterTenantId > 0) {
+            $where[]  = 'al.tenant_id = ?';
+            $params[] = $filterTenantId;
+        }
+        if ($filterAction)   { $where[] = 'al.action LIKE ?';     $params[] = '%' . $filterAction . '%'; }
+        if ($filterUser)     { $where[] = 'al.user_name LIKE ?';  $params[] = '%' . $filterUser . '%'; }
+        if ($filterEntity)   { $where[] = 'al.entity_type = ?';   $params[] = $filterEntity; }
+        if ($filterDateFrom) { $where[] = 'al.created_at >= ?';   $params[] = $filterDateFrom . ' 00:00:00'; }
+        if ($filterDateTo)   { $where[] = 'al.created_at <= ?';   $params[] = $filterDateTo . ' 23:59:59'; }
+
+        $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+
+        // Export up to 10,000 rows (no pagination for CSV)
+        $logs = Database::fetchAll(
+            "SELECT al.*, t.name AS tenant_name
+             FROM audit_logs al
+             LEFT JOIN tenants t ON al.tenant_id = t.id
+             $whereClause
+             ORDER BY al.created_at DESC
+             LIMIT 10000",
+            $params
+        );
+
+        $filename = 'audit-log-' . date('Y-m-d') . '.csv';
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        $out = fopen('php://output', 'w');
+        fputcsv($out, ['Date/Time', 'Action', 'User', 'Role', 'Airline', 'Entity Type', 'Entity ID', 'Details', 'IP Address']);
+
+        foreach ($logs as $row) {
+            fputcsv($out, [
+                $row['created_at'],
+                $row['action'],
+                $row['user_name'] ?? '',
+                $row['actor_role'] ?? '',
+                $row['tenant_name'] ?? '',
+                $row['entity_type'] ?? '',
+                $row['entity_id'] ?? '',
+                $row['details'] ?? '',
+                $row['ip_address'] ?? '',
+            ]);
+        }
+        fclose($out);
+        exit;
+    }
+
     public function loginActivity(): void {
         RbacMiddleware::requireRole(['super_admin', 'platform_security', 'airline_admin', 'safety_officer']);
 

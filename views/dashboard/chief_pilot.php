@@ -23,6 +23,19 @@ ob_start();
     </div>
 </div>
 
+<?php if (($data['pending_changes'] ?? 0) > 0): ?>
+<div class="card" style="border-left:3px solid #f59e0b; margin-bottom:24px;">
+    <div class="card-header">
+        <div class="card-title" style="color:#f59e0b;">⏳ Pending Roster Change Requests</div>
+        <a href="/roster/changes" class="btn btn-sm btn-outline">Review All →</a>
+    </div>
+    <p style="margin:0; font-size:14px; color:var(--text);">
+        <strong><?= (int)$data['pending_changes'] ?></strong> crew request<?= $data['pending_changes'] !== 1 ? 's' : '' ?> await<?= $data['pending_changes'] === 1 ? 's' : '' ?> your review.
+        These may include leave requests, swap requests, corrections, or training requests.
+    </p>
+</div>
+<?php endif; ?>
+
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
     <!-- Active Notices -->
     <div class="card">

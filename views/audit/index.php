@@ -117,8 +117,22 @@ $actionColors = [
         <button type="submit" class="btn btn-sm btn-primary">Filter</button>
         <a href="/audit-log" class="btn btn-sm btn-outline">Clear</a>
     </div>
-    <div style="margin-left:auto; font-size:12px; color:var(--text-muted); align-self:flex-end; padding-bottom:2px;">
-        <?= number_format($totalLogs) ?> record<?= $totalLogs !== 1 ? 's' : '' ?>
+    <div style="margin-left:auto; display:flex; align-items:flex-end; gap:10px;">
+        <span style="font-size:12px; color:var(--text-muted); padding-bottom:2px;">
+            <?= number_format($totalLogs) ?> record<?= $totalLogs !== 1 ? 's' : '' ?>
+        </span>
+        <a href="/audit-log/export?<?= http_build_query(array_filter([
+            'action'    => $filterAction,
+            'user'      => $filterUser,
+            'entity'    => $filterEntity,
+            'date_from' => $filterDateFrom,
+            'date_to'   => $filterDateTo,
+            'tenant_id' => $filterTenantId > 0 ? $filterTenantId : null,
+        ])) ?>"
+           class="btn btn-sm btn-outline"
+           title="Export current filter as CSV (up to 10,000 rows)">
+            ↓ Export CSV
+        </a>
     </div>
 </div>
 </form>

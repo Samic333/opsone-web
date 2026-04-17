@@ -230,6 +230,7 @@ return [
     // ─── Audit Log ──────────────────────
     'GET /audit-log'         => ['AuditLogController', 'index'],
     'GET /audit-log/logins'  => ['AuditLogController', 'loginActivity'],
+    'GET /audit-log/export'  => ['AuditLogController', 'exportCsv'],
 
     // ─── Install (Protected) ──────────
     'GET /install'                 => ['InstallController', 'index'],

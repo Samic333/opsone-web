@@ -299,8 +299,37 @@ class RosterController {
     public function changes(): void {
         RbacMiddleware::requireRole(['scheduler', 'airline_admin', 'super_admin', 'chief_pilot', 'head_cabin_crew']);
 
-        $tenantId = currentTenantId();
-        $pending  = RosterModel::getPendingChanges($tenantId);
+        $tenantId   = currentTenantId();
+        $statusFilter = $_GET['status'] ?? 'pending';   // pending | approved | rejected | noted | all
+
+        // Pending always shown via the primary model helper; other statuses use a raw query
+        if ($statusFilter === 'pending') {
+            $changes = RosterModel::getPendingChanges($tenantId);
+        } else {
+            $whereStatus = $statusFilter !== 'all' ? "AND rc.status = '$statusFilter'" : '';
+            $changes = Database::fetchAll(
+                "SELECT rc.*, u.name AS user_name, u.employee_id,
+                        p.name AS period_name,
+                        rb.name AS responded_by_name
+                 FROM roster_changes rc
+                 JOIN users u ON u.id = rc.user_id
+                 LEFT JOIN roster_periods p ON p.id = rc.roster_period_id
+                 LEFT JOIN users rb ON rb.id = rc.responded_by
+                 WHERE rc.tenant_id = ? $whereStatus
+                 ORDER BY rc.created_at DESC",
+                [$tenantId]
+            );
+        }
+
+        // Counts for tab badges
+        $counts = Database::fetchAll(
+            "SELECT status, COUNT(*) as c FROM roster_changes WHERE tenant_id = ? GROUP BY status",
+            [$tenantId]
+        );
+        $statusCounts = [];
+        foreach ($counts as $row) { $statusCounts[$row['status']] = (int)$row['c']; }
+        $totalCount   = array_sum($statusCounts);
+        $pendingCount = $statusCounts['pending'] ?? 0;
 
         $pageTitle    = 'Roster Change Requests';
         $pageSubtitle = 'Review and respond to crew requests';

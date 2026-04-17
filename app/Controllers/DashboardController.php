@@ -243,6 +243,7 @@ class DashboardController {
             'expiring_licenses' => CrewProfileModel::expiringLicenses($tenantId, 90),
             'expiring_medicals' => CrewProfileModel::expiringMedicals($tenantId, 90),
             'expiring_qualifications' => QualificationModel::expiringForTenant($tenantId, 90),
+            'pending_changes'   => count(RosterModel::getPendingChanges($tenantId)),
         ];
         require VIEWS_PATH . '/dashboard/chief_pilot.php';
     }
