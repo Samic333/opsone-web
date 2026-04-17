@@ -39,9 +39,14 @@ class Database {
 
                 $dsn = "mysql:host=$host;port=$port;dbname=$database;charset=utf8mb4";
                 self::$instance = new PDO($dsn, $username, $password, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                    PDO::ATTR_EMULATE_PREPARES => false,
+                    PDO::ATTR_EMULATE_PREPARES   => false,
+                    // Always return integer/float columns as PHP strings so that
+                    // json_encode() produces JSON strings ("1") rather than JSON
+                    // integers (1).  Swift's JSONDecoder requires exact type matches
+                    // and cannot coerce JSON integers to Swift String properties.
+                    PDO::ATTR_STRINGIFY_FETCHES  => true,
                 ]);
             }
         }
