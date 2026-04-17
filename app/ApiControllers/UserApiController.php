@@ -23,11 +23,11 @@ class UserApiController {
         jsonResponse([
             'success' => true,
             'user' => [
-                'id'            => $fullUser['id'],
+                'id'            => (string) $fullUser['id'],
                 'name'          => $fullUser['name'],
                 'email'         => $fullUser['email'],
                 'employee_id'   => $fullUser['employee_id'],
-                'tenant_id'     => $tenantId,
+                'tenant_id'     => (string) $tenantId,
                 'status'        => $fullUser['status'],
                 'department'    => $fullUser['department_name'] ?? null,
                 'base'          => $fullUser['base_code'] ?? null,
