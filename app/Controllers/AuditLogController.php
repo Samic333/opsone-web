@@ -92,6 +92,8 @@ class AuditLogController {
         // Tenant list for platform tenant filter dropdown
         $allTenants = $isPlatformSecurity ? Tenant::all() : [];
 
+        $isSuperAdmin = $isPlatformSecurity; // alias expected by view
+
         $pageTitle    = 'Audit Log';
         $pageSubtitle = 'Security & action history';
 
