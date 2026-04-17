@@ -100,4 +100,55 @@ class UserApiController {
             'modules' => $codes,
         ]);
     }
+
+    // ─── GET /api/user/capabilities ───────────────────────────────────────────
+    // Phase 10: richer mobile entitlements.
+    // Returns the user's role-level capabilities grouped by module, plus
+    // the tenant's active feature flags.  The iPad app can use this for
+    // fine-grained UI decisions (e.g. show/hide "Upload" button vs read-only).
+    public function capabilities(): void {
+        $user     = apiUser();
+        $tenantId = apiTenantId();
+        $roles    = apiUserRoles();   // array of role slugs
+
+        // Role capabilities from role_capabilities table
+        $capRows = \Database::fetchAll(
+            "SELECT DISTINCT mc.capability, m.code AS module_code
+             FROM user_roles ur
+             JOIN roles r ON r.id = ur.role_id
+             JOIN role_capabilities rc ON rc.role_id = r.id
+             JOIN module_capabilities mc ON mc.id = rc.module_capability_id
+             JOIN modules m ON m.id = mc.module_id
+             WHERE ur.user_id = ?
+             ORDER BY m.code, mc.capability",
+            [$user['user_id']]
+        );
+
+        // Group by module
+        $byModule = [];
+        foreach ($capRows as $row) {
+            $byModule[$row['module_code']][] = $row['capability'];
+        }
+
+        // Active feature flags for this tenant (global OR tenant-specific enabled)
+        $flagRows = \Database::fetchAll(
+            "SELECT ff.code, ff.name, ff.category
+             FROM feature_flags ff
+             LEFT JOIN tenant_feature_flags tff
+                   ON tff.flag_id = ff.id AND tff.tenant_id = ?
+             WHERE ff.is_global = 1
+                OR (tff.enabled = 1)
+             ORDER BY ff.category, ff.code",
+            [$tenantId]
+        );
+        $activeFlags = array_column($flagRows, 'code');
+
+        jsonResponse([
+            'success'         => true,
+            'roles'           => $roles,
+            'capabilities'    => $byModule,   // { "rostering": ["view","create"], ... }
+            'active_flags'    => $activeFlags, // ["jeppesen_charts_beta", ...]
+            'api_version'     => '2',
+        ]);
+    }
 }

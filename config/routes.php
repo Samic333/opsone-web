@@ -227,6 +227,10 @@ return [
     // ─── Compliance ─────────────────────
     'GET /compliance' => ['ComplianceController', 'index'],
 
+    // ─── Platform: Feature Flags ────────
+    'GET /platform/feature-flags'              => ['FeatureFlagController', 'index'],
+    'POST /platform/feature-flags/toggle/{id}' => ['FeatureFlagController', 'toggle'],
+
     // ─── Audit Log ──────────────────────
     'GET /audit-log'         => ['AuditLogController', 'index'],
     'GET /audit-log/logins'  => ['AuditLogController', 'loginActivity'],
@@ -247,8 +251,9 @@ return [
     'GET /api/devices/status'    => ['DeviceApiController', 'status'],
 
     // ─── API: User ─────────────────────
-    'GET /api/user/profile'  => ['UserApiController', 'profile'],
-    'GET /api/user/modules'  => ['UserApiController', 'modules'],
+    'GET /api/user/profile'       => ['UserApiController', 'profile'],
+    'GET /api/user/modules'       => ['UserApiController', 'modules'],
+    'GET /api/user/capabilities'  => ['UserApiController', 'capabilities'],  // Phase 10: richer entitlements
 
     // ─── API: Roster ───────────────────
     'GET /api/roster' => ['RosterApiController', 'index'],

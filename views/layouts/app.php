@@ -126,6 +126,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <a href="/platform/modules" class="sidebar-link <?= str_starts_with($currentPath, '/platform/modules') ? 'active' : '' ?>">
                     <span class="icon">🧩</span> Module Catalog
                 </a>
+                <a href="/platform/feature-flags" class="sidebar-link <?= str_starts_with($currentPath, '/platform/feature-flags') ? 'active' : '' ?>">
+                    <span class="icon">🚩</span> Feature Flags
+                </a>
             </div>
             <?php endif; ?>
 
