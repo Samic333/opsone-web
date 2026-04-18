@@ -9,8 +9,8 @@ $today     = date('Y-m-d');
 $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
 ?>
 <style>
-.myr-layout{display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start;}
-@media(max-width:900px){.myr-layout{grid-template-columns:1fr;}}
+.myr-layout{display:grid;grid-template-columns:1fr 340px;gap:24px;align-items:start;}
+@media(max-width:960px){.myr-layout{grid-template-columns:1fr;}}
 /* Monthly calendar */
 .myr-cal-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .myr-cal-hdr{padding:16px 20px;background:var(--bg-secondary);border-bottom:1px solid var(--border);
@@ -36,14 +36,14 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
 /* Summary panel */
 .myr-summary-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .myr-summary-hdr{padding:14px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);}
-.myr-summary-body{padding:16px;}
+.myr-summary-body{padding:0;}
 .myr-stat-row{display:flex;justify-content:space-between;align-items:center;
- padding:9px 0;border-bottom:1px solid var(--border);}
+ padding:11px 16px;border-bottom:1px solid var(--border);}
 .myr-stat-row:last-child{border:none;}
 .myr-stat-label{font-size:13px;color:var(--text-muted);}
 .myr-stat-val{font-size:20px;font-weight:800;}
 /* Upcoming duties */
-.upcoming-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:14px;}
+.upcoming-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px;}
 .upcoming-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);}
 .upcoming-item:last-child{border:none;}
 .upcoming-date{width:44px;text-align:center;flex-shrink:0;}
@@ -53,12 +53,33 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
 .upcoming-detail{flex:1;min-width:0;}
 .upcoming-duty-name{font-size:13px;font-weight:600;}
 .upcoming-duty-note{font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-/* Request form */
-.req-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-top:14px;}
+/* ── Request form ─────────────────────────────── */
+.req-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px;}
+.req-card-hdr{padding:14px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);
+ display:flex;align-items:center;gap:10px;}
+.req-card-hdr-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+ background:var(--accent-blue,#3b82f6);color:#fff;font-size:15px;flex-shrink:0;}
+.req-card-body{padding:18px 16px;}
+.req-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;}
+.req-type-btn{padding:10px 8px;border-radius:8px;border:2px solid var(--border);cursor:pointer;
+ text-align:center;transition:all .15s;background:var(--bg-secondary);}
+.req-type-btn:hover{border-color:var(--accent-blue,#3b82f6);background:rgba(37,99,235,.05);}
+.req-type-btn.active{border-color:var(--accent-blue,#3b82f6);background:rgba(37,99,235,.07);}
+.req-type-icon{font-size:18px;display:block;margin-bottom:3px;}
+.req-type-label{font-size:11px;font-weight:700;color:var(--text-primary);}
+.req-field{margin-bottom:14px;}
+.req-field label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);
+ text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+.req-field .form-control{font-size:14px;padding:10px 12px;border-radius:8px;}
+.req-field textarea.form-control{resize:vertical;min-height:90px;}
+.req-hint{font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.4;}
+.req-submit-btn{width:100%;padding:11px;font-size:14px;font-weight:700;border-radius:8px;
+ border:none;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.req-submit-btn:hover{opacity:.88;}
 /* Change requests history */
-.cr-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.cr-item{display:flex;align-items:flex-start;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
 .cr-item:last-child{border:none;}
-.cr-type-chip{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:3px;white-space:nowrap;}
+.cr-type-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;}
 .cr-status-pending{background:#fef9c3;color:#92400e;}
 .cr-status-approved{background:#d1fae5;color:#065f46;}
 .cr-status-rejected{background:#fee2e2;color:#991b1b;}
@@ -173,7 +194,8 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
 
     <!-- Right sidebar -->
     <div>
-        <!-- Monthly summary -->
+
+        <!-- ── Month Summary ───────────────────── -->
         <div class="myr-summary-card">
             <div class="myr-summary-hdr">
                 <strong style="font-size:13px;">Month Summary</strong>
@@ -181,75 +203,164 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
             </div>
             <div class="myr-summary-body">
                 <div class="myr-stat-row">
-                    <span class="myr-stat-label">Flight days</span>
+                    <div>
+                        <div class="myr-stat-label">Flight Days</div>
+                        <div style="font-size:10px;color:var(--text-muted);">Active flying assignments</div>
+                    </div>
                     <span class="myr-stat-val" style="color:#2563eb;"><?= $summary['flight'] ?></span>
                 </div>
                 <div class="myr-stat-row">
-                    <span class="myr-stat-label">Standby / Reserve</span>
+                    <div>
+                        <div class="myr-stat-label">Standby / Reserve</div>
+                        <div style="font-size:10px;color:var(--text-muted);">On-call availability</div>
+                    </div>
                     <span class="myr-stat-val" style="color:#d97706;"><?= ($summary['standby'] ?? 0) + ($summary['reserve'] ?? 0) ?></span>
                 </div>
                 <div class="myr-stat-row">
-                    <span class="myr-stat-label">Training</span>
+                    <div>
+                        <div class="myr-stat-label">Training</div>
+                        <div style="font-size:10px;color:var(--text-muted);">Sim / ground / recurrent</div>
+                    </div>
                     <span class="myr-stat-val" style="color:#7c3aed;"><?= $summary['training'] ?></span>
                 </div>
                 <div class="myr-stat-row">
-                    <span class="myr-stat-label">Leave</span>
+                    <div>
+                        <div class="myr-stat-label">Leave</div>
+                        <div style="font-size:10px;color:var(--text-muted);">Annual, sick, study</div>
+                    </div>
                     <span class="myr-stat-val" style="color:#059669;"><?= $summary['leave'] ?></span>
                 </div>
                 <div class="myr-stat-row">
-                    <span class="myr-stat-label">Days off / Rest</span>
+                    <div>
+                        <div class="myr-stat-label">Days Off / Rest</div>
+                        <div style="font-size:10px;color:var(--text-muted);">Off duty, rest periods</div>
+                    </div>
                     <span class="myr-stat-val" style="color:var(--text-muted);"><?= ($summary['off'] ?? 0) + ($summary['rest'] ?? 0) ?></span>
                 </div>
-                <div class="myr-stat-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:10px;">
-                    <span class="myr-stat-label" style="font-weight:600;">Total rostered days</span>
-                    <span class="myr-stat-val"><?= $summary['total'] ?></span>
+                <div class="myr-stat-row" style="background:rgba(37,99,235,.04);">
+                    <div>
+                        <div class="myr-stat-label" style="font-weight:700;color:var(--text-primary);">Total Rostered Days</div>
+                    </div>
+                    <span class="myr-stat-val" style="font-size:24px;"><?= $summary['total'] ?></span>
                 </div>
             </div>
         </div>
 
-        <!-- Submit a request -->
+        <!-- ── Submit a Request ─────────────────── -->
         <div class="req-card">
-            <strong style="font-size:13px;display:block;margin-bottom:10px;">Submit Request</strong>
-            <form method="POST" action="/roster/changes/request">
-                <?= csrfField() ?>
-                <input type="hidden" name="redirect" value="/my-roster?year=<?= $year ?>&month=<?= $month ?>">
-                <div style="margin-bottom:8px;">
-                    <select name="change_type" class="form-control" style="font-size:12px;">
-                        <option value="leave_request">Leave Request</option>
-                        <option value="swap_request">Swap Request</option>
-                        <option value="correction">Correction</option>
-                        <option value="comment">Comment / Query</option>
-                    </select>
+            <div class="req-card-hdr">
+                <div class="req-card-hdr-icon">✍️</div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:var(--text-primary);">Submit a Request</div>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Your request is sent directly to scheduling</div>
                 </div>
-                <div style="margin-bottom:8px;">
-                    <textarea name="message" class="form-control" rows="2" style="font-size:12px;"
-                              placeholder="Describe your request…" required></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width:100%;font-size:12px;">Submit</button>
-            </form>
+            </div>
+            <div class="req-card-body">
+                <form method="POST" action="/roster/changes/request" id="reqForm">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="redirect" value="/my-roster?year=<?= $year ?>&month=<?= $month ?>">
+                    <input type="hidden" name="change_type" id="changeTypeHidden" value="leave_request">
+
+                    <!-- Request type selector -->
+                    <div class="req-field">
+                        <label>Request Type</label>
+                        <div class="req-type-grid">
+                            <div class="req-type-btn active" data-type="leave_request" onclick="selectType(this,'leave_request')">
+                                <span class="req-type-icon">🏖️</span>
+                                <span class="req-type-label">Leave Request</span>
+                            </div>
+                            <div class="req-type-btn" data-type="swap_request" onclick="selectType(this,'swap_request')">
+                                <span class="req-type-icon">🔄</span>
+                                <span class="req-type-label">Duty Swap</span>
+                            </div>
+                            <div class="req-type-btn" data-type="correction" onclick="selectType(this,'correction')">
+                                <span class="req-type-icon">✏️</span>
+                                <span class="req-type-label">Correction</span>
+                            </div>
+                            <div class="req-type-btn" data-type="comment" onclick="selectType(this,'comment')">
+                                <span class="req-type-icon">💬</span>
+                                <span class="req-type-label">Comment / Query</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic hint based on type -->
+                    <div id="typeHint" style="margin-bottom:14px;padding:10px 12px;border-radius:8px;background:rgba(37,99,235,.06);
+                         border:1px solid rgba(37,99,235,.15);font-size:12px;color:#1d4ed8;line-height:1.5;">
+                        <strong>Leave Request:</strong> Include your preferred dates and type of leave (annual, sick, study).
+                    </div>
+
+                    <!-- Message -->
+                    <div class="req-field">
+                        <label>Your Message <span style="color:#ef4444;">*</span></label>
+                        <textarea name="message" id="reqMessage" class="form-control"
+                                  placeholder="Describe your request in detail. Include relevant dates, flight numbers, or crew members where applicable."
+                                  required maxlength="1000"></textarea>
+                        <div class="req-hint">
+                            <span id="charCount">0</span>/1000 characters · Be as specific as possible to help scheduling respond quickly.
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <button type="submit" class="req-submit-btn" id="reqSubmitBtn"
+                            style="background:var(--accent-blue,#3b82f6);color:#fff;">
+                        <span id="submitIcon">🏖️</span>
+                        <span id="submitLabel">Submit Leave Request</span>
+                    </button>
+
+                    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin:10px 0 0;">
+                        You'll be notified when scheduling responds. Average response: 24–48 hours.
+                    </p>
+                </form>
+            </div>
         </div>
 
-        <!-- My recent requests -->
+        <!-- ── My Recent Requests ───────────────── -->
         <?php if (!empty($myChanges)): ?>
-        <div style="margin-top:14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-            <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg-secondary);">
+        <div style="margin-top:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);background:var(--bg-secondary);
+                        display:flex;align-items:center;justify-content:space-between;">
                 <strong style="font-size:13px;">My Recent Requests</strong>
+                <a href="/roster/changes" style="font-size:12px;color:var(--accent-blue,#3b82f6);text-decoration:none;font-weight:600;">View All →</a>
             </div>
-            <div style="padding:8px 16px;">
+            <div style="padding:4px 16px 8px;">
                 <?php
-                $crTypeLabels = ['leave_request'=>'Leave','swap_request'=>'Swap','correction'=>'Correction','comment'=>'Comment','training_request'=>'Training'];
+                $crTypeLabels = [
+                    'leave_request'    => ['label'=>'Leave',    'icon'=>'🏖️'],
+                    'swap_request'     => ['label'=>'Swap',     'icon'=>'🔄'],
+                    'correction'       => ['label'=>'Correct',  'icon'=>'✏️'],
+                    'comment'          => ['label'=>'Comment',  'icon'=>'💬'],
+                    'training_request' => ['label'=>'Training', 'icon'=>'📚'],
+                ];
+                $statusIcons = ['pending'=>'⏳','approved'=>'✅','rejected'=>'❌','noted'=>'📝'];
                 foreach ($myChanges as $cr):
+                    $crMeta = $crTypeLabels[$cr['change_type']] ?? ['label'=>ucfirst($cr['change_type']),'icon'=>'📋'];
+                    $sIcon  = $statusIcons[$cr['status']] ?? '•';
                 ?>
                 <div class="cr-item">
-                    <div>
-                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-                            <span class="cr-type-chip"><?= $crTypeLabels[$cr['change_type']] ?? ucfirst($cr['change_type']) ?></span>
-                            <span class="cr-type-chip cr-status-<?= $cr['status'] ?>"><?= ucfirst($cr['status']) ?></span>
+                    <div style="flex-shrink:0;font-size:20px;margin-top:1px;"><?= $crMeta['icon'] ?></div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;">
+                            <span class="cr-type-chip" style="background:var(--bg-secondary);color:var(--text-muted);">
+                                <?= $crMeta['label'] ?>
+                            </span>
+                            <span class="cr-type-chip cr-status-<?= $cr['status'] ?>">
+                                <?= $sIcon ?> <?= ucfirst($cr['status']) ?>
+                            </span>
                         </div>
-                        <div style="font-size:12px;color:var(--text-primary);"><?= e(substr($cr['message'],0,60)) ?><?= strlen($cr['message'])>60?'…':'' ?></div>
-                        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;"><?= date('d M Y', strtotime($cr['created_at'])) ?></div>
+                        <div style="font-size:13px;color:var(--text-primary);line-height:1.4;">
+                            <?= e(substr($cr['message'], 0, 70)) ?><?= strlen($cr['message']) > 70 ? '…' : '' ?>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+                            <?= date('d M Y', strtotime($cr['created_at'])) ?>
+                        </div>
                         <?php if ($cr['response']): ?>
-                            <div style="font-size:11px;color:var(--text-muted);font-style:italic;margin-top:3px;">Response: <?= e(substr($cr['response'],0,60)) ?></div>
+                        <div style="margin-top:6px;padding:6px 10px;border-radius:6px;background:var(--bg-secondary);
+                                    border-left:3px solid <?= $cr['status'] === 'approved' ? '#10b981' : ($cr['status'] === 'rejected' ? '#ef4444' : '#6b7280') ?>;">
+                            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+                                        color:var(--text-muted);margin-bottom:2px;">Scheduling Response</div>
+                            <div style="font-size:12px;color:var(--text-primary);"><?= e(substr($cr['response'], 0, 80)) ?><?= strlen($cr['response']) > 80 ? '…' : '' ?></div>
+                        </div>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -257,5 +368,30 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
             </div>
         </div>
         <?php endif; ?>
-    </div>
+
+    </div><!-- /right sidebar -->
 </div>
+
+<script>
+const typeConfig = {
+    leave_request:  { hint: '<strong>Leave Request:</strong> Include your preferred dates and type of leave (annual, sick, study leave).', icon: '🏖️', label: 'Submit Leave Request', color: '#059669' },
+    swap_request:   { hint: '<strong>Duty Swap:</strong> Specify the date(s) you want to swap, and if possible the crew member you want to swap with.', icon: '🔄', label: 'Submit Swap Request', color: '#d97706' },
+    correction:     { hint: '<strong>Roster Correction:</strong> Describe the incorrect entry, the correct information, and the date(s) affected.', icon: '✏️', label: 'Submit Correction', color: '#3b82f6' },
+    comment:        { hint: '<strong>Comment / Query:</strong> Ask a question or leave a general comment for scheduling to review.', icon: '💬', label: 'Send Comment', color: '#6b7280' },
+};
+
+function selectType(el, type) {
+    document.querySelectorAll('.req-type-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('changeTypeHidden').value = type;
+    const cfg = typeConfig[type];
+    document.getElementById('typeHint').innerHTML = cfg.hint;
+    document.getElementById('submitIcon').textContent = cfg.icon;
+    document.getElementById('submitLabel').textContent = cfg.label;
+    document.getElementById('reqSubmitBtn').style.background = cfg.color;
+}
+
+document.getElementById('reqMessage').addEventListener('input', function() {
+    document.getElementById('charCount').textContent = this.value.length;
+});
+</script>

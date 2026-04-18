@@ -341,7 +341,7 @@ class RosterController {
     }
 
     public function requestChange(): void {
-        RbacMiddleware::requireAuth();
+        requireAuth();
 
         if (!verifyCsrf()) {
             flash('error', 'Invalid security token.');
