@@ -172,6 +172,7 @@ return [
     'POST /notices/toggle/{id}'                 => ['NoticeController', 'togglePublish'],
     'POST /notices/delete/{id}'                 => ['NoticeController', 'delete'],
     'GET /notices/categories'                   => ['NoticeController', 'categories'],
+    'GET /notices/ack-report/{id}'              => ['NoticeController', 'ackReport'],
     'POST /notices/categories/store'            => ['NoticeController', 'storeCategory'],
     'POST /notices/categories/delete/{id}'      => ['NoticeController', 'deleteCategory'],
 

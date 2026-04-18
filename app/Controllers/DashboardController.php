@@ -421,6 +421,14 @@ class DashboardController {
             'recent_files'   => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
             'sync_status'    => Device::getLatestSync($user['id']),
             'last_login'     => $user['last_login'] ?? 'Never',
+            'pending_notice_acks' => (int)(Database::fetch(
+                "SELECT COUNT(*) as c FROM notices n
+                 LEFT JOIN notice_reads nr ON nr.notice_id = n.id AND nr.user_id = ?
+                 WHERE n.tenant_id = ? AND n.published = 1 AND n.requires_ack = 1
+                   AND (n.expires_at IS NULL OR n.expires_at > NOW())
+                   AND nr.acknowledged_at IS NULL",
+                [$user['id'], $tenantId]
+            )['c'] ?? 0),
         ];
         require VIEWS_PATH . '/dashboard/pilot.php';
     }
@@ -434,6 +442,14 @@ class DashboardController {
             'recent_files'   => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
             'sync_status'    => Device::getLatestSync($user['id']),
             'total_files'    => FileModel::countByTenant($tenantId),
+            'pending_notice_acks' => (int)(Database::fetch(
+                "SELECT COUNT(*) as c FROM notices n
+                 LEFT JOIN notice_reads nr ON nr.notice_id = n.id AND nr.user_id = ?
+                 WHERE n.tenant_id = ? AND n.published = 1 AND n.requires_ack = 1
+                   AND (n.expires_at IS NULL OR n.expires_at > NOW())
+                   AND nr.acknowledged_at IS NULL",
+                [$user['id'], $tenantId]
+            )['c'] ?? 0),
         ];
         require VIEWS_PATH . '/dashboard/engineer.php';
     }

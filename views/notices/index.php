@@ -38,7 +38,7 @@ $filterPriority = $_GET['priority'] ?? '';
                 <th>Title</th>
                 <th>Priority</th>
                 <th>Category</th>
-                <th>Ack Required</th>
+                <th>Ack Status</th>
                 <th>Status</th>
                 <th>Expires</th>
                 <th>Created</th>
@@ -70,7 +70,28 @@ $filterPriority = $_GET['priority'] ?? '';
                     <span class="status-badge" style="--badge-color: <?= $pc ?>"><?= ucfirst(e($notice['priority'])) ?></span>
                 </td>
                 <td class="text-muted text-sm"><?= ucfirst(e($notice['category'] ?? '—')) ?></td>
-                <td class="text-sm"><?= $notice['requires_ack'] ? '<span style="color:#f59e0b;">⚠ Yes</span>' : '<span class="text-muted">No</span>' ?></td>
+                <td>
+                    <?php if ($notice['requires_ack']): ?>
+                        <?php
+                        $nid     = (int)$notice['id'];
+                        $acked   = $ackStats[$nid] ?? 0;
+                        $total   = $totalCrew;
+                        $pct     = $total > 0 ? round(($acked / $total) * 100) : 0;
+                        $barCol  = $pct >= 80 ? '#10b981' : ($pct >= 50 ? '#f59e0b' : '#ef4444');
+                        ?>
+                        <a href="/notices/ack-report/<?= $nid ?>" style="text-decoration:none;">
+                            <div style="min-width:90px;">
+                                <div style="background:var(--bg-secondary);border-radius:4px;height:6px;overflow:hidden;margin-bottom:3px;">
+                                    <div style="width:<?= $pct ?>%;height:100%;background:<?= $barCol ?>;border-radius:4px;"></div>
+                                </div>
+                                <span style="font-size:11px;color:var(--text-muted);"><?= $acked ?>/<?= $total ?> crew</span>
+                                <span style="font-size:11px;color:<?= $barCol ?>;font-weight:600;margin-left:4px;">(<?= $pct ?>%)</span>
+                            </div>
+                        </a>
+                    <?php else: ?>
+                        <span class="text-muted text-xs">Not required</span>
+                    <?php endif; ?>
+                </td>
                 <td><?= $notice['published'] ? statusBadge('published') : statusBadge('draft') ?></td>
                 <td class="text-sm text-muted">
                     <?php if ($notice['expires_at']): ?>
@@ -87,6 +108,9 @@ $filterPriority = $_GET['priority'] ?? '';
                 <td>
                     <div class="btn-group">
                         <a href="/notices/edit/<?= $notice['id'] ?>" class="btn btn-outline btn-xs">Edit</a>
+                        <?php if ($notice['requires_ack']): ?>
+                            <a href="/notices/ack-report/<?= $notice['id'] ?>" class="btn btn-outline btn-xs">Ack Report</a>
+                        <?php endif; ?>
                         <form method="POST" action="/notices/toggle/<?= $notice['id'] ?>" style="display:inline;">
                             <?= csrfField() ?>
                             <button type="submit" class="btn btn-xs <?= $notice['published'] ? 'btn-warning' : 'btn-success' ?>">

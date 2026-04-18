@@ -4,6 +4,23 @@ $pageSubtitle = 'Crew Operations Overview';
 ob_start();
 ?>
 
+<?php if (($data['pending_notice_acks'] ?? 0) > 0): ?>
+<div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:22px;">✍️</span>
+        <div>
+            <strong style="font-size:14px; display:block;">
+                <?= $data['pending_notice_acks'] ?> notice<?= $data['pending_notice_acks'] !== 1 ? 's' : '' ?> require<?= $data['pending_notice_acks'] === 1 ? 's' : '' ?> your acknowledgement
+            </strong>
+            <span style="font-size:12px; opacity:0.9;">Your sign-off is required — tap to review and acknowledge.</span>
+        </div>
+    </div>
+    <a href="/my-notices" style="background:#fff; color:#d97706; font-weight:700; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:13px; white-space:nowrap; flex-shrink:0;">
+        Review Notices →
+    </a>
+</div>
+<?php endif; ?>
+
 <div class="stats-grid">
     <div class="stat-card blue">
         <div class="stat-label">Welcome</div>
@@ -24,7 +41,7 @@ ob_start();
     <div class="card">
         <div class="card-header">
             <div class="card-title">Company Notices</div>
-            <a href="/notices" class="btn btn-sm btn-outline">View All →</a>
+            <a href="/my-notices" class="btn btn-sm btn-outline">View All →</a>
         </div>
         <?php if (empty($data['recent_notices'])): ?>
             <div class="empty-state"><p>No active operational bulletins.</p></div>

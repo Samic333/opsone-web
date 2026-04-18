@@ -152,6 +152,68 @@
 </div>
 <?php endif; ?>
 
+<!-- ─── Pending Notice Acknowledgements ─── -->
+<?php if (!empty($pendingNoticeAcks)): ?>
+<div class="card" style="border-left:3px solid #f59e0b;">
+    <div class="card-header">
+        <div class="card-title" style="color:#d97706;">✍️ Notices Awaiting Crew Acknowledgement</div>
+        <a href="/notices" class="btn btn-sm btn-outline">Manage Notices →</a>
+    </div>
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
+        These notices require acknowledgement from mobile crew but have outstanding sign-offs.
+        Click the notice title to see per-crew status.
+    </p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Notice</th>
+                    <th>Priority</th>
+                    <th>Category</th>
+                    <th>Required</th>
+                    <th>Acknowledged</th>
+                    <th>Outstanding</th>
+                    <th>Progress</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            <?php foreach ($pendingNoticeAcks as $na):
+                $pct = $na['total_required'] > 0
+                    ? round(($na['total_acked'] / $na['total_required']) * 100)
+                    : 0;
+                $barColor = $pct >= 75 ? '#10b981' : ($pct >= 40 ? '#f59e0b' : '#ef4444');
+                $pc = ['normal'=>'#6b7280','urgent'=>'#f59e0b','critical'=>'#ef4444'][$na['priority']] ?? '#6b7280';
+            ?>
+            <tr>
+                <td>
+                    <a href="/notices/ack-report/<?= (int)$na['id'] ?>" style="font-weight:600;color:var(--text-primary);text-decoration:none;">
+                        <?= e($na['title']) ?>
+                    </a>
+                    <br><span class="text-xs text-muted"><?= formatDate($na['published_at'] ?? $na['created_at']) ?></span>
+                </td>
+                <td><span class="status-badge" style="--badge-color:<?= $pc ?>"><?= ucfirst(e($na['priority'])) ?></span></td>
+                <td style="font-size:12px;color:var(--text-muted);"><?= ucfirst(e($na['category'] ?? '—')) ?></td>
+                <td style="text-align:center;"><?= (int)$na['total_required'] ?></td>
+                <td style="text-align:center;color:#10b981;font-weight:600;"><?= (int)$na['total_acked'] ?></td>
+                <td style="text-align:center;color:#ef4444;font-weight:700;"><?= (int)$na['pending_count'] ?></td>
+                <td style="min-width:100px;">
+                    <div style="background:var(--bg-secondary);border-radius:4px;height:8px;overflow:hidden;">
+                        <div style="width:<?= $pct ?>%;height:100%;background:<?= $barColor ?>;border-radius:4px;transition:width .3s;"></div>
+                    </div>
+                    <div style="font-size:10px;color:var(--text-muted);margin-top:2px;text-align:right;"><?= $pct ?>%</div>
+                </td>
+                <td>
+                    <a href="/notices/ack-report/<?= (int)$na['id'] ?>" class="btn btn-outline btn-xs">View Report</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <!-- ─── Pending Document Acknowledgements ─── -->
 <?php if (!empty($pendingAcks)): ?>
 <div class="card" style="border-left:3px solid #6366f1;">
@@ -204,7 +266,7 @@
 <?php endif; ?>
 
 <!-- All clear state -->
-<?php if (empty($expiredLicenses) && empty($expiringLicenses) && empty($expiringMedicals) && empty($expiringPassports) && empty($pendingAcks)): ?>
+<?php if (empty($expiredLicenses) && empty($expiringLicenses) && empty($expiringMedicals) && empty($expiringPassports) && empty($pendingAcks) && empty($pendingNoticeAcks)): ?>
 <div class="card">
     <div class="empty-state">
         <div class="icon">✅</div>
