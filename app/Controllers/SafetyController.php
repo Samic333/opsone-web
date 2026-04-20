@@ -60,16 +60,25 @@ class SafetyController {
     /**
      * Safety home: shows report type tiles filtered by user role + tenant settings.
      * GET /safety
+     *
+     * Safety-team users are redirected to the Safety Dashboard — they should use
+     * the team queue, not the crew submission landing page.
      */
     public function home(): void {
         requireAuth();
-        $user     = currentUser();
+        $user      = currentUser();
+        $userRoles = UserModel::getRoles((int) $user['id']);
+        $roleSlugs = array_column($userRoles, 'slug');
+
+        // Team users land on the dashboard, not the submission home
+        if (array_intersect(self::TEAM_ROLES, $roleSlugs)) {
+            redirect('/safety/dashboard');
+        }
+
         $tenantId = (int) $user['tenant_id'];
 
         $settings     = SafetyReportModel::getSettings($tenantId);
         $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
-        $userRoles    = UserModel::getRoles((int) $user['id']);
-        $roleSlugs    = array_column($userRoles, 'slug');
 
         $reportTypes = self::filterTypesByRole($enabledTypes, $roleSlugs);
 
@@ -77,9 +86,7 @@ class SafetyController {
         $submittedCount = count(SafetyReportModel::forUser($tenantId, (int) $user['id']));
         $followUpCount  = count(SafetyReportModel::followUpsForUser($tenantId, (int) $user['id']));
 
-        // Determine if user has safety-team access
-        $isTeamUser = (bool) array_intersect(self::TEAM_ROLES, $roleSlugs);
-        $teamStats  = $isTeamUser ? SafetyReportModel::stats($tenantId) : null;
+        $isTeamUser = false; // non-team path (team users redirected above)
 
         $pageTitle    = 'Safety Reporting';
         $pageSubtitle = 'Confidential safety, hazard, and incident reporting. Protected under Just Culture policy.';
@@ -606,9 +613,7 @@ class SafetyController {
 
         $stats = SafetyReportModel::stats($tenantId);
 
-        $recentReports = SafetyReportModel::allForTenant($tenantId, 'all', []);
-        $recentReports = array_slice($recentReports, 0, 5);
-
+        $recentReports  = array_slice(SafetyReportModel::allForTenant($tenantId, 'all', []), 0, 8);
         $overdueActions = SafetyReportModel::tenantActions($tenantId, 'overdue');
         $pendingActions = SafetyReportModel::tenantActions($tenantId, 'open');
 
@@ -664,7 +669,11 @@ class SafetyController {
             redirect('/safety/queue');
         }
 
-        $threads       = SafetyReportModel::getThreads($id, true); // include internal
+        $allThreads    = SafetyReportModel::getThreads($id, true); // include internal
+        // Split for view: Discussion tab uses $publicThreads, Internal Notes uses $internalNotes
+        $publicThreads = array_values(array_filter($allThreads, fn($t) => !(bool)($t['is_internal'] ?? false)));
+        $internalNotes = array_values(array_filter($allThreads, fn($t) =>  (bool)($t['is_internal'] ?? false)));
+        $threads       = $allThreads; // kept for backward-compat in any view code referencing $threads
         $attachments   = SafetyReportModel::getAttachments($id);
         $statusHistory = SafetyReportModel::getStatusHistory($id);
         $actions       = SafetyReportModel::getActions($id, $tenantId);
@@ -738,6 +747,33 @@ class SafetyController {
         }
 
         flash('success', 'Status updated to ' . str_replace('_', ' ', $newStatus) . '.');
+        redirect("/safety/team/report/$id");
+    }
+
+    /**
+     * POST /safety/team/report/{id}/severity
+     * Set the safety team's final severity classification.
+     */
+    public function updateSeverity(int $id): void {
+        RbacMiddleware::requireRole(self::TEAM_ROLES);
+        verifyCsrf();
+
+        $tenantId = currentTenantId();
+        $user     = currentUser();
+        $severity = trim($_POST['final_severity'] ?? '');
+
+        $report = SafetyReportModel::find($tenantId, $id);
+        if (!$report) {
+            flash('error', 'Report not found.');
+            redirect('/safety/queue');
+        }
+
+        SafetyReportModel::setFinalSeverity($tenantId, $id, $severity ?: null);
+        AuditService::log('safety.severity_classified', 'safety_reports', $id, [
+            'final_severity' => $severity ?: 'unclassified',
+        ]);
+
+        flash('success', $severity ? 'Severity classified as ' . ucfirst($severity) . '.' : 'Severity classification cleared.');
         redirect("/safety/team/report/$id");
     }
 

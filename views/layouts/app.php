@@ -299,16 +299,41 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             <?php if (hasAnyRole(['airline_admin','safety_officer','fdm_analyst','chief_pilot','hr'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Safety</div>
+
+                <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
+                <!-- Safety Management sub-menu (team only) -->
+                <a href="/safety/dashboard" class="sidebar-link <?= str_starts_with($currentPath, '/safety/dashboard') ? 'active' : '' ?>">
+                    <span class="icon">📊</span> Safety Dashboard
+                </a>
+                <a href="/safety/queue" class="sidebar-link <?= (str_starts_with($currentPath, '/safety/queue') || (str_starts_with($currentPath, '/safety/team/report') )) ? 'active' : '' ?>">
+                    <span class="icon">📋</span> Reports Queue
+                </a>
+                <a href="/safety/team/actions" class="sidebar-link <?= str_starts_with($currentPath, '/safety/team/actions') ? 'active' : '' ?>">
+                    <span class="icon">⚙️</span> Corrective Actions
+                </a>
+                <a href="/safety/publications" class="sidebar-link <?= str_starts_with($currentPath, '/safety/publication') ? 'active' : '' ?>">
+                    <span class="icon">📢</span> Publications
+                </a>
+                <a href="/safety/select-type" class="sidebar-link <?=
+                    (str_starts_with($currentPath, '/safety/select-type')
+                     || str_starts_with($currentPath, '/safety/report/new')
+                     || str_starts_with($currentPath, '/safety/quick-report'))
+                    ? 'active' : '' ?>">
+                    <span class="icon">✏️</span> Submit a Report
+                </a>
+                <?php if (hasAnyRole(['safety_officer','airline_admin','super_admin'])): ?>
+                <a href="/safety/settings" class="sidebar-link <?= str_starts_with($currentPath, '/safety/settings') ? 'active' : '' ?>">
+                    <span class="icon">🔧</span> Safety Settings
+                </a>
+                <?php endif; ?>
+                <?php endif; ?>
+
                 <?php if (hasAnyRole(['airline_admin','safety_officer','fdm_analyst'])): ?>
                 <a href="/fdm" class="sidebar-link <?= str_starts_with($currentPath, '/fdm') ? 'active' : '' ?>">
-                    <span class="icon">📊</span> FDM Data
+                    <span class="icon">📈</span> FDM Data
                 </a>
                 <?php endif; ?>
-                <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
-                <a href="/safety" class="sidebar-link <?= str_starts_with($currentPath, '/safety') && !str_starts_with($currentPath, '/safety/my') && !str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
-                    <span class="icon">🚨</span> Safety Management
-                </a>
-                <?php endif; ?>
+
                 <a href="/compliance" class="sidebar-link <?= str_starts_with($currentPath, '/compliance') ? 'active' : '' ?>">
                     <span class="icon">✅</span> Compliance
                 </a>

@@ -23,7 +23,7 @@ $activeTab = $_GET['tab'] ?? 'overview';
 ?>
 
 <div style="margin-bottom:16px;">
-    <a href="/safety" class="btn btn-ghost btn-sm">← Safety Queue</a>
+    <a href="/safety/queue" class="btn btn-ghost btn-sm">← Safety Queue</a>
 </div>
 
 <!-- Report Header -->

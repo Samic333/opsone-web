@@ -409,6 +409,19 @@ class SafetyReportModel {
     }
 
     /**
+     * Set the safety team's final severity classification on a report.
+     */
+    public static function setFinalSeverity(int $tenantId, int $id, ?string $severity): bool {
+        $allowed = ['negligible','minor','moderate','significant','critical',''];
+        if (!in_array($severity ?? '', $allowed, true)) return false;
+        Database::execute(
+            "UPDATE safety_reports SET final_severity = ? WHERE id = ? AND tenant_id = ?",
+            [$severity ?: null, $id, $tenantId]
+        );
+        return true;
+    }
+
+    /**
      * Assign a report to a user (or un-assign with null).
      * Records an assignment history row.
      */

@@ -166,6 +166,7 @@ return [
     'GET /safety/team/actions'                              => [SafetyController::class, 'actionsQueue'],
     'GET /safety/team/report/(\d+)'                         => [SafetyController::class, 'teamDetail'],
     'POST /safety/team/report/(\d+)/status'                 => [SafetyController::class, 'updateStatus'],
+    'POST /safety/team/report/(\d+)/severity'               => [SafetyController::class, 'updateSeverity'],
     'POST /safety/team/report/(\d+)/assign'                 => [SafetyController::class, 'assignReport'],
     'POST /safety/team/report/(\d+)/internal-note'          => [SafetyController::class, 'addInternalNote'],
     'POST /safety/team/report/(\d+)/reply'                  => [SafetyController::class, 'addTeamReply'],
