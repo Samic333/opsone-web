@@ -57,7 +57,7 @@ class SafetyReportModel {
         'hse'                     => ['all'],
         'tcas'                    => ['pilot', 'captain', 'first_officer', 'safety_manager', 'airline_admin'],
         'environmental'           => ['all'],
-        'frat'                    => ['pilot', 'captain', 'first_officer', 'dispatcher', 'airline_admin'],
+        'frat'                    => ['pilot', 'captain', 'first_officer', 'dispatcher', 'airline_admin', 'safety_manager', 'safety_staff'],
     ];
 
     // ─── Reference Number ─────────────────────────────────────────────────────
@@ -896,6 +896,42 @@ class SafetyReportModel {
             'open_actions'    => (int) ($openActionsRow['cnt']  ?? 0),
             'by_severity'     => $severityMap,
         ];
+    }
+
+    // ─── Follow-Ups ────────────────────────────────────────────────────────────
+
+    /**
+     * Reports where the safety team sent the last public thread message.
+     * These are "follow-ups" — the reporter should reply.
+     */
+    public static function followUpsForUser(int $tenantId, int $userId): array {
+        // Get user's submitted reports
+        // For each, check if last public thread message (is_internal=0) was from someone other than $userId
+        return Database::fetchAll(
+            "SELECT sr.*,
+                    last_thread.body        AS last_message,
+                    last_thread.created_at  AS last_message_at,
+                    last_thread_author.name AS last_message_by
+             FROM safety_reports sr
+             JOIN (
+                 SELECT t1.report_id, t1.body, t1.author_id, t1.created_at
+                 FROM safety_report_threads t1
+                 WHERE t1.is_internal = 0
+                   AND t1.created_at = (
+                       SELECT MAX(t2.created_at)
+                       FROM safety_report_threads t2
+                       WHERE t2.report_id = t1.report_id AND t2.is_internal = 0
+                   )
+             ) last_thread ON last_thread.report_id = sr.id
+             JOIN users last_thread_author ON last_thread_author.id = last_thread.author_id
+             WHERE sr.tenant_id = ?
+               AND sr.reporter_id = ?
+               AND sr.is_draft = 0
+               AND sr.status NOT IN ('closed', 'draft')
+               AND last_thread.author_id != ?
+             ORDER BY last_thread.created_at DESC",
+            [$tenantId, $userId, $userId]
+        );
     }
 
     // ─── Legacy Compatibility ─────────────────────────────────────────────────

@@ -156,8 +156,10 @@ return [
     'GET /safety/report/(\d+)'                  => [SafetyController::class, 'reportDetail'],
     'POST /safety/report/(\d+)/reply'           => [SafetyController::class, 'addReply'],
     'POST /safety/report/(\d+)/upload'          => [SafetyController::class, 'uploadAttachment'],
+    'GET /safety/follow-ups'                    => [SafetyController::class, 'myFollowUps'],
 
     // ─── Safety Phase 1 — Safety Team Routes ─────────────────
+    'GET /safety/dashboard'                                  => [SafetyController::class, 'safetyDashboard'],
     'GET /safety/queue'                                     => [SafetyController::class, 'index'],
     'GET /safety/team/actions'                              => [SafetyController::class, 'actionsQueue'],
     'GET /safety/team/report/(\d+)'                         => [SafetyController::class, 'teamDetail'],

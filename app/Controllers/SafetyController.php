@@ -66,6 +66,7 @@ class SafetyController {
 
         $draftCount     = count(SafetyReportModel::draftsForUser($tenantId, (int) $user['id']));
         $submittedCount = count(SafetyReportModel::forUser($tenantId, (int) $user['id']));
+        $followUpCount  = count(SafetyReportModel::followUpsForUser($tenantId, (int) $user['id']));
 
         // Determine if user has safety-team access
         $isTeamUser = (bool) array_intersect(self::TEAM_ROLES, $roleSlugs);
@@ -502,9 +503,56 @@ class SafetyController {
         redirect($backUrl);
     }
 
+    /**
+     * GET /safety/follow-ups
+     * Reports where the safety team has replied and the reporter hasn't responded yet.
+     */
+    public function myFollowUps(): void {
+        requireAuth();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+        $userId   = (int) $user['id'];
+
+        $followUps = SafetyReportModel::followUpsForUser($tenantId, $userId);
+
+        $pageTitle    = 'Follow-Ups';
+        $pageSubtitle = 'Reports where the safety team has responded and is awaiting your reply.';
+
+        ob_start();
+        require VIEWS_PATH . '/safety/my_followups.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
     // =========================================================================
     // SAFETY-TEAM ROUTES
     // =========================================================================
+
+    /**
+     * GET /safety/dashboard
+     * Safety team dashboard with counters and recent activity.
+     */
+    public function safetyDashboard(): void {
+        RbacMiddleware::requireRole(self::TEAM_ROLES);
+
+        $tenantId = (int) currentUser()['tenant_id'];
+
+        $stats = SafetyReportModel::stats($tenantId);
+
+        $recentReports = SafetyReportModel::allForTenant($tenantId, 'all', []);
+        $recentReports = array_slice($recentReports, 0, 5);
+
+        $overdueActions = SafetyReportModel::tenantActions($tenantId, 'overdue');
+        $pendingActions = SafetyReportModel::tenantActions($tenantId, 'open');
+
+        $pageTitle    = 'Safety Dashboard';
+        $pageSubtitle = 'Overview of all safety activity for your airline.';
+
+        ob_start();
+        require VIEWS_PATH . '/safety/safety_dashboard.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
 
     /**
      * GET /safety/queue
@@ -1068,6 +1116,18 @@ class SafetyController {
      * Filter enabled type slugs to those accessible by the user's roles.
      */
     private static function filterTypesByRole(array $enabledTypes, array $userRoleSlugs): array {
+        // Safety team members can submit any enabled report type
+        $teamRoles = ['safety_manager', 'safety_staff', 'airline_admin', 'super_admin'];
+        if (array_intersect($teamRoles, $userRoleSlugs)) {
+            $result = [];
+            foreach ($enabledTypes as $slug) {
+                if (isset(SafetyReportModel::TYPES[$slug])) {
+                    $result[$slug] = SafetyReportModel::TYPES[$slug];
+                }
+            }
+            return $result;
+        }
+
         $result = [];
         foreach ($enabledTypes as $slug) {
             if (!isset(SafetyReportModel::TYPES[$slug])) continue;
@@ -1092,11 +1152,14 @@ class SafetyController {
         $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
         if (!in_array($type, $enabledTypes, true)) return false;
 
-        $allowed    = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
+        $allowed = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
         if (in_array('all', $allowed, true)) return true;
 
-        $userRoles  = UserModel::getRoles($userId);
-        $roleSlugs  = array_column($userRoles, 'slug');
+        $teamRoles = ['safety_manager', 'safety_staff', 'airline_admin', 'super_admin'];
+        $userRoles = UserModel::getRoles($userId);
+        $roleSlugs = array_column($userRoles, 'slug');
+        if (array_intersect($teamRoles, $roleSlugs)) return true;
+
         return (bool) array_intersect($allowed, $roleSlugs);
     }
 

@@ -103,6 +103,12 @@ $activeTab = $_GET['tab'] ?? 'overview';
             </div>
 
             <h4 style="margin:0 0 8px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted);">Description</h4>
+            <div style="display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--bg-secondary,#f8f9fa); border:1px solid var(--border-color,#e5e7eb); border-radius:8px; margin-bottom:12px;">
+                <span style="font-size:16px;">🔒</span>
+                <span style="font-size:12px; color:var(--text-muted,#6b7280); font-weight:500;">
+                    Original submitted content — read only. Use Discussion or Internal Notes to add context.
+                </span>
+            </div>
             <div style="background:var(--bg-body); padding:14px 16px; border-radius:var(--radius-md); border:1px solid var(--border); line-height:1.65; white-space:pre-wrap; font-size:14px;"><?= e($report['description'] ?? '') ?></div>
         </div>
 

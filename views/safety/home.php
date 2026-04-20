@@ -100,7 +100,7 @@ $typeDescriptions = [
         </span>
     </a>
 
-    <a href="/safety/my-reports?tab=followups" style="
+    <a href="/safety/follow-ups" style="
         display:flex; align-items:center; gap:8px;
         padding:10px 16px; border-radius:var(--radius-md);
         background:var(--card-bg, var(--bg-card)); border:1px solid var(--border);
@@ -111,6 +111,13 @@ $typeDescriptions = [
         onmouseout="this.style.boxShadow=''; this.style.transform=''">
         <span>💬</span>
         <span>Follow-ups</span>
+        <?php if (!empty($followUpCount)): ?>
+        <span style="
+            background:#f59e0b; color:#fff;
+            border-radius:20px; padding:1px 8px; font-size:11px; font-weight:700;">
+            <?= (int)$followUpCount ?>
+        </span>
+        <?php endif; ?>
     </a>
 
     <a href="/safety/publications" style="
@@ -198,7 +205,7 @@ $typeDescriptions = [
 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:32px;">
     <?php
     $teamActions = [
-        ['icon' => '📋', 'label' => 'Safety Queue',      'url' => '/safety/queue'],
+        ['icon' => '📊', 'label' => 'Safety Dashboard',  'url' => '/safety/dashboard'],
         ['icon' => '🔍', 'label' => 'Under Review',      'url' => '/safety/queue?status=under_review'],
         ['icon' => '🔬', 'label' => 'Investigation',     'url' => '/safety/queue?status=investigation'],
         ['icon' => '✅', 'label' => 'Actions',           'url' => '/safety/queue?status=action_in_progress'],
