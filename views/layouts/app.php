@@ -222,8 +222,35 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <a href="/my-notices" class="sidebar-link <?= str_starts_with($currentPath, '/my-notices') ? 'active' : '' ?>">
                     <span class="icon">📬</span> Operational Notices
                 </a>
-                <a href="/safety/my-reports" class="sidebar-link <?= str_starts_with($currentPath, '/safety/my-reports') || str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
+                <?php
+                // Badge: count reports where safety team has replied and crew hasn't responded yet
+                $safetyPendingReplies = 0;
+                try {
+                    $safetyPendingReplies = (int)(Database::fetch(
+                        "SELECT COUNT(DISTINCT sr.id) AS cnt
+                           FROM safety_reports sr
+                           JOIN safety_report_threads lt
+                             ON lt.report_id = sr.id
+                            AND lt.is_internal = 0
+                            AND lt.created_at = (
+                                SELECT MAX(t2.created_at)
+                                  FROM safety_report_threads t2
+                                 WHERE t2.report_id = sr.id AND t2.is_internal = 0
+                            )
+                          WHERE sr.tenant_id   = ?
+                            AND sr.reporter_id = ?
+                            AND sr.is_draft    = 0
+                            AND sr.status NOT IN ('closed','draft')
+                            AND lt.author_id  != sr.reporter_id",
+                        [currentTenantId(), currentUser()['id']]
+                    )['cnt'] ?? 0);
+                } catch (\Throwable $e) { /* threads table may not exist yet */ }
+                ?>
+                <a href="/safety/my-reports" class="sidebar-link <?= str_starts_with($currentPath, '/safety/my-reports') || str_starts_with($currentPath, '/safety/report/') ? 'active' : '' ?>">
                     <span class="icon">🛡️</span> My Safety Reports
+                    <?php if ($safetyPendingReplies > 0): ?>
+                        <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $safetyPendingReplies ?></span>
+                    <?php endif; ?>
                 </a>
             </div>
             <?php endif; ?>

@@ -403,8 +403,11 @@ class SafetyController {
         requireAuth();
         $user     = currentUser();
         $tenantId = (int) $user['tenant_id'];
+        $userId   = (int) $user['id'];
 
-        $reports = SafetyReportModel::forUser($tenantId, (int) $user['id']);
+        $reports       = SafetyReportModel::forUser($tenantId, $userId);
+        // Count reports where safety team has replied and reporter hasn't replied yet
+        $pendingReplies = count(array_filter($reports, fn($r) => !empty($r['has_pending_reply'])));
 
         $pageTitle    = 'My Safety Submissions';
         $pageSubtitle = 'A history of reports you have securely filed.';

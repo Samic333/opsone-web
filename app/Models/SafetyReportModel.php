@@ -334,17 +334,51 @@ class SafetyReportModel {
      * Submitted/active reports for a specific reporter (their own submissions).
      */
     public static function forUser(int $tenantId, int $userId): array {
-        return Database::fetchAll(
-            "SELECT r.*,
-                    a.name AS assigned_to_name
-               FROM safety_reports r
-          LEFT JOIN users a ON a.id = r.assigned_to
-              WHERE r.tenant_id  = ?
-                AND r.reporter_id = ?
-                AND r.is_draft    = 0
-           ORDER BY r.created_at DESC",
-            [$tenantId, $userId]
-        );
+        // has_pending_reply = 1 when the last public thread message was written
+        // by someone other than the reporter — i.e. the safety team is waiting
+        // for the reporter's response.
+        try {
+            return Database::fetchAll(
+                "SELECT r.*,
+                        a.name AS assigned_to_name,
+                        CASE
+                            WHEN lt.author_id IS NOT NULL
+                             AND lt.author_id != r.reporter_id THEN 1
+                            ELSE 0
+                        END AS has_pending_reply,
+                        lt.created_at AS last_message_at
+                   FROM safety_reports r
+              LEFT JOIN users a ON a.id = r.assigned_to
+              LEFT JOIN (
+                  SELECT t1.report_id, t1.author_id, t1.created_at
+                    FROM safety_report_threads t1
+                   WHERE t1.is_internal = 0
+                     AND t1.created_at = (
+                         SELECT MAX(t2.created_at)
+                           FROM safety_report_threads t2
+                          WHERE t2.report_id = t1.report_id
+                            AND t2.is_internal = 0
+                     )
+              ) lt ON lt.report_id = r.id
+                  WHERE r.tenant_id   = ?
+                    AND r.reporter_id = ?
+                    AND r.is_draft    = 0
+               ORDER BY r.created_at DESC",
+                [$tenantId, $userId]
+            );
+        } catch (\Throwable $e) {
+            // Fallback: threads table may not exist yet; return without pending flag
+            return Database::fetchAll(
+                "SELECT r.*, a.name AS assigned_to_name, 0 AS has_pending_reply
+                   FROM safety_reports r
+              LEFT JOIN users a ON a.id = r.assigned_to
+                  WHERE r.tenant_id   = ?
+                    AND r.reporter_id = ?
+                    AND r.is_draft    = 0
+               ORDER BY r.created_at DESC",
+                [$tenantId, $userId]
+            );
+        }
     }
 
     /**
