@@ -138,7 +138,9 @@ return [
     'GET /documents/(\d+)/edit'     => [FileController::class, 'editForm'],
     'POST /documents/(\d+)/edit'    => [FileController::class, 'edit'],
     'POST /documents/(\d+)/delete'  => [FileController::class, 'delete'],
-    'GET /my-files'                 => [FileController::class, 'myFiles'],
+    // NOTE: 'GET /my-files' was duplicated here (Phase 4 block) and at the
+    // Crew Files Portal section below. The duplicate has been removed; the
+    // canonical entry lives under '─── Crew Files Portal ──────────────────'.
     'POST /my-files/(\d+)/ack'      => [FileController::class, 'acknowledge'],
 
     // Phase 6 - Safety & Reporting
