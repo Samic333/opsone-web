@@ -213,7 +213,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             <!-- ─── Me (all logged-in crew) ─────────────── -->
             <?php if (hasAnyRole(['pilot','cabin_crew','engineer','scheduler','chief_pilot',
                                    'head_cabin_crew','engineering_manager','base_manager',
-                                   'training_admin','fdm_analyst','document_control','safety_officer'])): ?>
+                                   'training_admin','fdm_analyst','document_control'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Me</div>
                 <a href="/my-profile" class="sidebar-link <?= str_starts_with($currentPath, '/my-profile') ? 'active' : '' ?>">
@@ -223,7 +223,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <span class="icon">📬</span> Operational Notices
                 </a>
                 <a href="/safety/my-reports" class="sidebar-link <?= str_starts_with($currentPath, '/safety/my-reports') || str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
-                    <span class="icon">🛡️</span> Safety Reports
+                    <span class="icon">🛡️</span> My Safety Reports
                 </a>
             </div>
             <?php endif; ?>
@@ -306,7 +306,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <?php endif; ?>
                 <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
                 <a href="/safety" class="sidebar-link <?= str_starts_with($currentPath, '/safety') && !str_starts_with($currentPath, '/safety/my') && !str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
-                    <span class="icon">🚨</span> Safety Reports
+                    <span class="icon">🚨</span> Safety Management
                 </a>
                 <?php endif; ?>
                 <a href="/compliance" class="sidebar-link <?= str_starts_with($currentPath, '/compliance') ? 'active' : '' ?>">

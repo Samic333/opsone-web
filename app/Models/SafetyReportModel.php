@@ -880,16 +880,24 @@ class SafetyReportModel {
         }
 
         // ── Action stats ──────────────────────────────────────────────────────
-        $overdueRow = Database::fetch(
-            "SELECT COUNT(*) AS cnt FROM safety_actions
-              WHERE tenant_id = ? AND status = 'overdue'",
-            [$tenantId]
-        );
-        $openActionsRow = Database::fetch(
-            "SELECT COUNT(*) AS cnt FROM safety_actions
-              WHERE tenant_id = ? AND status IN ('open','in_progress')",
-            [$tenantId]
-        );
+        // Wrapped in try/catch: safety_actions table may not exist yet on some
+        // environments (migration pending). Return 0 rather than fatal-erroring.
+        $overdueRow     = ['cnt' => 0];
+        $openActionsRow = ['cnt' => 0];
+        try {
+            $overdueRow = Database::fetch(
+                "SELECT COUNT(*) AS cnt FROM safety_actions
+                  WHERE tenant_id = ? AND status = 'overdue'",
+                [$tenantId]
+            ) ?: ['cnt' => 0];
+            $openActionsRow = Database::fetch(
+                "SELECT COUNT(*) AS cnt FROM safety_actions
+                  WHERE tenant_id = ? AND status IN ('open','in_progress')",
+                [$tenantId]
+            ) ?: ['cnt' => 0];
+        } catch (\Throwable $e) {
+            // Table missing — silently return zeros; page still loads
+        }
 
         // ── By severity (submitted reports only) ─────────────────────────────
         // initial_risk_code uses letters A-E (consequence/likelihood columns)
