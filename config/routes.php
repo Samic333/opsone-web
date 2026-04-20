@@ -152,6 +152,8 @@ return [
     'GET /safety/quick-report/([a-z_]+)'        => [SafetyController::class, 'quickReportForm'],
     'POST /safety/quick-report'                 => [SafetyController::class, 'submitQuickReport'],
     'GET /safety/drafts'                        => [SafetyController::class, 'myDrafts'],
+    'GET /safety/report/edit/(\d+)'             => [SafetyController::class, 'editDraft'],
+    'POST /safety/report/delete/(\d+)'          => [SafetyController::class, 'deleteDraft'],
     'GET /safety/my-reports'                    => [SafetyController::class, 'myReports'],
     'GET /safety/report/(\d+)'                  => [SafetyController::class, 'reportDetail'],
     'POST /safety/report/(\d+)/reply'           => [SafetyController::class, 'addReply'],

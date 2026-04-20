@@ -43,6 +43,12 @@ $statusColor = function(string $status): string {
     <?php endforeach; ?>
 </div>
 
+<?php
+// Filter the fetched reports by status tab
+if ($filterStatus !== 'all') {
+    $reports = array_filter($reports, fn($r) => ($r['status'] ?? '') === $filterStatus);
+}
+?>
 <?php if (empty($reports)): ?>
     <div class="card">
         <div class="empty-state" style="padding:48px 0;">
@@ -94,7 +100,7 @@ $statusColor = function(string $status): string {
                         <?= !empty($r['created_at']) ? date('d M Y', strtotime($r['created_at'])) : '—' ?>
                     </td>
                     <td style="text-align:right;">
-                        <a href="/safety/my-reports/<?= (int)$r['id'] ?>" class="btn btn-outline btn-xs">View</a>
+                        <a href="/safety/report/<?= (int)$r['id'] ?>" class="btn btn-outline btn-xs">View</a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

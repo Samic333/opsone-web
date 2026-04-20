@@ -306,6 +306,64 @@ class SafetyController {
     }
 
     /**
+     * GET /safety/report/edit/{id}
+     * Continue editing an existing draft.
+     */
+    public function editDraft(int $id): void {
+        requireAuth();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        $draft = SafetyReportModel::find($tenantId, $id);
+
+        if (!$draft || !$draft['is_draft'] || (int) $draft['reporter_id'] !== (int) $user['id']) {
+            flash('error', 'Draft not found or access denied.');
+            redirect('/safety/drafts');
+        }
+
+        $type            = $draft['report_type'];
+        $settings        = SafetyReportModel::getSettings($tenantId);
+        $reportType      = $type;
+        $reportTypeLabel = SafetyReportModel::TYPES[$type] ?? $type;
+        $prefill         = $this->buildPrefill($user);
+
+        $pageTitle    = 'Continue Draft';
+        $pageSubtitle = 'Finish and submit your saved report.';
+
+        ob_start();
+        require VIEWS_PATH . '/safety/report_form.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * POST /safety/report/delete/{id}
+     * Delete a draft (own reports only).
+     */
+    public function deleteDraft(int $id): void {
+        requireAuth();
+        verifyCsrf();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        $draft = SafetyReportModel::find($tenantId, $id);
+
+        if (!$draft || !$draft['is_draft'] || (int) $draft['reporter_id'] !== (int) $user['id']) {
+            flash('error', 'Draft not found or access denied.');
+            redirect('/safety/drafts');
+        }
+
+        Database::execute(
+            "DELETE FROM safety_reports WHERE id = ? AND tenant_id = ? AND is_draft = 1",
+            [$id, $tenantId]
+        );
+
+        AuditService::log('safety.draft_deleted', 'safety_reports', $id);
+        flash('success', 'Draft deleted.');
+        redirect('/safety/drafts');
+    }
+
+    /**
      * GET /safety/drafts
      */
     public function myDrafts(): void {
@@ -581,7 +639,7 @@ class SafetyController {
         $pageSubtitle = 'Aviation Safety, Hazards, and Compliance Reports.';
 
         ob_start();
-        require VIEWS_PATH . '/safety/index.php';
+        require VIEWS_PATH . '/safety/queue.php';
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
     }
@@ -790,7 +848,7 @@ class SafetyController {
         }
 
         $actionId = SafetyReportModel::addAction($tenantId, $id, (int) $user['id'], $data);
-        AuditService::log($user['id'], $tenantId, 'safety_action.created', 'safety_actions', $actionId, ['report_id' => $id, 'title' => $data['title']]);
+        AuditService::log('safety_action.created', 'safety_actions', $actionId, ['report_id' => $id, 'title' => $data['title']]);
 
         // Notify assigned user
         if ($data['assigned_to']) {
@@ -826,7 +884,7 @@ class SafetyController {
         $data = array_filter($data, fn($v) => $v !== null);
 
         SafetyReportModel::updateAction($id, $tenantId, $data);
-        AuditService::log($user['id'], $tenantId, 'safety_action.updated', 'safety_actions', $id, $data);
+        AuditService::log('safety_action.updated', 'safety_actions', $id, $data);
 
         flash('success', 'Action updated.');
         $ref = $_SERVER['HTTP_REFERER'] ?? '/safety/queue';
@@ -917,7 +975,7 @@ class SafetyController {
         $pageSubtitle = 'Draft a safety bulletin or lessons-learned document.';
 
         ob_start();
-        require VIEWS_PATH . '/safety/new_publication.php';
+        require VIEWS_PATH . '/safety/publication_form.php';
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
     }

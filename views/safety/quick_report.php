@@ -37,7 +37,7 @@ $nowUtc    = gmdate('H:i');
 <!-- ═══════════════════════════════
      SINGLE CARD FORM
      ═══════════════════════════════ -->
-<form method="POST" action="/safety/report/quick/<?= e($reportType ?? '') ?>" enctype="multipart/form-data" id="quickReportForm">
+<form method="POST" action="/safety/quick-report" enctype="multipart/form-data" id="quickReportForm">
     <?= csrfField() ?>
     <input type="hidden" name="report_type" value="<?= e($reportType ?? '') ?>">
     <input type="hidden" name="is_quick_report" value="1">
