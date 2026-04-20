@@ -69,6 +69,7 @@ class SafetyController {
 
         // Determine if user has safety-team access
         $isTeamUser = (bool) array_intersect(self::TEAM_ROLES, $roleSlugs);
+        $teamStats  = $isTeamUser ? SafetyReportModel::stats($tenantId) : null;
 
         $pageTitle    = 'Safety Reporting';
         $pageSubtitle = 'Confidential safety, hazard, and incident reporting. Protected under Just Culture policy.';
@@ -131,6 +132,91 @@ class SafetyController {
         require VIEWS_PATH . '/safety/report_form.php';
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * GET /safety/quick-report/{type}
+     * Minimal quick-capture form for fast field entry.
+     */
+    public function quickReportForm(string $type): void {
+        requireAuth();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        if (!self::userCanUseType($type, $tenantId, (int) $user['id'])) {
+            flash('error', 'You do not have access to that report type.');
+            redirect('/safety');
+        }
+
+        $prefill      = $this->buildPrefill($user);
+        $typeName     = SafetyReportModel::TYPES[$type] ?? $type;
+        $pageTitle    = 'Quick Report: ' . htmlspecialchars($typeName);
+        $pageSubtitle = 'Fast capture — add detail later.';
+
+        ob_start();
+        require VIEWS_PATH . '/safety/quick_report.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * POST /safety/quick-report
+     * Submit a quick report (can also save as draft).
+     * Only validates: type, title, description. All other fields are optional.
+     */
+    public function submitQuickReport(): void {
+        requireAuth();
+        verifyCsrf();
+
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+        $type     = trim($_POST['report_type'] ?? 'general_hazard');
+
+        if (!self::userCanUseType($type, $tenantId, (int) $user['id'])) {
+            flash('error', 'You do not have access to that report type.');
+            redirect('/safety');
+        }
+
+        $title       = trim($_POST['title']       ?? '');
+        $description = trim($_POST['description'] ?? '');
+
+        if (!$title || !$description) {
+            flash('error', 'Title and description are required.');
+            redirect('/safety/quick-report/' . urlencode($type));
+        }
+
+        $data = $this->collectFormData($user);
+
+        // Determine submit vs draft
+        $asDraft = !empty($_POST['save_draft']);
+
+        if ($asDraft) {
+            $id = SafetyReportModel::saveDraft($tenantId, $data);
+            AuditService::log('safety.draft_saved', 'safety_reports', $id);
+            flash('success', 'Draft saved.');
+            redirect('/safety/drafts');
+            return;
+        }
+
+        $id     = SafetyReportModel::submit($tenantId, $data);
+        $report = SafetyReportModel::find($tenantId, $id);
+
+        AuditService::log('safety.report_submitted', 'safety_reports', $id, [
+            'reference_no' => $report['reference_no'],
+            'type'         => $type,
+            'quick'        => true,
+        ]);
+
+        NotificationService::notifyTenant(
+            $tenantId,
+            'safety_manager',
+            'New Safety Report: ' . $report['reference_no'],
+            "{$report['reference_no']} — {$title}",
+            '/safety/team/report/' . $id
+        );
+
+        flash('success', "Report successfully submitted. Reference: {$report['reference_no']}");
+        redirect('/safety/report/' . $id);
     }
 
     /**
@@ -466,6 +552,7 @@ class SafetyController {
         $threads       = SafetyReportModel::getThreads($id, true); // include internal
         $attachments   = SafetyReportModel::getAttachments($id);
         $statusHistory = SafetyReportModel::getStatusHistory($id);
+        $actions       = SafetyReportModel::getActions($id, $tenantId);
         $crewList      = UserModel::allForTenant($tenantId);
 
         $pageTitle    = 'Safety Report: ' . $report['reference_no'];
@@ -618,6 +705,103 @@ class SafetyController {
 
         flash('success', 'Reply sent.');
         redirect("/safety/team/report/$id");
+    }
+
+    // ─── Corrective Actions ───────────────────────────────────────────────────
+
+    /**
+     * POST /safety/team/report/{id}/action
+     * Create a corrective action for a report (safety team only).
+     */
+    public function addAction(int $id): void {
+        RbacMiddleware::requireRole(self::TEAM_ROLES);
+        verifyCsrf();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        $report = SafetyReportModel::find($tenantId, $id);
+        if (!$report) {
+            flash('error', 'Report not found.');
+            redirect('/safety/queue');
+        }
+
+        $data = [
+            'title'         => trim($_POST['title']         ?? ''),
+            'description'   => trim($_POST['description']   ?? ''),
+            'assigned_to'   => !empty($_POST['assigned_to'])   ? (int) $_POST['assigned_to']   : null,
+            'assigned_role' => trim($_POST['assigned_role'] ?? ''),
+            'due_date'      => trim($_POST['due_date']       ?? '') ?: null,
+        ];
+
+        if (!$data['title']) {
+            flash('error', 'Action title is required.');
+            redirect("/safety/team/report/$id");
+        }
+
+        $actionId = SafetyReportModel::addAction($tenantId, $id, (int) $user['id'], $data);
+        AuditService::log($user['id'], $tenantId, 'safety_action.created', 'safety_actions', $actionId, ['report_id' => $id, 'title' => $data['title']]);
+
+        // Notify assigned user
+        if ($data['assigned_to']) {
+            NotificationService::notifyUser(
+                $data['assigned_to'],
+                'Safety Action Assigned',
+                "You have been assigned a corrective action for report {$report['reference_no']}: {$data['title']}",
+                "/safety/team/report/$id"
+            );
+        }
+
+        flash('success', 'Action created successfully.');
+        redirect("/safety/team/report/$id#actions");
+    }
+
+    /**
+     * POST /safety/team/action/{id}/update
+     * Update action status/details.
+     */
+    public function updateAction(int $id): void {
+        RbacMiddleware::requireRole(self::TEAM_ROLES);
+        verifyCsrf();
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        $data = [
+            'status'      => $_POST['status']      ?? null,
+            'title'       => !empty($_POST['title'])      ? trim($_POST['title'])      : null,
+            'due_date'    => !empty($_POST['due_date'])   ? trim($_POST['due_date'])   : null,
+            'assigned_to' => !empty($_POST['assigned_to']) ? (int) $_POST['assigned_to'] : null,
+        ];
+        // Remove null values so we don't overwrite existing data with nulls
+        $data = array_filter($data, fn($v) => $v !== null);
+
+        SafetyReportModel::updateAction($id, $tenantId, $data);
+        AuditService::log($user['id'], $tenantId, 'safety_action.updated', 'safety_actions', $id, $data);
+
+        flash('success', 'Action updated.');
+        $ref = $_SERVER['HTTP_REFERER'] ?? '/safety/queue';
+        redirect($ref);
+    }
+
+    /**
+     * GET /safety/team/actions
+     * All actions across all reports for the tenant (safety team view).
+     */
+    public function actionsQueue(): void {
+        RbacMiddleware::requireRole(self::TEAM_ROLES);
+        $user     = currentUser();
+        $tenantId = (int) $user['tenant_id'];
+
+        $statusFilter = $_GET['status'] ?? 'all';
+        $actions      = SafetyReportModel::tenantActions($tenantId, $statusFilter);
+        $stats        = SafetyReportModel::stats($tenantId);
+
+        $pageTitle    = 'Corrective Actions';
+        $pageSubtitle = 'Track and manage safety corrective actions across all reports.';
+
+        ob_start();
+        require VIEWS_PATH . '/safety/actions_queue.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
     }
 
     // ─── Publications ─────────────────────────────────────────────────────────

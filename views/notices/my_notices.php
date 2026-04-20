@@ -1,6 +1,9 @@
-<?php /** OpsOne — My Notices (Crew Portal) */ ?>
+<?php /** OpsOne — Operational Notices (Crew Portal) */ ?>
 
 <?php
+$pageTitle    = 'Operational Notices';
+$pageSubtitle = 'Company and operational information from your airline.';
+
 $priorityColors = ['normal' => '#6b7280', 'urgent' => '#f59e0b', 'critical' => '#ef4444'];
 $priorityIcons  = ['normal' => '📢', 'urgent' => '⚠️', 'critical' => '🚨'];
 

@@ -679,6 +679,131 @@ class SafetyReportModel {
         return true;
     }
 
+    // ─── Corrective Actions ───────────────────────────────────────────────────
+
+    /**
+     * Create a corrective action linked to a report.
+     *
+     * Required keys in $data: title
+     * Optional keys: description, assigned_to, assigned_role, due_date
+     *
+     * @return int  Inserted row ID
+     */
+    public static function addAction(int $tenantId, int $reportId, int $assignedBy, array $data): int {
+        return Database::insert(
+            "INSERT INTO safety_actions
+                (tenant_id, report_id, assigned_by, title, description,
+                 assigned_to, assigned_role, due_date)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                $tenantId,
+                $reportId,
+                $assignedBy,
+                $data['title'],
+                $data['description']   ?? null,
+                !empty($data['assigned_to'])   ? (int) $data['assigned_to']   : null,
+                !empty($data['assigned_role']) ? $data['assigned_role']       : null,
+                !empty($data['due_date'])      ? $data['due_date']            : null,
+            ]
+        );
+    }
+
+    /**
+     * Get all actions for a report, joined with assignee and assigner names.
+     */
+    public static function getActions(int $reportId, int $tenantId): array {
+        return Database::fetchAll(
+            "SELECT sa.*,
+                    u.name  AS assignee_name,
+                    ab.name AS assigned_by_name
+               FROM safety_actions sa
+          LEFT JOIN users u  ON u.id  = sa.assigned_to
+          LEFT JOIN users ab ON ab.id = sa.assigned_by
+              WHERE sa.report_id = ? AND sa.tenant_id = ?
+           ORDER BY sa.created_at DESC",
+            [$reportId, $tenantId]
+        );
+    }
+
+    /**
+     * Update fields on a corrective action.
+     * Only fields present in $data are updated.
+     * If status is set to 'completed', completed_at is set automatically.
+     */
+    public static function updateAction(int $id, int $tenantId, array $data): bool {
+        $allowed = ['status', 'title', 'description', 'assigned_to', 'due_date', 'completed_at'];
+
+        $sets   = [];
+        $params = [];
+
+        foreach ($allowed as $col) {
+            if (array_key_exists($col, $data)) {
+                $sets[]   = "`{$col}` = ?";
+                $params[] = $data[$col];
+            }
+        }
+
+        // Auto-set completed_at when marking completed (unless caller supplied it)
+        if (isset($data['status']) && $data['status'] === 'completed' && !array_key_exists('completed_at', $data)) {
+            $sets[]   = "`completed_at` = NOW()";
+        }
+
+        if (empty($sets)) return true;
+
+        $params[] = $id;
+        $params[] = $tenantId;
+
+        Database::execute(
+            "UPDATE safety_actions SET " . implode(', ', $sets) . " WHERE id = ? AND tenant_id = ?",
+            $params
+        );
+        return true;
+    }
+
+    /**
+     * Get all actions for a tenant, optionally filtered by status.
+     * Joined with report reference_no, report title, and assignee name.
+     */
+    public static function tenantActions(int $tenantId, string $statusFilter = 'all'): array {
+        $sql    = "SELECT sa.*,
+                          sr.reference_no,
+                          sr.title AS report_title,
+                          u.name   AS assignee_name
+                     FROM safety_actions sa
+                LEFT JOIN safety_reports sr ON sr.id = sa.report_id
+                LEFT JOIN users u           ON u.id  = sa.assigned_to
+                    WHERE sa.tenant_id = ?";
+        $params = [$tenantId];
+
+        if ($statusFilter && $statusFilter !== 'all') {
+            $sql .= " AND sa.status = ?";
+            $params[] = $statusFilter;
+        }
+
+        $sql .= " ORDER BY sa.due_date ASC, sa.created_at DESC";
+
+        return Database::fetchAll($sql, $params);
+    }
+
+    /**
+     * Get all actions assigned to a specific user within a tenant.
+     */
+    public static function actionsForUser(int $tenantId, int $userId): array {
+        return Database::fetchAll(
+            "SELECT sa.*,
+                    sr.reference_no,
+                    sr.title AS report_title,
+                    u.name   AS assignee_name
+               FROM safety_actions sa
+          LEFT JOIN safety_reports sr ON sr.id = sa.report_id
+          LEFT JOIN users u           ON u.id  = sa.assigned_to
+              WHERE sa.tenant_id  = ?
+                AND sa.assigned_to = ?
+           ORDER BY sa.due_date ASC, sa.created_at DESC",
+            [$tenantId, $userId]
+        );
+    }
+
     // ─── Statistics ────────────────────────────────────────────────────────────
 
     /**
@@ -731,12 +856,45 @@ class SafetyReportModel {
             $typeMap[$row['report_type']] = (int) $row['cnt'];
         }
 
+        // ── Action stats ──────────────────────────────────────────────────────
+        $overdueRow = Database::fetch(
+            "SELECT COUNT(*) AS cnt FROM safety_actions
+              WHERE tenant_id = ? AND status = 'overdue'",
+            [$tenantId]
+        );
+        $openActionsRow = Database::fetch(
+            "SELECT COUNT(*) AS cnt FROM safety_actions
+              WHERE tenant_id = ? AND status IN ('open','in_progress')",
+            [$tenantId]
+        );
+
+        // ── By severity (submitted reports only) ─────────────────────────────
+        // initial_risk_code uses letters A-E (consequence/likelihood columns)
+        // and numbers 1-5 (row axis). We group by the raw initial_risk_score
+        // for simplicity; views may interpret the mapping.
+        $bySeverity = Database::fetchAll(
+            "SELECT severity, COUNT(*) AS cnt
+               FROM safety_reports
+              WHERE tenant_id = ? AND is_draft = 0
+                AND status != 'draft'
+           GROUP BY severity",
+            [$tenantId]
+        );
+
+        $severityMap = [];
+        foreach ($bySeverity as $row) {
+            $severityMap[$row['severity']] = (int) $row['cnt'];
+        }
+
         return [
-            'total'     => $total,
-            'open'      => $open,
-            'closed'    => $closed,
-            'by_status' => $statusMap,
-            'by_type'   => $typeMap,
+            'total'           => $total,
+            'open'            => $open,
+            'closed'          => $closed,
+            'by_status'       => $statusMap,
+            'by_type'         => $typeMap,
+            'overdue_actions' => (int) ($overdueRow['cnt']      ?? 0),
+            'open_actions'    => (int) ($openActionsRow['cnt']  ?? 0),
+            'by_severity'     => $severityMap,
         ];
     }
 

@@ -48,6 +48,7 @@ $activeTab = $_GET['tab'] ?? 'overview';
         'overview'    => 'Overview',
         'discussion'  => 'Discussion',
         'internal'    => 'Internal Notes',
+        'actions'     => 'Actions',
         'history'     => 'History',
         'attachments' => 'Attachments',
     ];
@@ -59,6 +60,11 @@ $activeTab = $_GET['tab'] ?? 'overview';
         <?= $label ?>
         <?php if ($slug === 'internal' && !empty($internalNotes)): ?>
             <span style="background:#ef4444;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:700;margin-left:4px;"><?= count($internalNotes) ?></span>
+        <?php endif; ?>
+        <?php
+        $actionsVar = $actions ?? [];
+        if ($slug === 'actions' && !empty($actionsVar)): ?>
+            <span style="background:#8b5cf6;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;font-weight:700;margin-left:4px;"><?= count($actionsVar) ?></span>
         <?php endif; ?>
     </a>
     <?php endforeach; ?>
@@ -285,6 +291,144 @@ $activeTab = $_GET['tab'] ?? 'overview';
         </div>
         <button type="submit" class="btn btn-sm" style="background:#ef4444; color:#fff; border:none; cursor:pointer; padding:8px 16px; border-radius:var(--radius-sm);">Add Internal Note</button>
     </form>
+</div>
+<?php endif; ?>
+
+<!-- ══════════════════════════════════════
+     ACTIONS TAB
+     ══════════════════════════════════════ -->
+<?php if ($activeTab === 'actions'):
+$actions = $actions ?? [];
+?>
+<div style="display:flex; flex-direction:column; gap:20px;">
+
+    <!-- Corrective Actions list -->
+    <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:16px 20px 12px; border-bottom:1px solid var(--border);">
+            <h4 style="margin:0; font-size:15px; font-weight:700;">Corrective Actions</h4>
+        </div>
+
+        <?php if (empty($actions)): ?>
+            <div style="padding:32px 20px; text-align:center; color:var(--text-muted);">
+                <div style="font-size:28px; margin-bottom:8px;">📋</div>
+                <p class="text-sm">No corrective actions recorded yet. Add one below.</p>
+            </div>
+        <?php else: ?>
+        <div class="table-wrap" style="border-radius:0;">
+            <table style="border-radius:0;">
+                <thead>
+                    <tr>
+                        <th>Action Title</th>
+                        <th>Assigned To</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th style="text-align:right;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($actions as $act):
+                    $actStatus = $act['status'] ?? 'open';
+                    $actStatusColor = match($actStatus) {
+                        'open'        => '#3b82f6',
+                        'in_progress' => '#f59e0b',
+                        'completed'   => '#10b981',
+                        'overdue'     => '#ef4444',
+                        default       => '#6b7280',
+                    };
+                    $isOverdue = !empty($act['due_date'])
+                                 && strtotime($act['due_date']) < time()
+                                 && $actStatus !== 'completed';
+                    ?>
+                    <tr>
+                        <td style="font-weight:600; font-size:13px;"><?= e($act['title'] ?? '—') ?></td>
+                        <td class="text-sm">
+                            <?php if (!empty($act['assigned_to_name'])): ?>
+                                <?= e($act['assigned_to_name']) ?>
+                            <?php elseif (!empty($act['assign_by_role'])): ?>
+                                <span style="color:var(--text-muted); font-size:11px;">Role: <?= e($act['assign_by_role']) ?></span>
+                            <?php else: ?>
+                                <span class="text-muted">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td style="font-size:13px; <?= $isOverdue ? 'color:#ef4444; font-weight:700;' : '' ?>">
+                            <?= !empty($act['due_date']) ? date('d M Y', strtotime($act['due_date'])) : '—' ?>
+                            <?php if ($isOverdue): ?><span style="font-size:10px; margin-left:4px;">⏰ OVERDUE</span><?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="status-badge" style="--badge-color:<?= $actStatusColor ?>;">
+                                <?= ucfirst(str_replace('_', ' ', $actStatus)) ?>
+                            </span>
+                        </td>
+                        <td style="text-align:right;">
+                            <form method="POST" action="/safety/team/action/<?= (int)$act['id'] ?>/update" style="display:inline-flex; align-items:center; gap:6px;">
+                                <?= csrfField() ?>
+                                <select name="status" class="form-control" style="width:auto; font-size:12px; padding:4px 8px;">
+                                    <option value="open"        <?= $actStatus === 'open'        ? 'selected' : '' ?>>Open</option>
+                                    <option value="in_progress" <?= $actStatus === 'in_progress' ? 'selected' : '' ?>>In Progress</option>
+                                    <option value="completed"   <?= $actStatus === 'completed'   ? 'selected' : '' ?>>Completed</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline btn-xs">Update</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Add New Action form -->
+    <div class="card">
+        <h4 style="margin:0 0 16px; font-size:15px; font-weight:700;">Add New Action</h4>
+        <form method="POST" action="/safety/team/report/<?= (int)$report['id'] ?>/action">
+            <?= csrfField() ?>
+
+            <div class="form-group">
+                <label>Action Title <span style="color:#ef4444;">*</span></label>
+                <input type="text" name="title" class="form-control" required
+                       placeholder="Describe the corrective action required">
+            </div>
+
+            <div class="form-group">
+                <label>Description <span class="text-muted" style="font-weight:400;">(optional)</span></label>
+                <textarea name="description" class="form-control" rows="2"
+                          placeholder="Additional detail or acceptance criteria…"></textarea>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div class="form-group">
+                    <label>Assign To (Person)</label>
+                    <select name="assigned_to" class="form-control">
+                        <option value="">— Select person —</option>
+                        <?php foreach ($safetyUsers as $u): ?>
+                        <option value="<?= (int)$u['id'] ?>"><?= e($u['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>OR Assign by Role</label>
+                    <select name="assign_by_role" class="form-control">
+                        <option value="">— Select role —</option>
+                        <option value="Engineer">Engineer</option>
+                        <option value="Base Manager">Base Manager</option>
+                        <option value="Ops Manager">Ops Manager</option>
+                        <option value="Safety Staff">Safety Staff</option>
+                        <option value="Maintenance Manager">Maintenance Manager</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Due Date</label>
+                <input type="date" name="due_date" class="form-control"
+                       min="<?= date('Y-m-d') ?>">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-sm">Add Action</button>
+        </form>
+    </div>
+
 </div>
 <?php endif; ?>
 

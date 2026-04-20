@@ -220,10 +220,10 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <span class="icon">👤</span> My Profile
                 </a>
                 <a href="/my-notices" class="sidebar-link <?= str_starts_with($currentPath, '/my-notices') ? 'active' : '' ?>">
-                    <span class="icon">📬</span> My Notices
+                    <span class="icon">📬</span> Operational Notices
                 </a>
                 <a href="/safety/my-reports" class="sidebar-link <?= str_starts_with($currentPath, '/safety/my-reports') || str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
-                    <span class="icon">🛡️</span> My Reports
+                    <span class="icon">🛡️</span> Safety Reports
                 </a>
             </div>
             <?php endif; ?>
@@ -306,7 +306,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 <?php endif; ?>
                 <?php if (hasAnyRole(['airline_admin','safety_officer'])): ?>
                 <a href="/safety" class="sidebar-link <?= str_starts_with($currentPath, '/safety') && !str_starts_with($currentPath, '/safety/my') && !str_starts_with($currentPath, '/safety/submit') ? 'active' : '' ?>">
-                    <span class="icon">🚨</span> Investigations
+                    <span class="icon">🚨</span> Safety Reports
                 </a>
                 <?php endif; ?>
                 <a href="/compliance" class="sidebar-link <?= str_starts_with($currentPath, '/compliance') ? 'active' : '' ?>">

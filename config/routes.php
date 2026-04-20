@@ -149,6 +149,8 @@ return [
     'GET /safety/report/new/([a-z_]+)'          => [SafetyController::class, 'reportForm'],
     'POST /safety/report/draft'                 => [SafetyController::class, 'saveDraft'],
     'POST /safety/report/submit'                => [SafetyController::class, 'submitReport'],
+    'GET /safety/quick-report/([a-z_]+)'        => [SafetyController::class, 'quickReportForm'],
+    'POST /safety/quick-report'                 => [SafetyController::class, 'submitQuickReport'],
     'GET /safety/drafts'                        => [SafetyController::class, 'myDrafts'],
     'GET /safety/my-reports'                    => [SafetyController::class, 'myReports'],
     'GET /safety/report/(\d+)'                  => [SafetyController::class, 'reportDetail'],
@@ -157,11 +159,14 @@ return [
 
     // ─── Safety Phase 1 — Safety Team Routes ─────────────────
     'GET /safety/queue'                                     => [SafetyController::class, 'index'],
+    'GET /safety/team/actions'                              => [SafetyController::class, 'actionsQueue'],
     'GET /safety/team/report/(\d+)'                         => [SafetyController::class, 'teamDetail'],
     'POST /safety/team/report/(\d+)/status'                 => [SafetyController::class, 'updateStatus'],
     'POST /safety/team/report/(\d+)/assign'                 => [SafetyController::class, 'assignReport'],
     'POST /safety/team/report/(\d+)/internal-note'          => [SafetyController::class, 'addInternalNote'],
     'POST /safety/team/report/(\d+)/reply'                  => [SafetyController::class, 'addTeamReply'],
+    'POST /safety/team/report/(\d+)/action'                 => [SafetyController::class, 'addAction'],
+    'POST /safety/team/action/(\d+)/update'                 => [SafetyController::class, 'updateAction'],
     'GET /safety/publications'                              => [SafetyController::class, 'publications'],
     'GET /safety/publications/new'                          => [SafetyController::class, 'newPublication'],
     'POST /safety/publications/save'                        => [SafetyController::class, 'savePublication'],
