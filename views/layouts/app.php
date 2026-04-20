@@ -442,10 +442,37 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <p><?= e($pageSubtitle) ?></p>
                 <?php endif; ?>
             </div>
-            <div>
+            <div style="display:flex;align-items:center;gap:10px;">
                 <?php if (!empty($headerAction)): ?>
                     <?= $headerAction ?>
                 <?php endif; ?>
+                <!-- Safety message notification bell -->
+                <?php
+                $_safetyBellRoles = ['safety_manager','safety_staff','safety_officer','airline_admin','super_admin'];
+                $_userRoles = $_SESSION['user_roles'] ?? [];
+                $_isTeamBell = (bool) array_intersect($_safetyBellRoles, $_userRoles);
+                $_bellLink = $_isTeamBell ? '/safety/queue' : '/safety/my-reports';
+                $_bellTitle = $_isTeamBell ? 'Pilot replies waiting' : 'Safety team messages';
+                ?>
+                <a id="safety-bell-btn" href="<?= $_bellLink ?>" title="<?= $_bellTitle ?>"
+                   style="position:relative;display:inline-flex;align-items:center;justify-content:center;
+                          width:36px;height:36px;border-radius:8px;background:var(--bg-card,#1e2535);
+                          border:1px solid var(--border-color,rgba(255,255,255,0.08));
+                          color:var(--text-secondary,#94a3b8);text-decoration:none;
+                          font-size:17px;transition:background 0.15s,border-color 0.15s;"
+                   onmouseover="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.4)'"
+                   onmouseout="this.style.background='var(--bg-card,#1e2535)';this.style.borderColor='var(--border-color,rgba(255,255,255,0.08))'">
+                    🛡️
+                    <span id="safety-bell-badge" style="
+                        display:none;
+                        position:absolute;top:-4px;right:-4px;
+                        min-width:16px;height:16px;padding:0 4px;
+                        background:#ef4444;color:#fff;
+                        font-size:9px;font-weight:800;line-height:16px;
+                        border-radius:8px;text-align:center;
+                        border:2px solid var(--bg-main,#111827);
+                        pointer-events:none;">0</span>
+                </a>
             </div>
         </div>
 
@@ -476,6 +503,37 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             overlay.classList.remove('active');
         });
     }
+})();
+
+// ── Safety Notification Bell — live poll every 30 s ──────────────────────
+(function() {
+    var badge = document.getElementById('safety-bell-badge');
+    var btn   = document.getElementById('safety-bell-btn');
+    if (!badge || !btn) return;
+
+    function updateBell() {
+        fetch('/safety/notifications/count', {credentials: 'same-origin'})
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data) return;
+                var n = parseInt(data.count, 10) || 0;
+                badge.textContent = n > 99 ? '99+' : String(n);
+                if (n > 0) {
+                    badge.style.display = 'block';
+                    btn.style.borderColor = 'rgba(239,68,68,0.6)';
+                    btn.title = (data.for_team
+                        ? 'Pilot replies waiting: ' + n
+                        : 'Safety team messages: ' + n);
+                } else {
+                    badge.style.display = 'none';
+                    btn.style.borderColor = 'var(--border-color,rgba(255,255,255,0.08))';
+                }
+            })
+            .catch(function() { /* silently ignore network errors */ });
+    }
+
+    updateBell();                        // run immediately on page load
+    setInterval(updateBell, 30000);      // then every 30 seconds
 })();
 </script>
 </body>

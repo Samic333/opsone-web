@@ -754,6 +754,77 @@ class SafetyController {
     }
 
     /**
+     * GET /safety/notifications/count
+     * Returns JSON {count, for_team} — used by the header bell for live polling.
+     * No role restriction: every authenticated user gets a count relevant to them.
+     */
+    public function notificationCount(): void {
+        requireAuth();
+        $user      = currentUser();
+        $tenantId  = (int) $user['tenant_id'];
+        $userId    = (int) $user['id'];
+        $userRoles = UserModel::getRoles($userId);
+        $roleSlugs = array_column($userRoles, 'slug');
+        $isTeam    = (bool) array_intersect(self::TEAM_ROLES, $roleSlugs);
+
+        $count = 0;
+        try {
+            if ($isTeam) {
+                // Safety team: count reports where the reporter last replied
+                // (pilot is waiting for safety team to respond)
+                $row = Database::fetch(
+                    "SELECT COUNT(DISTINCT sr.id) AS cnt
+                       FROM safety_reports sr
+                       JOIN safety_report_threads lt
+                         ON lt.report_id   = sr.id
+                        AND lt.is_internal = 0
+                        AND lt.created_at  = (
+                            SELECT MAX(t2.created_at)
+                              FROM safety_report_threads t2
+                             WHERE t2.report_id   = sr.id
+                               AND t2.is_internal = 0
+                        )
+                      WHERE sr.tenant_id = ?
+                        AND sr.is_draft  = 0
+                        AND sr.status NOT IN ('closed','draft')
+                        AND lt.author_id = sr.reporter_id",
+                    [$tenantId]
+                );
+                $count = (int)($row['cnt'] ?? 0);
+            } else {
+                // Pilot/crew: count their reports where safety team last replied
+                // (safety team is waiting for reporter to respond)
+                $row = Database::fetch(
+                    "SELECT COUNT(DISTINCT sr.id) AS cnt
+                       FROM safety_reports sr
+                       JOIN safety_report_threads lt
+                         ON lt.report_id   = sr.id
+                        AND lt.is_internal = 0
+                        AND lt.created_at  = (
+                            SELECT MAX(t2.created_at)
+                              FROM safety_report_threads t2
+                             WHERE t2.report_id   = sr.id
+                               AND t2.is_internal = 0
+                        )
+                      WHERE sr.tenant_id  = ?
+                        AND sr.reporter_id = ?
+                        AND sr.is_draft    = 0
+                        AND sr.status NOT IN ('closed','draft')
+                        AND lt.author_id  != sr.reporter_id",
+                    [$tenantId, $userId]
+                );
+                $count = (int)($row['cnt'] ?? 0);
+            }
+        } catch (\Throwable $e) {
+            $count = 0; // threads table may not exist yet
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['count' => $count, 'for_team' => $isTeam]);
+        exit;
+    }
+
+    /**
      * POST /safety/team/report/{id}/severity
      * Set the safety team's final severity classification.
      */

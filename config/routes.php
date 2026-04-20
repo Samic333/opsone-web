@@ -179,6 +179,7 @@ return [
     'GET /safety/publication/(\d+)'                         => [SafetyController::class, 'publicationDetail'],
     'GET /safety/settings'                                  => [SafetyController::class, 'settings'],
     'POST /safety/settings'                                 => [SafetyController::class, 'saveSettings'],
+    'GET /safety/notifications/count'                       => [SafetyController::class, 'notificationCount'],
 
     // ─── Files ─────────────────────────
     'GET /files'               => ['FileController', 'index'],
