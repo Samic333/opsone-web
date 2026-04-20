@@ -67,6 +67,9 @@ class SafetyController {
         $draftCount     = count(SafetyReportModel::draftsForUser($tenantId, (int) $user['id']));
         $submittedCount = count(SafetyReportModel::forUser($tenantId, (int) $user['id']));
 
+        // Determine if user has safety-team access
+        $isTeamUser = (bool) array_intersect(self::TEAM_ROLES, $roleSlugs);
+
         $pageTitle    = 'Safety Reporting';
         $pageSubtitle = 'Confidential safety, hazard, and incident reporting. Protected under Just Culture policy.';
 
@@ -115,10 +118,14 @@ class SafetyController {
             redirect('/safety');
         }
 
-        $settings    = SafetyReportModel::getSettings($tenantId);
-        $typeName    = SafetyReportModel::TYPES[$type] ?? $type;
-        $pageTitle   = 'New ' . htmlspecialchars($typeName);
-        $pageSubtitle = 'Complete the form below. Your submission is confidential.';
+        $settings        = SafetyReportModel::getSettings($tenantId);
+        $typeName        = SafetyReportModel::TYPES[$type] ?? $type;
+        $reportType      = $type;
+        $reportTypeLabel = $typeName;
+        $draft           = null; // populated when editing an existing draft
+        $prefill         = $this->buildPrefill($user);
+        $pageTitle       = 'New ' . htmlspecialchars($typeName);
+        $pageSubtitle    = 'Complete the form below. Your submission is confidential.';
 
         ob_start();
         require VIEWS_PATH . '/safety/report_form.php';
@@ -784,6 +791,62 @@ class SafetyController {
     // =========================================================================
     // PRIVATE HELPERS
     // =========================================================================
+
+    /**
+     * Build pre-fill context for the report form from the current user's profile,
+     * roles, crew profile, and today's roster entry.
+     */
+    private function buildPrefill(array $user): array {
+        $tenantId = (int) $user['tenant_id'];
+        $userId   = (int) $user['id'];
+
+        // 1. Reporter identity from user record
+        $prefill = [
+            'reporter_name'        => $user['name']            ?? '',
+            'reporter_employee_id' => $user['employee_id']     ?? '',
+            'reporter_department'  => $user['department_name'] ?? '',
+            'reporter_base'        => $user['base_code']       ?? '',
+            'reporter_fleet'       => $user['fleet_name']      ?? '',
+            'event_date'           => date('Y-m-d'),
+            'event_utc_time'       => gmdate('H:i'),
+            'event_local_time'     => date('H:i'),
+            'location_name'        => $user['base_code']       ?? '',
+        ];
+
+        // 2. Role/position from user roles
+        $roles       = UserModel::getRoles($userId);
+        $primaryRole = !empty($roles) ? ($roles[0]['name'] ?? '') : '';
+        $prefill['reporter_position'] = $primaryRole;
+
+        // 3. Crew profile for additional position info
+        if (class_exists('CrewProfileModel')) {
+            $profile = CrewProfileModel::findByUser($userId);
+            if ($profile && !empty($profile['contract_type'])) {
+                $prefill['reporter_contract'] = $profile['contract_type'];
+            }
+        }
+
+        // 4. Today's roster entry for flight/duty context
+        $today       = date('Y-m-d');
+        $todayRoster = Database::fetch(
+            "SELECT r.*, r.duty_type, r.notes
+             FROM rosters r
+             WHERE r.tenant_id = ? AND r.user_id = ? AND r.roster_date = ?
+             LIMIT 1",
+            [$tenantId, $userId, $today]
+        );
+
+        if ($todayRoster) {
+            $prefill['roster_duty_type'] = $todayRoster['duty_type'] ?? '';
+            $prefill['roster_notes']     = $todayRoster['notes']     ?? '';
+            // For flight duties, expose that flight context exists
+            if (in_array($todayRoster['duty_type'], ['flight', 'pos', 'deadhead'])) {
+                $prefill['has_flight_context'] = true;
+            }
+        }
+
+        return $prefill;
+    }
 
     /**
      * Collect and sanitise form fields from $_POST into a data array
