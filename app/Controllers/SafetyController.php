@@ -31,8 +31,17 @@
  */
 class SafetyController {
 
-    /** Roles that have safety-team (queue management) access */
-    private const TEAM_ROLES = ['safety_manager', 'safety_staff', 'airline_admin', 'super_admin'];
+    /** Roles that have safety-team (queue management) access.
+     *  Includes 'safety_officer' which is the actual DB slug used in demo/prod data.
+     *  'safety_manager' and 'safety_staff' are kept for forward-compatibility.
+     */
+    private const TEAM_ROLES = [
+        'safety_manager',   // future / new tenants
+        'safety_staff',     // future / new tenants
+        'safety_officer',   // current DB slug (demo + prod seed)
+        'airline_admin',
+        'super_admin',
+    ];
 
     /** Accepted upload MIME types */
     private const ALLOWED_MIMES = [
@@ -208,9 +217,8 @@ class SafetyController {
             'quick'        => true,
         ]);
 
-        NotificationService::notifyTenant(
+        self::notifySafetyTeam(
             $tenantId,
-            'safety_manager',
             'New Safety Report: ' . $report['reference_no'],
             "{$report['reference_no']} — {$title}",
             '/safety/team/report/' . $id
@@ -292,10 +300,9 @@ class SafetyController {
             'type'         => $type,
         ]);
 
-        // Notify all safety_manager users in the tenant
-        NotificationService::notifyTenant(
+        // Notify all safety team users in the tenant
+        self::notifySafetyTeam(
             $tenantId,
-            'safety_manager',
             'New Safety Report: ' . $report['reference_no'],
             "{$report['reference_no']} — {$title}",
             '/safety/team/report/' . $id
@@ -468,9 +475,8 @@ class SafetyController {
                 '/safety/team/report/' . $id
             );
         } else {
-            NotificationService::notifyTenant(
+            self::notifySafetyTeam(
                 $tenantId,
-                'safety_manager',
                 'New Reply: ' . $report['reference_no'],
                 'The reporter has added a reply to ' . $report['reference_no'],
                 '/safety/team/report/' . $id
@@ -663,6 +669,19 @@ class SafetyController {
         $statusHistory = SafetyReportModel::getStatusHistory($id);
         $actions       = SafetyReportModel::getActions($id, $tenantId);
         $crewList      = UserModel::allForTenant($tenantId);
+
+        // Safety-team users for assignment dropdown
+        // Covers all safety role slugs including the actual DB slug 'safety_officer'
+        $safetyUsers = array_filter($crewList, function($u) {
+            $roles = array_column(UserModel::getRoles((int)$u['id']), 'slug');
+            return (bool) array_intersect(self::TEAM_ROLES, $roles);
+        });
+        $safetyUsers = array_values($safetyUsers);
+
+        // Fallback: if no safety-team users found, show all crew
+        if (empty($safetyUsers)) {
+            $safetyUsers = $crewList;
+        }
 
         $pageTitle    = 'Safety Report: ' . $report['reference_no'];
         $pageSubtitle = 'Filed ' . date('d M Y, H:i', strtotime($report['created_at']));
@@ -1039,7 +1058,7 @@ class SafetyController {
      * GET /safety/settings
      */
     public function settings(): void {
-        RbacMiddleware::requireRole(['safety_manager', 'airline_admin', 'super_admin']);
+        RbacMiddleware::requireRole(['safety_manager', 'safety_officer', 'airline_admin', 'super_admin']);
         $tenantId = currentTenantId();
         $settings = SafetyReportModel::getSettings($tenantId);
 
@@ -1056,7 +1075,7 @@ class SafetyController {
      * POST /safety/settings
      */
     public function saveSettings(): void {
-        RbacMiddleware::requireRole(['safety_manager', 'airline_admin', 'super_admin']);
+        RbacMiddleware::requireRole(['safety_manager', 'safety_officer', 'airline_admin', 'super_admin']);
         verifyCsrf();
 
         $tenantId = currentTenantId();
@@ -1178,8 +1197,7 @@ class SafetyController {
      */
     private static function filterTypesByRole(array $enabledTypes, array $userRoleSlugs): array {
         // Safety team members can submit any enabled report type
-        $teamRoles = ['safety_manager', 'safety_staff', 'airline_admin', 'super_admin'];
-        if (array_intersect($teamRoles, $userRoleSlugs)) {
+        if (array_intersect(self::TEAM_ROLES, $userRoleSlugs)) {
             $result = [];
             foreach ($enabledTypes as $slug) {
                 if (isset(SafetyReportModel::TYPES[$slug])) {
@@ -1216,10 +1234,9 @@ class SafetyController {
         $allowed = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
         if (in_array('all', $allowed, true)) return true;
 
-        $teamRoles = ['safety_manager', 'safety_staff', 'airline_admin', 'super_admin'];
         $userRoles = UserModel::getRoles($userId);
         $roleSlugs = array_column($userRoles, 'slug');
-        if (array_intersect($teamRoles, $roleSlugs)) return true;
+        if (array_intersect(self::TEAM_ROLES, $roleSlugs)) return true;
 
         return (bool) array_intersect($allowed, $roleSlugs);
     }
@@ -1232,6 +1249,24 @@ class SafetyController {
             ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest' ||
             str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')
         );
+    }
+
+    /**
+     * Notify all safety-team roles for a tenant.
+     * Covers 'safety_manager', 'safety_staff', and 'safety_officer' (actual DB slug).
+     * Each role gets one notification; duplicate users (multiple roles) may get extras —
+     * acceptable for safety-critical comms.
+     */
+    private static function notifySafetyTeam(
+        int    $tenantId,
+        string $title,
+        string $body,
+        string $link = ''
+    ): void {
+        $notifyRoles = ['safety_manager', 'safety_staff', 'safety_officer'];
+        foreach ($notifyRoles as $role) {
+            NotificationService::notifyTenant($tenantId, $role, $title, $body, $link);
+        }
     }
 
     /**

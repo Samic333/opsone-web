@@ -241,9 +241,8 @@ $activeTab = $_GET['tab'] ?? 'overview';
         <?php endif; ?>
     </div>
 
-    <form method="POST" action="/safety/team/report/<?= (int)$report['id'] ?>/thread">
+    <form method="POST" action="/safety/team/report/<?= (int)$report['id'] ?>/reply">
         <?= csrfField() ?>
-        <input type="hidden" name="is_internal" value="0">
         <div class="form-group">
             <label>Reply to Reporter</label>
             <textarea name="body" class="form-control" rows="3" placeholder="Message visible to the reporter…"></textarea>
@@ -288,9 +287,8 @@ $activeTab = $_GET['tab'] ?? 'overview';
         <?php endif; ?>
     </div>
 
-    <form method="POST" action="/safety/team/report/<?= (int)$report['id'] ?>/thread">
+    <form method="POST" action="/safety/team/report/<?= (int)$report['id'] ?>/internal-note">
         <?= csrfField() ?>
-        <input type="hidden" name="is_internal" value="1">
         <div class="form-group">
             <label>Add Internal Note</label>
             <textarea name="body" class="form-control" rows="3" placeholder="Investigation notes, findings, or team comments — not visible to the reporter…"></textarea>

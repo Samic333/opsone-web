@@ -425,7 +425,7 @@ class DashboardController {
                 "SELECT COUNT(*) as c FROM notices n
                  LEFT JOIN notice_reads nr ON nr.notice_id = n.id AND nr.user_id = ?
                  WHERE n.tenant_id = ? AND n.published = 1 AND n.requires_ack = 1
-                   AND (n.expires_at IS NULL OR n.expires_at > NOW())
+                   AND (n.expires_at IS NULL OR n.expires_at > " . dbNow() . ")
                    AND nr.acknowledged_at IS NULL",
                 [$user['id'], $tenantId]
             )['c'] ?? 0),
@@ -446,7 +446,7 @@ class DashboardController {
                 "SELECT COUNT(*) as c FROM notices n
                  LEFT JOIN notice_reads nr ON nr.notice_id = n.id AND nr.user_id = ?
                  WHERE n.tenant_id = ? AND n.published = 1 AND n.requires_ack = 1
-                   AND (n.expires_at IS NULL OR n.expires_at > NOW())
+                   AND (n.expires_at IS NULL OR n.expires_at > " . dbNow() . ")
                    AND nr.acknowledged_at IS NULL",
                 [$user['id'], $tenantId]
             )['c'] ?? 0),

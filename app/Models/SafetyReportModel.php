@@ -48,16 +48,18 @@ class SafetyReportModel {
 
     // ─── Role Visibility Per Type ──────────────────────────────────────────────
 
+    // 'safety_officer' is the actual slug used in demo/prod DB.
+    // 'safety_manager' and 'safety_staff' are kept for forward-compatibility.
     const TYPE_ROLES = [
         'general_hazard'          => ['all'],
-        'flight_crew_occurrence'  => ['pilot', 'captain', 'first_officer', 'safety_manager', 'safety_staff', 'airline_admin'],
-        'maintenance_engineering' => ['engineer', 'maintenance_manager', 'safety_manager', 'safety_staff', 'airline_admin'],
-        'ground_ops'              => ['ground_ops', 'dispatcher', 'safety_manager', 'safety_staff', 'airline_admin'],
-        'quality'                 => ['quality_manager', 'safety_manager', 'safety_staff', 'airline_admin'],
+        'flight_crew_occurrence'  => ['pilot', 'captain', 'first_officer', 'chief_pilot', 'safety_manager', 'safety_staff', 'safety_officer', 'airline_admin'],
+        'maintenance_engineering' => ['engineer', 'maintenance_manager', 'engineering_manager', 'safety_manager', 'safety_staff', 'safety_officer', 'airline_admin'],
+        'ground_ops'              => ['ground_ops', 'dispatcher', 'safety_manager', 'safety_staff', 'safety_officer', 'airline_admin'],
+        'quality'                 => ['quality_manager', 'safety_manager', 'safety_staff', 'safety_officer', 'airline_admin'],
         'hse'                     => ['all'],
-        'tcas'                    => ['pilot', 'captain', 'first_officer', 'safety_manager', 'airline_admin'],
+        'tcas'                    => ['pilot', 'captain', 'first_officer', 'chief_pilot', 'safety_manager', 'safety_officer', 'airline_admin'],
         'environmental'           => ['all'],
-        'frat'                    => ['pilot', 'captain', 'first_officer', 'dispatcher', 'airline_admin', 'safety_manager', 'safety_staff'],
+        'frat'                    => ['pilot', 'captain', 'first_officer', 'chief_pilot', 'dispatcher', 'airline_admin', 'safety_manager', 'safety_staff', 'safety_officer'],
     ];
 
     // ─── Reference Number ─────────────────────────────────────────────────────
@@ -111,7 +113,7 @@ class SafetyReportModel {
                  ?, ?, ?,
                  ?, ?, ?, ?,
                  ?, ?,
-                 'submitted', 0, NOW())",
+                 'submitted', 0, " . dbNow() . ")",
             [
                 $tenantId,
                 $ref,
@@ -384,7 +386,7 @@ class SafetyReportModel {
         $params = [$newStatus];
 
         if ($newStatus === self::STATUS_CLOSED) {
-            $sets[]   = "closed_at = NOW()";
+            $sets[]   = "closed_at = " . dbNow();
         }
 
         $params[] = $id;
@@ -601,7 +603,7 @@ class SafetyReportModel {
     public static function publishPublication(int $id, int $tenantId): bool {
         $rows = Database::execute(
             "UPDATE safety_publications
-                SET status = 'published', published_at = NOW()
+                SET status = 'published', published_at = " . dbNow() . "
               WHERE id = ? AND tenant_id = ?",
             [$id, $tenantId]
         );
@@ -745,7 +747,7 @@ class SafetyReportModel {
 
         // Auto-set completed_at when marking completed (unless caller supplied it)
         if (isset($data['status']) && $data['status'] === 'completed' && !array_key_exists('completed_at', $data)) {
-            $sets[]   = "`completed_at` = NOW()";
+            $sets[]   = "`completed_at` = " . dbNow();
         }
 
         if (empty($sets)) return true;
