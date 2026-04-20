@@ -143,13 +143,32 @@ return [
     // canonical entry lives under '─── Crew Files Portal ──────────────────'.
     'POST /my-files/(\d+)/ack'      => [FileController::class, 'acknowledge'],
 
-    // Phase 6 - Safety & Reporting
-    'GET /safety'                   => [SafetyController::class, 'index'],
-    'GET /safety/report/(\d+)'      => [SafetyController::class, 'view'],
-    'POST /safety/report/(\d+)/update'=>[SafetyController::class, 'update'],
-    'GET /safety/my-reports'        => [SafetyController::class, 'myReports'],
-    'GET /safety/submit'            => [SafetyController::class, 'submitForm'],
-    'POST /safety/submit'           => [SafetyController::class, 'submit'],
+    // ─── Safety Phase 1 — Crew Routes ────────────────────────
+    'GET /safety'                               => [SafetyController::class, 'home'],
+    'GET /safety/select-type'                   => [SafetyController::class, 'selectType'],
+    'GET /safety/report/new/([a-z_]+)'          => [SafetyController::class, 'reportForm'],
+    'POST /safety/report/draft'                 => [SafetyController::class, 'saveDraft'],
+    'POST /safety/report/submit'                => [SafetyController::class, 'submitReport'],
+    'GET /safety/drafts'                        => [SafetyController::class, 'myDrafts'],
+    'GET /safety/my-reports'                    => [SafetyController::class, 'myReports'],
+    'GET /safety/report/(\d+)'                  => [SafetyController::class, 'reportDetail'],
+    'POST /safety/report/(\d+)/reply'           => [SafetyController::class, 'addReply'],
+    'POST /safety/report/(\d+)/upload'          => [SafetyController::class, 'uploadAttachment'],
+
+    // ─── Safety Phase 1 — Safety Team Routes ─────────────────
+    'GET /safety/queue'                                     => [SafetyController::class, 'index'],
+    'GET /safety/team/report/(\d+)'                         => [SafetyController::class, 'teamDetail'],
+    'POST /safety/team/report/(\d+)/status'                 => [SafetyController::class, 'updateStatus'],
+    'POST /safety/team/report/(\d+)/assign'                 => [SafetyController::class, 'assignReport'],
+    'POST /safety/team/report/(\d+)/internal-note'          => [SafetyController::class, 'addInternalNote'],
+    'POST /safety/team/report/(\d+)/reply'                  => [SafetyController::class, 'addTeamReply'],
+    'GET /safety/publications'                              => [SafetyController::class, 'publications'],
+    'GET /safety/publications/new'                          => [SafetyController::class, 'newPublication'],
+    'POST /safety/publications/save'                        => [SafetyController::class, 'savePublication'],
+    'POST /safety/publications/(\d+)/publish'               => [SafetyController::class, 'publishPublication'],
+    'GET /safety/publication/(\d+)'                         => [SafetyController::class, 'publicationDetail'],
+    'GET /safety/settings'                                  => [SafetyController::class, 'settings'],
+    'POST /safety/settings'                                 => [SafetyController::class, 'saveSettings'],
 
     // ─── Files ─────────────────────────
     'GET /files'               => ['FileController', 'index'],
@@ -278,4 +297,16 @@ return [
     // ─── API: App Info ─────────────────
     'GET /api/app/version'     => ['InstallApiController', 'appVersion'],
     'GET /api/app/build'       => ['InstallApiController', 'latestBuild'],
+
+    // ─── API: Safety Phase 1 ───────────────
+    'GET /api/safety/types'                   => ['SafetyApiController', 'types'],
+    'GET /api/safety/my-reports'              => ['SafetyApiController', 'myReports'],
+    'GET /api/safety/drafts'                  => ['SafetyApiController', 'drafts'],
+    'GET /api/safety/report/(\d+)'            => ['SafetyApiController', 'report'],
+    'POST /api/safety/report'                 => ['SafetyApiController', 'createReport'],
+    'PUT /api/safety/report/(\d+)'            => ['SafetyApiController', 'updateReport'],
+    'DELETE /api/safety/report/(\d+)/draft'   => ['SafetyApiController', 'deleteDraft'],
+    'POST /api/safety/report/(\d+)/reply'     => ['SafetyApiController', 'addReply'],
+    'GET /api/safety/publications'            => ['SafetyApiController', 'publications'],
+    'GET /api/safety/publication/(\d+)'       => ['SafetyApiController', 'publication'],
 ];
