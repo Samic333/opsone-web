@@ -1,11 +1,10 @@
 -- Migration 021: Safety Actions Table (MySQL)
 -- Phase 1.2 — Corrective actions assigned from safety reports
 --
--- REQUIREMENT: MySQL Event Scheduler must be enabled.
--- Run: SET GLOBAL event_scheduler = ON;
--- Or add event_scheduler = ON to my.cnf under [mysqld].
-
-SET GLOBAL event_scheduler = ON;
+-- NOTE: The MySQL EVENT for auto-marking overdue actions has been removed
+-- because shared hosting (Namecheap) blocks SET GLOBAL / SUPER privilege.
+-- Overdue marking is handled in PHP by SafetyReportModel::markOverdueActions()
+-- which is called from the safety dashboard on each load.
 
 CREATE TABLE IF NOT EXISTS `safety_actions` (
     `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -34,13 +33,5 @@ CREATE TABLE IF NOT EXISTS `safety_actions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Corrective actions assigned from safety reports';
 
--- Nightly event: automatically mark open/in_progress actions as overdue
--- when their due_date has passed. Runs at 01:00 AM each day.
--- NOTE: Requires MySQL event_scheduler = ON (see above).
-CREATE EVENT IF NOT EXISTS `mark_overdue_safety_actions`
-ON SCHEDULE EVERY 1 DAY STARTS TIMESTAMP(CURDATE(), '01:00:00')
-DO
-  UPDATE `safety_actions`
-  SET `status` = 'overdue'
-  WHERE `status` IN ('open','in_progress')
-    AND `due_date` < CURDATE();
+-- Overdue marking is handled in PHP (SafetyReportModel::markOverdueActions)
+-- called from SafetyController::safetyDashboard() on each dashboard load.

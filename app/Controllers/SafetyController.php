@@ -537,6 +537,9 @@ class SafetyController {
 
         $tenantId = (int) currentUser()['tenant_id'];
 
+        // Mark past-due actions as overdue (replaces MySQL EVENT on shared hosting)
+        SafetyReportModel::markOverdueActions($tenantId);
+
         $stats = SafetyReportModel::stats($tenantId);
 
         $recentReports = SafetyReportModel::allForTenant($tenantId, 'all', []);

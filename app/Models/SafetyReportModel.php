@@ -761,6 +761,27 @@ class SafetyReportModel {
     }
 
     /**
+     * Mark open/in_progress actions as overdue when past due_date.
+     * Called from the safety dashboard on each load — replaces MySQL EVENT
+     * which requires SUPER privilege not available on shared hosting.
+     */
+    public static function markOverdueActions(int $tenantId): void {
+        try {
+            Database::execute(
+                "UPDATE safety_actions
+                    SET status = 'overdue'
+                  WHERE tenant_id = ?
+                    AND status IN ('open','in_progress')
+                    AND due_date IS NOT NULL
+                    AND due_date < CURDATE()",
+                [$tenantId]
+            );
+        } catch (\Throwable $e) {
+            error_log('[SafetyReportModel] markOverdueActions error: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Get all actions for a tenant, optionally filtered by status.
      * Joined with report reference_no, report title, and assignee name.
      */
