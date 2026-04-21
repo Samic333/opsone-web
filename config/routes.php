@@ -309,6 +309,11 @@ return [
     'GET /api/app/version'     => ['InstallApiController', 'appVersion'],
     'GET /api/app/build'       => ['InstallApiController', 'latestBuild'],
 
+    // ─── Duty Reporting — Crew self-service (web) ──
+    'GET /my-duty'               => ['DutyReportController', 'myDuty'],
+    'POST /my-duty/check-in'     => ['DutyReportController', 'myDutyCheckIn'],
+    'POST /my-duty/clock-out'    => ['DutyReportController', 'myDutyClockOut'],
+
     // ─── Duty Reporting (Airline Admin) ───────────
     'GET /duty-reporting'                                => ['DutyReportController', 'index'],
     'GET /duty-reporting/history'                        => ['DutyReportController', 'history'],

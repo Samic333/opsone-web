@@ -320,9 +320,32 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             <?php endif; ?>
 
             <!-- ─── Duty Reporting ───────────────────────── -->
-            <?php if (hasAnyRole(['airline_admin','hr','chief_pilot','head_cabin_crew','engineering_manager','base_manager','scheduler'])): ?>
+            <?php
+            // Compute once: is the current user permitted to self-report per
+            // the tenant's duty_reporting_settings.allowed_roles list?
+            $dutyCrewAllowed  = false;
+            $dutyAdmin        = hasAnyRole(['airline_admin','hr','chief_pilot','head_cabin_crew','engineering_manager','base_manager','scheduler']);
+            try {
+                $_tid = (int) currentTenantId();
+                if ($_tid > 0 && class_exists('DutyReportingSettings')) {
+                    $_drs = DutyReportingSettings::forTenant($_tid);
+                    if (!empty($_drs['enabled'])) {
+                        $dutyCrewAllowed = DutyReportingSettings::userAllowed($_tid, $_SESSION['user_roles'] ?? []);
+                    }
+                }
+            } catch (\Throwable $e) { /* never break the sidebar */ }
+            ?>
+            <?php if ($dutyAdmin || $dutyCrewAllowed): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Duty Reporting</div>
+
+                <?php if ($dutyCrewAllowed): ?>
+                <a href="/my-duty" class="sidebar-link <?= str_starts_with($currentPath, '/my-duty') ? 'active' : '' ?>">
+                    <span class="icon">✈️</span> My Duty
+                </a>
+                <?php endif; ?>
+
+                <?php if ($dutyAdmin): ?>
                 <a href="/duty-reporting" class="sidebar-link <?= (rtrim($currentPath, '/') === '/duty-reporting' || str_starts_with($currentPath, '/duty-reporting/report') || str_starts_with($currentPath, '/duty-reporting/history')) ? 'active' : '' ?>">
                     <span class="icon">🟢</span> On Duty Now
                 </a>
@@ -340,6 +363,8 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                         <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $pendingDutyEx ?></span>
                     <?php endif; ?>
                 </a>
+                <?php endif; ?>
+
                 <?php if (hasAnyRole(['airline_admin','super_admin'])): ?>
                 <a href="/duty-reporting/settings" class="sidebar-link <?= str_starts_with($currentPath, '/duty-reporting/settings') ? 'active' : '' ?>">
                     <span class="icon">⚙️</span> Settings

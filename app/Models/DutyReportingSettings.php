@@ -20,11 +20,22 @@ class DutyReportingSettings {
         'retention_days'              => 180,
     ];
 
+    /** @var array<int, array> per-request cache keyed by tenant_id */
+    private static array $cache = [];
+
     /**
      * Load settings for a tenant, creating a defaults row if none exists.
      * Returns an associative array with all fields.
+     *
+     * Cached for the lifetime of the request — the sidebar and multiple
+     * dashboards all call this, and it should not round-trip to the DB
+     * more than once per request.
      */
     public static function forTenant(int $tenantId): array {
+        if (isset(self::$cache[$tenantId])) {
+            return self::$cache[$tenantId];
+        }
+
         $row = Database::fetch(
             "SELECT * FROM duty_reporting_settings WHERE tenant_id = ?",
             [$tenantId]
@@ -38,7 +49,15 @@ class DutyReportingSettings {
             );
         }
 
-        return self::cast($row ?: array_merge(['tenant_id' => $tenantId], self::DEFAULTS));
+        $normalised = self::cast($row ?: array_merge(['tenant_id' => $tenantId], self::DEFAULTS));
+        self::$cache[$tenantId] = $normalised;
+        return $normalised;
+    }
+
+    /** Invalidate the per-request cache (call after save()). */
+    public static function clearCache(?int $tenantId = null): void {
+        if ($tenantId === null) { self::$cache = []; return; }
+        unset(self::$cache[$tenantId]);
     }
 
     public static function ensureRow(int $tenantId): void {
@@ -101,6 +120,10 @@ class DutyReportingSettings {
             "UPDATE duty_reporting_settings SET " . implode(', ', $sets) . " WHERE tenant_id = ?",
             $params
         );
+
+        // Settings just changed — drop the cached copy so the new values are
+        // visible on the next fetch (including sidebar gates).
+        self::clearCache($tenantId);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────

@@ -33,6 +33,219 @@ class DutyReportController {
 
     private const SETTINGS_ROLES = ['airline_admin', 'super_admin'];
 
+    // =========================================================================
+    // CREW SELF-SERVICE (web) — mirror of the iPad check-in / clock-out surface
+    // Routes: GET /my-duty, POST /my-duty/check-in, POST /my-duty/clock-out
+    //
+    // Gated by the tenant's duty_reporting_settings.allowed_roles list, not
+    // by hardcoded role slugs — so an airline can include chief_pilot /
+    // head_cabin_crew and allow managers who fly lines to self-check-in.
+    // =========================================================================
+
+    public function myDuty(): void {
+        $tenantId = $this->requireCrewAccess('/dashboard');
+        if ($tenantId === null) return;
+
+        $user     = currentUser();
+        $userId   = (int) ($user['id'] ?? 0);
+        $settings = DutyReportingSettings::forTenant($tenantId);
+        $current  = DutyReport::findOpenForUser($tenantId, $userId);
+        $history  = DutyReport::historyForUser($tenantId, $userId, 10);
+
+        $pageTitle    = 'My Duty';
+        $pageSubtitle = $current
+            ? 'You are on duty — remember to clock out at the end of your shift.'
+            : 'Report for duty to start a new duty event.';
+
+        ob_start();
+        require VIEWS_PATH . '/duty-reporting/my_duty.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    public function myDutyCheckIn(): void {
+        $tenantId = $this->requireCrewAccess('/my-duty');
+        if ($tenantId === null) return;
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid security token. Please try again.');
+            redirect('/my-duty');
+        }
+
+        $user     = currentUser();
+        $userId   = (int) ($user['id'] ?? 0);
+        $roles    = UserModel::getRoleSlugs($userId);
+        $primary  = $roles[0] ?? null;
+        $reasonTx = trim((string) ($_POST['exception_reason_text'] ?? ''));
+        $reasonCd = trim((string) ($_POST['exception_reason_code'] ?? ''));
+
+        $payload = [
+            'tenant_id'             => $tenantId,
+            'user_id'               => $userId,
+            'role_slug'             => $primary,
+            'lat'                   => null,   // web has no GPS; server still processes fine
+            'lng'                   => null,
+            'local_time'            => date('Y-m-d H:i:s'),
+            'method'                => 'manual',
+            'notes'                 => trim((string) ($_POST['notes'] ?? '')) ?: null,
+            'exception_reason_code' => $reasonCd !== '' ? $reasonCd : null,
+            'exception_reason_text' => $reasonTx !== '' ? $reasonTx : null,
+        ];
+
+        $result = DutyReportingService::performCheckIn($payload);
+
+        if (!$result['ok']) {
+            // exception_note_required is expected when tenant policy forces
+            // a reason — stash state in flash so the form can re-render.
+            if ($result['error'] === 'exception_note_required') {
+                $_SESSION['duty_exception_pending'] = [
+                    'reason_code' => $result['exception']['reason_code'] ?? 'other',
+                    'notes'       => $payload['notes'] ?? '',
+                ];
+                flash('warning', 'This check-in needs a reason. Please fill the form below.');
+            } elseif ($result['error'] === 'already_on_duty') {
+                flash('warning', 'You are already on duty.');
+            } elseif ($result['error'] === 'module_disabled') {
+                flash('error', 'Duty Reporting is not enabled for your airline.');
+            } else {
+                flash('error', 'Check-in blocked: ' . str_replace('_', ' ', (string)$result['error']));
+            }
+            AuditService::log(
+                'duty_reporting.check_in.blocked',
+                'duty_reports',
+                $result['duty_report_id'] ?? null,
+                ['via' => 'web', 'error' => $result['error']],
+                'blocked',
+                $result['error']
+            );
+            redirect('/my-duty');
+        }
+
+        unset($_SESSION['duty_exception_pending']);
+
+        AuditService::log(
+            'duty_reporting.check_in',
+            'duty_reports',
+            (int) $result['duty_report_id'],
+            [
+                'via'             => 'web',
+                'state'           => $result['state'],
+                'has_exception'   => !empty($result['exception']),
+            ]
+        );
+
+        if (!empty($result['exception']) && $result['state'] === DutyReport::STATE_EXCEPTION_PENDING) {
+            NotificationService::notifyTenant(
+                $tenantId, 'airline_admin',
+                'Duty exception pending review',
+                ($user['name'] ?? 'A crew member') . ' submitted an exception via web.',
+                '/duty-reporting/exceptions'
+            );
+            NotificationService::notifyTenant(
+                $tenantId, 'chief_pilot',
+                'Duty exception pending review',
+                ($user['name'] ?? 'A crew member') . ' submitted an exception via web.',
+                '/duty-reporting/exceptions'
+            );
+            flash('warning', 'Check-in submitted — pending manager review.');
+        } else {
+            flash('success', 'Reported for duty.');
+        }
+        redirect('/my-duty');
+    }
+
+    public function myDutyClockOut(): void {
+        $tenantId = $this->requireCrewAccess('/my-duty');
+        if ($tenantId === null) return;
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid security token. Please try again.');
+            redirect('/my-duty');
+        }
+
+        $user     = currentUser();
+        $userId   = (int) ($user['id'] ?? 0);
+
+        $result = DutyReportingService::performClockOut([
+            'tenant_id'  => $tenantId,
+            'user_id'    => $userId,
+            'lat'        => null,
+            'lng'        => null,
+            'local_time' => date('Y-m-d H:i:s'),
+            'notes'      => trim((string) ($_POST['notes'] ?? '')) ?: null,
+        ]);
+
+        if (!$result['ok']) {
+            AuditService::log(
+                'duty_reporting.clock_out.blocked',
+                'duty_reports',
+                null,
+                ['via' => 'web', 'error' => $result['error']],
+                'blocked',
+                $result['error']
+            );
+            if ($result['error'] === 'no_active_duty') {
+                flash('warning', 'You have no active duty record to clock out.');
+            } else {
+                flash('error', 'Clock-out blocked: ' . str_replace('_', ' ', (string)$result['error']));
+            }
+            redirect('/my-duty');
+        }
+
+        AuditService::log(
+            'duty_reporting.clock_out',
+            'duty_reports',
+            (int) $result['duty_report_id'],
+            [
+                'via'              => 'web',
+                'state'            => $result['state'],
+                'duration_minutes' => $result['duration_minutes'] ?? null,
+            ]
+        );
+
+        flash('success', 'Clocked out. Duration: ' . ($result['duration_minutes'] ?? 0) . ' minutes.');
+        redirect('/my-duty');
+    }
+
+    /**
+     * Gate for all /my-duty/* crew endpoints. Returns the resolved tenant id,
+     * or null (after redirecting) if the user isn't allowed.
+     *
+     * Allowed when: module enabled for tenant, tenant settings.enabled = 1,
+     * AND any of the user's role slugs appears in settings.allowed_roles.
+     * No hardcoded role list — the tenant's admin decides who can use it.
+     */
+    private function requireCrewAccess(string $redirectOnDenyTo): ?int {
+        $tenantId = (int) currentTenantId();
+        if ($tenantId <= 0) {
+            flash('error', 'Please log in first.');
+            redirect('/login');
+            return null;
+        }
+
+        if (!AuthorizationService::isModuleEnabledForTenant('duty_reporting', $tenantId)) {
+            flash('warning', 'Duty Reporting is not enabled for your airline.');
+            redirect($redirectOnDenyTo);
+            return null;
+        }
+
+        $settings = DutyReportingSettings::forTenant($tenantId);
+        if (!$settings['enabled']) {
+            flash('warning', 'Duty Reporting is temporarily disabled by your airline admin.');
+            redirect($redirectOnDenyTo);
+            return null;
+        }
+
+        $user     = currentUser();
+        $userId   = (int) ($user['id'] ?? 0);
+        $roles    = UserModel::getRoleSlugs($userId);
+        if (!DutyReportingSettings::userAllowed($tenantId, $roles)) {
+            flash('error', 'Your role is not permitted to use Duty Reporting. Ask your airline admin.');
+            redirect($redirectOnDenyTo);
+            return null;
+        }
+
+        return $tenantId;
+    }
+
     // ─── GET /duty-reporting ──────────────────────────────────────────────────
 
     public function index(): void {

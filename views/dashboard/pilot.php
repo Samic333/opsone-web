@@ -2,7 +2,67 @@
 $pageTitle    = 'Pilot Dashboard';
 $pageSubtitle = 'Crew Operations Overview';
 ob_start();
+
+// ─── Duty Reporting widget (if tenant allows this role) ───────────────────
+$dutyAllowed = false;
+$dutyOpen    = null;
+try {
+    $__tid = (int) currentTenantId();
+    if ($__tid > 0 && class_exists('DutyReportingSettings')) {
+        $__s = DutyReportingSettings::forTenant($__tid);
+        if (!empty($__s['enabled'])
+            && DutyReportingSettings::userAllowed($__tid, $_SESSION['user_roles'] ?? [])) {
+            $dutyAllowed = true;
+            $__uid = (int) ($_SESSION['user']['id'] ?? 0);
+            if ($__uid > 0 && class_exists('DutyReport')) {
+                $dutyOpen = DutyReport::findOpenForUser($__tid, $__uid);
+            }
+        }
+    }
+} catch (\Throwable $e) { /* widget is optional — never break the dashboard */ }
 ?>
+
+<?php if ($dutyAllowed): ?>
+    <?php if ($dutyOpen && in_array($dutyOpen['state'], ['checked_in','on_duty','exception_pending_review'], true)):
+        $onDutySince = strtotime($dutyOpen['check_in_at_utc'] ?? '') ?: 0;
+        $mins        = $onDutySince ? max(0, (int) floor((time() - $onDutySince) / 60)) : 0;
+        $durText     = sprintf('%dh %dm', intdiv($mins, 60), $mins % 60);
+        $pending     = $dutyOpen['state'] === 'exception_pending_review';
+        $bg          = $pending
+            ? 'linear-gradient(135deg,#f59e0b 0%,#d97706 100%)'
+            : 'linear-gradient(135deg,#10b981 0%,#059669 100%)';
+    ?>
+    <div style="background:<?= $bg ?>; color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:22px;"><?= $pending ? '⏳' : '✈️' ?></span>
+            <div>
+                <strong style="font-size:14px; display:block;">
+                    <?= $pending ? 'On duty — pending manager review' : 'On duty now' ?>
+                </strong>
+                <span style="font-size:12px; opacity:0.9;">
+                    Checked in at <?= e($dutyOpen['check_in_at_utc'] ?? '—') ?> UTC · On duty for <?= e($durText) ?>
+                </span>
+            </div>
+        </div>
+        <a href="/my-duty" style="background:#fff; color:<?= $pending ? '#d97706' : '#059669' ?>; font-weight:700; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:13px; white-space:nowrap; flex-shrink:0;">
+            Clock Out →
+        </a>
+    </div>
+    <?php else: ?>
+    <div style="background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <span style="font-size:22px;">🟢</span>
+            <div>
+                <strong style="font-size:14px; display:block;">Not currently on duty</strong>
+                <span style="font-size:12px; opacity:0.9;">Report for duty to start your shift.</span>
+            </div>
+        </div>
+        <a href="/my-duty" style="background:#fff; color:#1e40af; font-weight:700; padding:8px 16px; border-radius:8px; text-decoration:none; font-size:13px; white-space:nowrap; flex-shrink:0;">
+            Report for Duty →
+        </a>
+    </div>
+    <?php endif; ?>
+<?php endif; ?>
 
 <?php if (($data['pending_notice_acks'] ?? 0) > 0): ?>
 <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
