@@ -252,6 +252,21 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                         <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $safetyPendingReplies ?></span>
                     <?php endif; ?>
                 </a>
+                <?php
+                $safetyDraftCount = 0;
+                try {
+                    $safetyDraftCount = (int)(Database::fetch(
+                        "SELECT COUNT(*) AS cnt FROM safety_reports WHERE tenant_id = ? AND reporter_id = ? AND is_draft = 1",
+                        [currentTenantId(), currentUser()['id']]
+                    )['cnt'] ?? 0);
+                } catch (\Throwable $e) {}
+                ?>
+                <a href="/safety/drafts" class="sidebar-link <?= str_starts_with($currentPath, '/safety/drafts') || str_starts_with($currentPath, '/safety/report/edit/') ? 'active' : '' ?>">
+                    <span class="icon">📝</span> Draft Reports
+                    <?php if ($safetyDraftCount > 0): ?>
+                        <span style="margin-left:auto;background:#6b7280;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $safetyDraftCount ?></span>
+                    <?php endif; ?>
+                </a>
             </div>
             <?php endif; ?>
 
