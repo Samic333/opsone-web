@@ -309,6 +309,24 @@ return [
     'GET /api/app/version'     => ['InstallApiController', 'appVersion'],
     'GET /api/app/build'       => ['InstallApiController', 'latestBuild'],
 
+    // ─── Duty Reporting (Airline Admin) ───────────
+    'GET /duty-reporting'                                => ['DutyReportController', 'index'],
+    'GET /duty-reporting/history'                        => ['DutyReportController', 'history'],
+    'GET /duty-reporting/exceptions'                     => ['DutyReportController', 'exceptions'],
+    'GET /duty-reporting/report/{id}'                    => ['DutyReportController', 'detail'],
+    'POST /duty-reporting/exception/{id}/approve'        => ['DutyReportController', 'approveException'],
+    'POST /duty-reporting/exception/{id}/reject'         => ['DutyReportController', 'rejectException'],
+    'POST /duty-reporting/report/{id}/correct'           => ['DutyReportController', 'correctRecord'],
+    'GET /duty-reporting/settings'                       => ['DutyReportController', 'settings'],
+    'POST /duty-reporting/settings'                      => ['DutyReportController', 'saveSettings'],
+
+    // ─── API: Duty Reporting ───────────────
+    'GET /api/duty-reporting/status'    => ['DutyReportingApiController', 'status'],
+    'POST /api/duty-reporting/check-in' => ['DutyReportingApiController', 'checkIn'],
+    'POST /api/duty-reporting/clock-out'=> ['DutyReportingApiController', 'clockOut'],
+    'GET /api/duty-reporting/history'   => ['DutyReportingApiController', 'history'],
+    'GET /api/duty-reporting/bases'     => ['DutyReportingApiController', 'bases'],
+
     // ─── API: Safety Phase 1 ───────────────
     'GET /api/safety/types'                   => ['SafetyApiController', 'types'],
     'GET /api/safety/my-reports'              => ['SafetyApiController', 'myReports'],

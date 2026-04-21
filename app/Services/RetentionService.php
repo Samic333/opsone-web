@@ -45,6 +45,7 @@ class RetentionService {
         'fdm_events'      => 1825,   // 5 years
         'audit_log'       => 1095,   // 3 years
         'notifications'   => 90,     // 90 days  — inbox clutter management
+        'duty_reporting'  => 180,    // 6 months — operational duty records (tenant-overridable)
     ];
 
     /**
@@ -61,6 +62,7 @@ class RetentionService {
         'fdm_events'      => ['table' => 'fdm_events',      'tenant_col' => 'tenant_id', 'ts_col' => 'created_at'],
         'audit_log'       => ['table' => 'audit_log',       'tenant_col' => 'tenant_id', 'ts_col' => 'created_at'],
         'notifications'   => ['table' => 'notifications',   'tenant_col' => 'tenant_id', 'ts_col' => 'created_at'],
+        'duty_reporting'  => ['table' => 'duty_reports',    'tenant_col' => 'tenant_id', 'ts_col' => 'created_at'],
     ];
 
     // -------------------------------------------------------------------------

@@ -304,6 +304,35 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php endif; ?>
 
+            <!-- ─── Duty Reporting ───────────────────────── -->
+            <?php if (hasAnyRole(['airline_admin','hr','chief_pilot','head_cabin_crew','engineering_manager','base_manager','scheduler'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Duty Reporting</div>
+                <a href="/duty-reporting" class="sidebar-link <?= (rtrim($currentPath, '/') === '/duty-reporting' || str_starts_with($currentPath, '/duty-reporting/report') || str_starts_with($currentPath, '/duty-reporting/history')) ? 'active' : '' ?>">
+                    <span class="icon">🟢</span> On Duty Now
+                </a>
+                <a href="/duty-reporting/exceptions" class="sidebar-link <?= str_starts_with($currentPath, '/duty-reporting/exceptions') ? 'active' : '' ?>">
+                    <span class="icon">⚠️</span> Duty Exceptions
+                    <?php
+                    $pendingDutyEx = 0;
+                    try {
+                        $pendingDutyEx = (int)(Database::fetch(
+                            "SELECT COUNT(*) AS c FROM duty_exceptions WHERE tenant_id = ? AND status = 'pending'",
+                            [currentTenantId()]
+                        )['c'] ?? 0);
+                    } catch (\Exception $e) {}
+                    if ($pendingDutyEx > 0): ?>
+                        <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $pendingDutyEx ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php if (hasAnyRole(['airline_admin','super_admin'])): ?>
+                <a href="/duty-reporting/settings" class="sidebar-link <?= str_starts_with($currentPath, '/duty-reporting/settings') ? 'active' : '' ?>">
+                    <span class="icon">⚙️</span> Settings
+                </a>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- ─── Content: Documents & Notices ─────────── -->
             <?php if (hasAnyRole(['airline_admin','hr','document_control','safety_officer','chief_pilot',
                                    'head_cabin_crew','engineering_manager','base_manager','training_admin',
