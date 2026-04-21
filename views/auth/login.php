@@ -56,9 +56,17 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
             <button type="submit" class="btn btn-primary login-btn">Sign In</button>
         </form>
 
+        <?php
+        // SECURITY: demo-account quick-picker + password display is a public-takeover vector in prod.
+        // Only render when APP_ENV is 'development' or 'local' AND APP_DEBUG is true.
+        $__env   = env('APP_ENV', 'production');
+        $__debug = env('APP_DEBUG', 'false') === 'true';
+        $showDemoBlock = in_array($__env, ['development','local','dev'], true) && $__debug;
+        ?>
+        <?php if ($showDemoBlock): ?>
         <div class="demo-section">
             <p style="text-align:center; font-size:12px; color:var(--text-muted);">
-                Demo accounts — Password: <code style="color:var(--accent-cyan);">DemoOps2026!</code>
+                Dev-only — Password: <code style="color:var(--accent-cyan);">DemoOps2026!</code>
             </p>
 
             <div class="demo-grid">
@@ -111,6 +119,7 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; /* $showDemoBlock */ ?>
     </div>
 </div>
 </body>

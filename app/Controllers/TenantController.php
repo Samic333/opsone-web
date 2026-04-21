@@ -93,7 +93,7 @@ class TenantController {
         );
         foreach ($systemRoles as $role) {
             Database::insert(
-                "INSERT IGNORE INTO roles (tenant_id, name, slug, description, is_system, role_type)
+                Database::insertIgnore() . " INTO roles (tenant_id, name, slug, description, is_system, role_type)
                  VALUES (?, ?, ?, ?, 0, ?)",
                 [$tenantId, $role['name'], $role['slug'], $role['description'], $role['role_type']]
             );

@@ -26,6 +26,29 @@ class AuthController {
             redirect('/login');
         }
 
+        // Rate-limit repeated failed attempts per IP+email (5-min window).
+        // Keeps the attempt log in a file so it survives server restarts.
+        $__rlDir  = BASE_PATH . '/storage/login_throttle';
+        if (!is_dir($__rlDir)) @mkdir($__rlDir, 0775, true);
+        $__ip     = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        $__key    = substr(sha1(strtolower($email) . '|' . $__ip), 0, 24);
+        $__rlFile = $__rlDir . '/' . $__key . '.json';
+        $__now    = time();
+        $__entry  = ['attempts' => 0, 'first' => $__now, 'blocked_until' => 0];
+        if (is_file($__rlFile)) {
+            $__decoded = json_decode((string) @file_get_contents($__rlFile), true);
+            if (is_array($__decoded)) $__entry = array_merge($__entry, $__decoded);
+        }
+        if (($__entry['blocked_until'] ?? 0) > $__now) {
+            $__wait = $__entry['blocked_until'] - $__now;
+            flash('error', "Too many failed login attempts. Please try again in " . max(1, (int) ceil($__wait / 60)) . " minute(s).");
+            redirect('/login');
+        }
+        // Attach to current request scope so the failure/success block below can update it.
+        $_REQUEST['__rlFile']  = $__rlFile;
+        $_REQUEST['__rlEntry'] = $__entry;
+        $_REQUEST['__rlNow']   = $__now;
+
         // Find user (search across tenants or within fixed tenant)
         $user = null;
         if (isSingleTenant()) {
@@ -39,9 +62,32 @@ class AuthController {
             $logUserId   = $user['id']        ?? null;
             $logTenantId = $user['tenant_id'] ?? (isSingleTenant() ? getFixedTenantId() : null);
             AuditLog::logLogin($logUserId, $logTenantId, $email, false, 'web');
+
+            // Rate-limit bookkeeping on failure
+            $__rlFile  = $_REQUEST['__rlFile']  ?? null;
+            $__rlEntry = $_REQUEST['__rlEntry'] ?? null;
+            $__now     = $_REQUEST['__rlNow']   ?? time();
+            if ($__rlFile && is_array($__rlEntry)) {
+                $__window = 300;                  // 5 minutes rolling
+                if (($__now - ($__rlEntry['first'] ?? $__now)) > $__window) {
+                    $__rlEntry = ['attempts' => 0, 'first' => $__now, 'blocked_until' => 0];
+                }
+                $__rlEntry['attempts'] = (int) ($__rlEntry['attempts'] ?? 0) + 1;
+                if ($__rlEntry['attempts'] >= 5) {
+                    // Exponential-ish lockout: 5→15min, 6→30min, 7+→60min
+                    $__extra = min(3600, 900 * (1 + ($__rlEntry['attempts'] - 5)));
+                    $__rlEntry['blocked_until'] = $__now + $__extra;
+                }
+                @file_put_contents($__rlFile, json_encode($__rlEntry));
+            }
+
             flash('error', 'Invalid email or password.');
             redirect('/login');
         }
+
+        // On success, clear the throttle file for this IP+email.
+        $__rlFile = $_REQUEST['__rlFile'] ?? null;
+        if ($__rlFile && is_file($__rlFile)) @unlink($__rlFile);
 
         if ($user['status'] !== 'active') {
             flash('error', 'Your account is not active. Contact your administrator.');

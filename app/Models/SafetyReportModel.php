@@ -675,7 +675,7 @@ class SafetyReportModel {
                 'ground_ops','quality','hse','tcas','environmental','frat',
             ]);
             Database::insert(
-                "INSERT IGNORE INTO safety_module_settings (tenant_id, enabled_types)
+                Database::insertIgnore() . " INTO safety_module_settings (tenant_id, enabled_types)
                  VALUES (?, ?)",
                 [$tenantId, $defaultTypes]
             );

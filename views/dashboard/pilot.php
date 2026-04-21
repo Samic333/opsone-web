@@ -1,6 +1,14 @@
 <?php
-$pageTitle    = 'Pilot Dashboard';
-$pageSubtitle = 'Crew Operations Overview';
+// Role-aware title so cabin crew don't see "Pilot Dashboard" on their own page.
+$__isCabin = function_exists('hasRole') ? hasRole('cabin_crew') : false;
+$__isPilot = function_exists('hasRole') ? hasRole('pilot') : false;
+if ($__isCabin && !$__isPilot) {
+    $pageTitle    = 'Cabin Crew Dashboard';
+    $pageSubtitle = 'Crew Operations Overview';
+} else {
+    $pageTitle    = 'Pilot Dashboard';
+    $pageSubtitle = 'Crew Operations Overview';
+}
 ob_start();
 
 // ─── Duty Reporting widget (if tenant allows this role) ───────────────────

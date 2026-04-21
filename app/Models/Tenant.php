@@ -26,7 +26,7 @@ class Tenant {
                  expected_headcount, headcount_pilots, headcount_cabin,
                  headcount_engineers, headcount_schedulers, headcount_training,
                  headcount_safety, headcount_hr, notes, onboarded_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, " . dbNow() . ")",
             [
                 $data['name'],
                 $data['legal_name']           ?? $data['name'],

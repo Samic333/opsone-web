@@ -470,7 +470,16 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                                    'fdm_analyst','pilot','cabin_crew','engineer'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Content</div>
-                <a href="/files" class="sidebar-link <?= str_starts_with($currentPath, '/files') ? 'active' : '' ?>">
+                <?php
+                // Rank-and-file crew get the crew-facing /my-files portal; admins get the management /files view.
+                $__isAdminFilesUser = hasAnyRole(['airline_admin','hr','document_control','safety_officer','chief_pilot',
+                                                   'head_cabin_crew','engineering_manager','base_manager','training_admin','fdm_analyst']);
+                $__filesHref  = $__isAdminFilesUser ? '/files' : '/my-files';
+                $__filesActive = $__isAdminFilesUser
+                    ? (str_starts_with($currentPath, '/files') ? 'active' : '')
+                    : (str_starts_with($currentPath, '/my-files') ? 'active' : '');
+                ?>
+                <a href="<?= $__filesHref ?>" class="sidebar-link <?= $__filesActive ?>">
                     <span class="icon">📄</span> Documents
                 </a>
                 <?php if (hasAnyRole(['airline_admin','safety_officer','document_control','chief_pilot',

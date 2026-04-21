@@ -103,7 +103,7 @@ class PlatformUsersController {
         $roleId = (int) $roleRow->fetchColumn();
 
         if ($roleId) {
-            $db->prepare("INSERT IGNORE INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, NULL)")
+            $db->prepare(Database::insertIgnore() . " INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, NULL)")
                ->execute([$userId, $roleId]);
         }
 

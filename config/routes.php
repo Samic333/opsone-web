@@ -16,6 +16,7 @@ return [
     'GET /install-info'     => ['PublicController', 'installInfo'],
     'GET /support'          => ['PublicController', 'support'],
     'GET /contact'          => ['PublicController', 'contact'],
+    'POST /contact'         => ['PublicController', 'submitContact'],
     'GET /faq'              => ['PublicController', 'faq'],
     'GET /about'            => ['PublicController', 'about'],
     'GET /privacy'          => ['PublicController', 'privacy'],
@@ -130,18 +131,15 @@ return [
     'POST /devices/reject/{id}'  => ['DeviceController', 'reject'],
     'POST /devices/revoke/{id}'  => ['DeviceController', 'revoke'],
 
-    // Phase 4 - Docs & Manuals
+    // Phase 4 - Docs & Manuals (canonical surface is /files; these are legacy aliases)
     'GET /documents'                => [FileController::class, 'index'],
-    'GET /documents/upload'         => [FileController::class, 'uploadForm'],
+    'GET /documents/upload'         => [FileController::class, 'showUpload'],
     'POST /documents/upload'        => [FileController::class, 'upload'],
     'GET /documents/(\d+)/download' => [FileController::class, 'download'],
-    'GET /documents/(\d+)/edit'     => [FileController::class, 'editForm'],
-    'POST /documents/(\d+)/edit'    => [FileController::class, 'edit'],
+    'GET /documents/(\d+)/edit'     => [FileController::class, 'edit'],
+    'POST /documents/(\d+)/edit'    => [FileController::class, 'update'],
     'POST /documents/(\d+)/delete'  => [FileController::class, 'delete'],
-    // NOTE: 'GET /my-files' was duplicated here (Phase 4 block) and at the
-    // Crew Files Portal section below. The duplicate has been removed; the
-    // canonical entry lives under '─── Crew Files Portal ──────────────────'.
-    'POST /my-files/(\d+)/ack'      => [FileController::class, 'acknowledge'],
+    'POST /my-files/(\d+)/ack'      => [FileController::class, 'acknowledgeFile'],
 
     // ─── Safety Phase 1 — Crew Routes ────────────────────────
     'GET /safety'                               => [SafetyController::class, 'home'],
@@ -458,4 +456,42 @@ return [
     'POST /api/safety/report/(\d+)/reply'     => ['SafetyApiController', 'addReply'],
     'GET /api/safety/publications'            => ['SafetyApiController', 'publications'],
     'GET /api/safety/publication/(\d+)'       => ['SafetyApiController', 'publication'],
+
+    // ─── API: Flights + Flight Bag (mobile) ──────────────────
+    'GET /api/flights/mine'                   => ['FlightApiController', 'mine'],
+    'GET /api/flights/bag/{id}/download'      => ['FlightApiController', 'download'],
+    'GET /api/flights/{id}/bag'               => ['FlightApiController', 'bag'],
+    'GET /api/flights/{id}'                   => ['FlightApiController', 'show'],
+
+    // ─── API: FDM (pilot inbox) ──────────────────────────────
+    'GET /api/fdm/mine'                       => ['FdmApiController', 'mine'],
+    'POST /api/fdm/event/{id}/ack'            => ['FdmApiController', 'ack'],
+
+    // ─── API: Per Diem ───────────────────────────────────────
+    'GET /api/per-diem/mine'                  => ['PerDiemApiController', 'mine'],
+    'GET /api/per-diem/rates'                 => ['PerDiemApiController', 'rates'],
+    'POST /api/per-diem/submit'               => ['PerDiemApiController', 'submit'],
+
+    // ─── API: Training ───────────────────────────────────────
+    'GET /api/training/mine'                  => ['TrainingApiController', 'mine'],
+
+    // ─── API: Appraisals ─────────────────────────────────────
+    'GET /api/appraisals/mine'                => ['AppraisalApiController', 'mine'],
+    'GET /api/appraisals/about-me'            => ['AppraisalApiController', 'aboutMe'],
+    'POST /api/appraisals'                    => ['AppraisalApiController', 'create'],
+
+    // ─── API: Logbook ────────────────────────────────────────
+    'GET /api/logbook/mine'                   => ['LogbookApiController', 'mine'],
+    'POST /api/logbook'                       => ['LogbookApiController', 'create'],
+
+    // ─── API: Notifications (Phase 5 unified inbox) ──────────
+    'GET /api/notifications'                  => ['NotificationApiController', 'index'],
+    'GET /api/notifications/counts'           => ['NotificationApiController', 'counts'],
+    'POST /api/notifications/read-all'        => ['NotificationApiController', 'markAllRead'],
+    'POST /api/notifications/{id}/read'       => ['NotificationApiController', 'markRead'],
+    'POST /api/notifications/{id}/ack'        => ['NotificationApiController', 'acknowledge'],
+
+    // ─── API: Help Hub ───────────────────────────────────────
+    'GET /api/help/topics'                    => ['HelpApiController', 'topics'],
+    'GET /api/help/topic'                     => ['HelpApiController', 'topic'],
 ];

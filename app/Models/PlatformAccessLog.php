@@ -28,7 +28,7 @@ class PlatformAccessLog {
 
     public static function endAccess(int $logId): void {
         Database::execute(
-            "UPDATE platform_access_log SET access_ended_at = NOW(), status = 'ended' WHERE id = ?",
+            "UPDATE platform_access_log SET access_ended_at = " . dbNow() . ", status = 'ended' WHERE id = ?",
             [$logId]
         );
     }

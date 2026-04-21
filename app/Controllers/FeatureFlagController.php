@@ -55,7 +55,7 @@ class FeatureFlagController {
             // Toggle is_global
             $newVal = $flag['is_global'] ? 0 : 1;
             Database::execute(
-                "UPDATE feature_flags SET is_global = ?, updated_at = NOW() WHERE id = ?",
+                "UPDATE feature_flags SET is_global = ?, updated_at = " . dbNow() . " WHERE id = ?",
                 [$newVal, $id]
             );
             AuditLog::log(
@@ -74,13 +74,13 @@ class FeatureFlagController {
             if ($existing) {
                 $newVal = $existing['enabled'] ? 0 : 1;
                 Database::execute(
-                    "UPDATE tenant_feature_flags SET enabled = ?, enabled_at = " . ($newVal ? 'NOW()' : 'NULL') . " WHERE id = ?",
+                    "UPDATE tenant_feature_flags SET enabled = ?, enabled_at = " . ($newVal ? dbNow() : 'NULL') . " WHERE id = ?",
                     [$newVal, $existing['id']]
                 );
             } else {
                 Database::execute(
                     "INSERT INTO tenant_feature_flags (tenant_id, flag_id, enabled, enabled_at, enabled_by)
-                     VALUES (?, ?, 1, NOW(), ?)",
+                     VALUES (?, ?, 1, " . dbNow() . ", ?)",
                     [$tenantId, $id, currentUser()['id']]
                 );
                 $newVal = 1;

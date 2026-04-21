@@ -9,6 +9,11 @@
             <div class="contact-form">
                 <div class="info-card">
                     <h3>Send a Message</h3>
+                    <?php if (!empty($flashMsg)): ?>
+                        <div style="margin-bottom: 16px; padding: 12px 14px; border-radius: 6px; <?= ($flashType ?? '') === 'success' ? 'background:#0f3d2b;color:#7ee8b4;border:1px solid #2a7f5a;' : 'background:#3d1313;color:#ffb0b0;border:1px solid #8a2a2a;' ?>">
+                            <?= ($flashType ?? '') === 'success' ? '✓' : '⚠' ?> <?= e($flashMsg) ?>
+                        </div>
+                    <?php endif; ?>
                     <form method="POST" action="/contact">
                         <div class="form-group">
                             <label for="contact-name">Full Name</label>

@@ -3,6 +3,12 @@
  * Login Activity viewer
  * Variables: $activity, $page, $totalPages, $filterEmail, $filterResult, $isSuperAdmin
  */
+$isSuperAdmin   = $isSuperAdmin   ?? (function_exists('hasRole') && hasRole('super_admin'));
+$activity       = $activity       ?? [];
+$page           = $page           ?? 1;
+$totalPages     = $totalPages     ?? 1;
+$filterEmail    = $filterEmail    ?? '';
+$filterResult   = $filterResult   ?? '';
 ?>
 <style>
 .audit-table { width:100%; border-collapse:collapse; font-size:12px; }

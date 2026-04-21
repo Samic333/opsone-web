@@ -54,7 +54,7 @@ class OnboardingRequest {
     public static function approve(int $id, int $reviewerId, ?string $notes = null): void {
         Database::execute(
             "UPDATE tenant_onboarding_requests
-             SET status = 'approved', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+             SET status = 'approved', reviewed_by = ?, reviewed_at = " . dbNow() . ", review_notes = ?
              WHERE id = ?",
             [$reviewerId, $notes, $id]
         );
@@ -63,7 +63,7 @@ class OnboardingRequest {
     public static function reject(int $id, int $reviewerId, ?string $notes = null): void {
         Database::execute(
             "UPDATE tenant_onboarding_requests
-             SET status = 'rejected', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+             SET status = 'rejected', reviewed_by = ?, reviewed_at = " . dbNow() . ", review_notes = ?
              WHERE id = ?",
             [$reviewerId, $notes, $id]
         );
@@ -72,7 +72,7 @@ class OnboardingRequest {
     public static function markInReview(int $id, int $reviewerId, ?string $notes = null): void {
         Database::execute(
             "UPDATE tenant_onboarding_requests
-             SET status = 'in_review', reviewed_by = ?, reviewed_at = NOW(), review_notes = ?
+             SET status = 'in_review', reviewed_by = ?, reviewed_at = " . dbNow() . ", review_notes = ?
              WHERE id = ?",
             [$reviewerId, $notes, $id]
         );

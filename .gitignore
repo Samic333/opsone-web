@@ -20,6 +20,11 @@ storage/logs/*
 storage/cookies.*
 storage/*.txt
 
+# Runtime state — never commit
+storage/contact_submissions/
+storage/login_throttle/
+storage/crew_documents/
+
 # OS files
 .DS_Store
 Thumbs.db

@@ -14,22 +14,11 @@ if (PHP_SAPI === 'cli-server') {
     }
 }
 
-// Error reporting
+// Error reporting — always log, only display when APP_DEBUG=true (set below after .env loads)
 error_reporting(E_ALL);
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-
-// Extreme debug catch-all for Namecheap suppressed errors
-set_exception_handler(function($e) {
-    http_response_code(500);
-    echo "<div style='font-family:monospace; padding: 20px; background: #fff1f0; color: #a80000; border: 1px solid #ffa39e;'>";
-    echo "<h2 style='margin-top:0;'>Fatal Application Error</h2>";
-    echo "<strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "<br><br>";
-    echo "<strong>File:</strong> " . $e->getFile() . ":" . $e->getLine() . "<br><br>";
-    echo "<strong>Trace:</strong><br><pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
-    echo "</div>";
-    exit;
-});
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('log_errors', '1');
 
 // Define base paths
 define('BASE_PATH', dirname(__DIR__));
@@ -52,10 +41,44 @@ if (file_exists($envFile)) {
     }
 }
 
-// Set error display based on config
-if (config('app.debug')) {
+$__appDebug = config('app.debug');
+if ($__appDebug) {
     ini_set('display_errors', '1');
+    ini_set('display_startup_errors', '1');
 }
+
+// Global exception handler — details only in debug; generic page otherwise.
+// Always logs to PHP error log, never leaks absolute paths to the browser in prod.
+set_exception_handler(function($e) use ($__appDebug) {
+    error_log('[OpsOne fatal] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+    http_response_code(500);
+    if (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Internal server error']);
+        exit;
+    }
+    if ($__appDebug) {
+        echo "<div style='font-family:monospace; padding: 20px; background: #fff1f0; color: #a80000; border: 1px solid #ffa39e;'>";
+        echo "<h2 style='margin-top:0;'>Fatal Application Error (debug)</h2>";
+        echo "<strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "<br><br>";
+        echo "<strong>File:</strong> " . htmlspecialchars(basename($e->getFile())) . ":" . (int)$e->getLine() . "<br><br>";
+        echo "<strong>Trace (top frames, relative paths only):</strong><br><pre>";
+        foreach (array_slice($e->getTrace(), 0, 6) as $i => $f) {
+            $file = isset($f['file']) ? str_replace(BASE_PATH . '/', '', $f['file']) : '(internal)';
+            $line = $f['line'] ?? '?';
+            $fn   = ($f['class'] ?? '') . ($f['type'] ?? '') . ($f['function'] ?? '');
+            echo "#$i $file:$line  $fn()\n";
+        }
+        echo "</pre></div>";
+    } else {
+        if (is_file(VIEWS_PATH . '/errors/500.php')) {
+            require VIEWS_PATH . '/errors/500.php';
+        } else {
+            echo "<h1>500</h1><p>Something went wrong. Please try again or contact support.</p>";
+        }
+    }
+    exit;
+});
 
 // Load helpers
 require APP_PATH . '/Helpers/functions.php';
@@ -63,8 +86,19 @@ require APP_PATH . '/Helpers/functions.php';
 // Load database config
 require CONFIG_PATH . '/database.php';
 
-// Start session for web requests
+// Start session for web requests — with hardened cookie flags.
 if (!str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
+    $sessionSecure = env('SESSION_SECURE', 'false') === 'true';
+    $sessionLifetime = max(0, (int) env('SESSION_LIFETIME', 120)) * 60;
+    session_set_cookie_params([
+        'lifetime' => $sessionLifetime,
+        'path'     => '/',
+        'domain'   => '',
+        'secure'   => $sessionSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_name('OPSONE_SESSID');
     session_start();
 }
 
@@ -130,7 +164,6 @@ if (!$matchedRoute) {
 // Determine route type
 $isApi = str_starts_with($uri, '/api/');
 $isPublic = $controllerName === 'PublicController';
-$isInstall = $controllerName === 'InstallController';
 
 // Apply middleware
 if ($isApi) {
@@ -139,8 +172,8 @@ if ($isApi) {
         $apiAuth = new ApiAuthMiddleware();
         $apiAuth->handle();
     }
-} elseif ($isPublic || $isInstall) {
-    // Public routes: NO auth required
+} elseif ($isPublic) {
+    // Public marketing routes: NO auth required
 } else {
     // Web routes: session auth (except login page)
     if ($controllerName !== 'AuthController') {
