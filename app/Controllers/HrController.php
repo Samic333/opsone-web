@@ -31,12 +31,14 @@ class HrController {
             [$tenantId]
         );
 
+        $today    = dbToday();
+        $in90Days = dbDatePlusDays(90);
         $contractExpiring = Database::fetchAll(
             "SELECT u.id, u.name, u.employee_id, cp.contract_type, cp.contract_expiry
                FROM users u
                JOIN crew_profiles cp ON cp.user_id = u.id
               WHERE u.tenant_id = ? AND cp.contract_expiry IS NOT NULL
-                AND cp.contract_expiry BETWEEN DATE('now') AND DATE('now','+90 days')
+                AND cp.contract_expiry BETWEEN $today AND $in90Days
               ORDER BY cp.contract_expiry ASC",
             [$tenantId]
         );

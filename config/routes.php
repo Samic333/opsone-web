@@ -23,11 +23,21 @@ return [
     'GET /terms'            => ['PublicController', 'terms'],
 
     // ─── Auth ──────────────────────────
-    'GET /login'      => ['AuthController', 'showLogin'],
-    'POST /login'     => ['AuthController', 'login'],
-    'GET /logout'     => ['AuthController', 'logout'],
-    'GET /activate'   => ['ActivationController', 'show'],
-    'POST /activate'  => ['ActivationController', 'process'],
+    'GET /login'              => ['AuthController', 'showLogin'],
+    'POST /login'             => ['AuthController', 'login'],
+    'GET /logout'             => ['AuthController', 'logout'],
+    'GET /activate'           => ['ActivationController', 'show'],
+    'POST /activate'          => ['ActivationController', 'process'],
+    'GET /forgot-password'    => ['PasswordResetController', 'showRequest'],
+    'POST /forgot-password'   => ['PasswordResetController', 'submitRequest'],
+    'GET /reset-password'     => ['PasswordResetController', 'showReset'],
+    'POST /reset-password'    => ['PasswordResetController', 'submitReset'],
+    // 2FA — post-password challenge + enrolment
+    'GET /2fa/challenge'      => ['TwoFactorController', 'showChallenge'],
+    'POST /2fa/challenge'     => ['TwoFactorController', 'submitChallenge'],
+    'GET /2fa/setup'          => ['TwoFactorController', 'showSetup'],
+    'POST /2fa/setup'         => ['TwoFactorController', 'submitSetup'],
+    'POST /2fa/disable'       => ['TwoFactorController', 'disable'],
 
     // ─── Dashboard ─────────────────────
     'GET /'           => ['PublicController', 'home'],

@@ -100,6 +100,24 @@ class AuthController {
             redirect('/login');
         }
 
+        // ── 2FA gate ─────────────────────────────────────────────
+        // If the user has TOTP 2FA enabled, don't complete the session here.
+        // Stash the user id in a short-lived "pending" slot and divert to
+        // /2fa/challenge. TwoFactorController will finish the login after
+        // a valid code or backup code.
+        $twoFa = Database::fetch(
+            "SELECT enabled_at FROM user_2fa WHERE user_id = ? AND enabled_at IS NOT NULL",
+            [(int)$user['id']]
+        );
+        if ($twoFa) {
+            // Regenerate to harden the partially-authed session, but do NOT set user data yet.
+            session_regenerate_id(true);
+            $_SESSION['pending_2fa_user_id'] = (int) $user['id'];
+            $_SESSION['pending_2fa_started'] = time();
+            AuditLog::log('2fa_challenge_issued', 'user', (int) $user['id'], 'Password valid; awaiting 2FA code');
+            redirect('/2fa/challenge');
+        }
+
         // Load roles — used for platform detection and session state
         $roles = UserModel::getRoleSlugs($user['id']);
 

@@ -86,6 +86,23 @@ require APP_PATH . '/Helpers/functions.php';
 // Load database config
 require CONFIG_PATH . '/database.php';
 
+// Security response headers — applied to every response (web + API).
+// HSTS is only emitted on HTTPS to avoid poisoning HTTP-dev setups.
+$__isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+          || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+          || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443);
+if ($__isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+header("Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'");
+header('Referrer-Policy: strict-origin-when-cross-origin');
+header('Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()');
+// X-Frame-Options, X-Content-Type-Options, X-XSS-Protection remain set by LiteSpeed/htaccess,
+// but we also emit them here so local/dev gets the same posture.
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('X-XSS-Protection: 1; mode=block');
+
 // Start session for web requests — with hardened cookie flags.
 if (!str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
     $sessionSecure = env('SESSION_SECURE', 'false') === 'true';
@@ -174,9 +191,12 @@ if ($isApi) {
     }
 } elseif ($isPublic) {
     // Public marketing routes: NO auth required
+} elseif ($controllerName === 'PasswordResetController') {
+    // Forgot/reset password flow — public by design, but still protected
+    // by per-IP rate limit + single-use, time-limited tokens.
 } else {
     // Web routes: session auth (except login page)
-    if ($controllerName !== 'AuthController') {
+    if ($controllerName !== 'AuthController' && $controllerName !== 'TwoFactorController') {
         $webAuth = new WebAuthMiddleware();
         $webAuth->handle();
 

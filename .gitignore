@@ -24,6 +24,7 @@ storage/*.txt
 storage/contact_submissions/
 storage/login_throttle/
 storage/crew_documents/
+storage/password_reset_throttle/
 
 # OS files
 .DS_Store

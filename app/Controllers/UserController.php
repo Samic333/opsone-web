@@ -16,11 +16,28 @@ class UserController {
 
     public function create(): void {
         $tenantId    = currentTenantId();
-        $roles       = Database::fetchAll("SELECT MIN(id) as id, name, slug FROM roles WHERE tenant_id = ? GROUP BY slug ORDER BY name", [$tenantId]);
+        // Exclude platform-only role slugs — they must never be assignable from the airline-scope
+        // user-create form (otherwise any HR admin could promote a new hire to platform super-admin).
+        $platformSlugs = self::platformOnlyRoleSlugs();
+        $placeholders  = implode(',', array_fill(0, count($platformSlugs), '?'));
+        $roles       = Database::fetchAll(
+            "SELECT MIN(id) as id, name, slug FROM roles
+              WHERE tenant_id = ? AND slug NOT IN ($placeholders)
+              GROUP BY slug ORDER BY name",
+            array_merge([$tenantId], $platformSlugs)
+        );
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $fleets      = Fleet::allForTenant($tenantId);
         require VIEWS_PATH . '/users/create.php';
+    }
+
+    /**
+     * Canonical list of role slugs that are platform-scope only.
+     * Airline-scope forms must never offer these; the server rejects them too.
+     */
+    private static function platformOnlyRoleSlugs(): array {
+        return ['super_admin', 'platform_support', 'platform_security', 'system_monitoring'];
     }
 
     public function store(): void {
@@ -75,8 +92,17 @@ class UserController {
             'web_access'        => $webAccess,
         ]);
 
-        // Assign roles
+        // Assign roles — hard-reject any platform-scope role so an airline HR admin
+        // cannot promote a new hire to platform super-admin even if they craft
+        // the POST by hand.
+        $platformSlugs = self::platformOnlyRoleSlugs();
         foreach ($roleIds as $roleId) {
+            $roleRow = Database::fetch("SELECT slug FROM roles WHERE id = ?", [(int)$roleId]);
+            if (!$roleRow || in_array($roleRow['slug'], $platformSlugs, true)) {
+                AuditLog::log('role_assignment_blocked', 'user', $userId,
+                    "Blocked attempt to assign platform role id=$roleId to airline user");
+                continue;
+            }
             UserModel::assignRole($userId, (int)$roleId, $tenantId);
         }
 
@@ -92,7 +118,14 @@ class UserController {
             redirect('/users');
         }
         $tenantId    = currentTenantId();
-        $roles       = Database::fetchAll("SELECT MIN(id) as id, name, slug FROM roles WHERE tenant_id = ? GROUP BY slug ORDER BY name", [$tenantId]);
+        $platformSlugs = self::platformOnlyRoleSlugs();
+        $placeholders  = implode(',', array_fill(0, count($platformSlugs), '?'));
+        $roles       = Database::fetchAll(
+            "SELECT MIN(id) as id, name, slug FROM roles
+              WHERE tenant_id = ? AND slug NOT IN ($placeholders)
+              GROUP BY slug ORDER BY name",
+            array_merge([$tenantId], $platformSlugs)
+        );
         $departments = Database::fetchAll("SELECT * FROM departments WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $bases       = Database::fetchAll("SELECT * FROM bases WHERE tenant_id = ? ORDER BY name", [$tenantId]);
         $fleets      = Fleet::allForTenant($tenantId);
@@ -184,9 +217,16 @@ class UserController {
             'web_access'        => $webAccess,
         ]);
 
-        // Re-assign roles
+        // Re-assign roles — same platform-role hard block as on create.
         UserModel::clearRoles($id);
+        $platformSlugs = self::platformOnlyRoleSlugs();
         foreach ($roleIds as $roleId) {
+            $roleRow = Database::fetch("SELECT slug FROM roles WHERE id = ?", [(int)$roleId]);
+            if (!$roleRow || in_array($roleRow['slug'], $platformSlugs, true)) {
+                AuditLog::log('role_assignment_blocked', 'user', $id,
+                    "Blocked attempt to assign platform role id=$roleId to airline user");
+                continue;
+            }
             UserModel::assignRole($id, (int)$roleId, $tenantId);
         }
 

@@ -221,6 +221,36 @@ function dbDateAdd(string $interval, int $amount): string {
     return "DATE_ADD(NOW(), INTERVAL $amount " . strtoupper($interval) . ")";
 }
 
+/**
+ * Database-agnostic "today" (DATE value, no time).
+ *   MySQL  → CURDATE()
+ *   SQLite → DATE('now')
+ */
+function dbToday(): string {
+    $driver = env('DB_DRIVER', 'mysql');
+    return $driver === 'sqlite' ? "DATE('now')" : 'CURDATE()';
+}
+
+/**
+ * Database-agnostic "today + N days" as a DATE value.
+ * Use for window queries like "expires in 30 days".
+ *   dbDatePlusDays(30)  → DATE_ADD(CURDATE(), INTERVAL 30 DAY) / DATE('now','+30 days')
+ *   dbDatePlusDays(-14) → DATE_SUB(CURDATE(), INTERVAL 14 DAY) / DATE('now','-14 days')
+ */
+function dbDatePlusDays(int $days): string {
+    $driver = env('DB_DRIVER', 'mysql');
+    if ($driver === 'sqlite') {
+        $sign = $days >= 0 ? '+' : '-';
+        $abs  = abs($days);
+        return "DATE('now', '{$sign}{$abs} days')";
+    }
+    if ($days >= 0) {
+        return "DATE_ADD(CURDATE(), INTERVAL $days DAY)";
+    }
+    $abs = abs($days);
+    return "DATE_SUB(CURDATE(), INTERVAL $abs DAY)";
+}
+
 // ─── Phase Zero: Authorization helpers ────────────────────────────────────────
 
 /**

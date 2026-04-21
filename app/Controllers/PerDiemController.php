@@ -122,9 +122,10 @@ class PerDiemController {
     public function showSubmit(): void {
         requireAuth();
         $tenantId = (int)currentTenantId();
+        $today = dbToday();
         $rates = Database::fetchAll(
             "SELECT * FROM per_diem_rates WHERE tenant_id = ?
-               AND (effective_to IS NULL OR effective_to >= DATE('now'))
+               AND (effective_to IS NULL OR effective_to >= $today)
               ORDER BY country, station",
             [$tenantId]
         );

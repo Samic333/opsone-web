@@ -229,7 +229,23 @@ class OnboardingController {
             'airline_admin',
             $actor['id'] ?? null
         );
-        // TODO Phase 1: send activation email
+
+        // Record the activation URL in the audit log so a platform admin
+        // can retrieve it until the mail pipeline is wired. InvitationToken::create
+        // returns either the raw token string or an array — normalise both shapes.
+        $rawToken = is_array($token)
+            ? ($token['token'] ?? $token['raw'] ?? null)
+            : (is_string($token) ? $token : null);
+        $baseUrl   = rtrim(env('APP_URL', 'https://acentoza.com'), '/');
+        $activateUrl = $rawToken
+            ? "$baseUrl/activate?token=" . urlencode($rawToken)
+            : "$baseUrl/activate";
+        AuditService::log(
+            'invitation_created',
+            'onboarding_request',
+            $id,
+            "Airline-admin invitation for {$request['contact_email']} ({$request['contact_name']}). Activation URL: {$activateUrl}"
+        );
 
         // Mark request as provisioned
         OnboardingRequest::markProvisioned($id, $tenantId);
@@ -237,7 +253,16 @@ class OnboardingController {
         AuditService::log('onboarding.provisioned', 'onboarding_request', $id,
             "Provisioned as tenant #{$tenantId}: {$request['legal_name']}");
 
-        flash('success', "Airline provisioned as tenant #{$tenantId}. Admin invitation created (email in Phase 1).");
+        // Surface the activation URL to the platform admin until email dispatch is live.
+        $devMode = in_array(env('APP_ENV', 'production'), ['development','local','dev'], true)
+                && env('APP_DEBUG', 'false') === 'true';
+        if ($devMode && $rawToken) {
+            flash('success',
+                "Airline provisioned as tenant #{$tenantId}. Activation URL for admin: {$activateUrl}");
+        } else {
+            flash('success',
+                "Airline provisioned as tenant #{$tenantId}. Activation link recorded in audit log ({$request['contact_email']}). Email delivery is the next platform phase.");
+        }
         redirect("/tenants/{$tenantId}");
     }
 }

@@ -6,17 +6,19 @@
 class Aircraft {
 
     public static function allForTenant(int $tenantId, ?string $status = null): array {
+        $today    = dbToday();
+        $in30Days = dbDatePlusDays(30);
         $sql = "SELECT a.*, f.name AS fleet_name, b.name AS base_name,
                        (SELECT COUNT(*) FROM aircraft_maintenance m
                          WHERE m.aircraft_id = a.id AND m.status = 'active'
-                           AND m.due_date IS NOT NULL AND m.due_date < DATE('now')) AS overdue_items,
+                           AND m.due_date IS NOT NULL AND m.due_date < $today) AS overdue_items,
                        (SELECT COUNT(*) FROM aircraft_maintenance m
                          WHERE m.aircraft_id = a.id AND m.status = 'active'
                            AND m.due_date IS NOT NULL
-                           AND m.due_date BETWEEN DATE('now') AND DATE('now','+30 days')) AS due_30d,
+                           AND m.due_date BETWEEN $today AND $in30Days) AS due_30d,
                        (SELECT COUNT(*) FROM aircraft_documents d
                          WHERE d.aircraft_id = a.id
-                           AND d.expiry_date IS NOT NULL AND d.expiry_date < DATE('now')) AS expired_docs
+                           AND d.expiry_date IS NOT NULL AND d.expiry_date < $today) AS expired_docs
                   FROM aircraft a
                   LEFT JOIN fleets f ON a.fleet_id = f.id
                   LEFT JOIN bases  b ON a.home_base_id = b.id
@@ -141,6 +143,8 @@ class Aircraft {
     // ─── Compliance summary ─────────────────────────────────────
 
     public static function complianceSummary(int $tenantId): array {
+        $today    = dbToday();
+        $in30Days = dbDatePlusDays(30);
         $active = (int)(Database::fetch(
             "SELECT COUNT(*) c FROM aircraft WHERE tenant_id = ? AND status IN ('active','maintenance')",
             [$tenantId]
@@ -153,20 +157,20 @@ class Aircraft {
             "SELECT COUNT(*) c FROM aircraft_maintenance m
                JOIN aircraft a ON m.aircraft_id = a.id
               WHERE a.tenant_id = ? AND m.status = 'active'
-                AND m.due_date IS NOT NULL AND m.due_date < DATE('now')",
+                AND m.due_date IS NOT NULL AND m.due_date < $today",
             [$tenantId]
         )['c'] ?? 0);
         $dueMx30 = (int)(Database::fetch(
             "SELECT COUNT(*) c FROM aircraft_maintenance m
                JOIN aircraft a ON m.aircraft_id = a.id
               WHERE a.tenant_id = ? AND m.status = 'active'
-                AND m.due_date BETWEEN DATE('now') AND DATE('now','+30 days')",
+                AND m.due_date BETWEEN $today AND $in30Days",
             [$tenantId]
         )['c'] ?? 0);
         $expiredDocs = (int)(Database::fetch(
             "SELECT COUNT(*) c FROM aircraft_documents d
                JOIN aircraft a ON d.aircraft_id = a.id
-              WHERE a.tenant_id = ? AND d.expiry_date IS NOT NULL AND d.expiry_date < DATE('now')",
+              WHERE a.tenant_id = ? AND d.expiry_date IS NOT NULL AND d.expiry_date < $today",
             [$tenantId]
         )['c'] ?? 0);
         return compact('active','aog','overdueMx','dueMx30','expiredDocs');

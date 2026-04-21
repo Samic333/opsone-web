@@ -33,8 +33,9 @@ class InstallLog {
     }
 
     public static function countByAction(string $action, ?int $days = 30): int {
+        $since = dbDatePlusDays(-(int)$days);
         return (int) Database::fetch(
-            "SELECT COUNT(*) as c FROM install_logs WHERE action = ? AND created_at > datetime('now', '-$days days')",
+            "SELECT COUNT(*) as c FROM install_logs WHERE action = ? AND created_at > $since",
             [$action]
         )['c'];
     }

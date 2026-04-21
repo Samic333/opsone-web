@@ -661,6 +661,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                     <div class="sidebar-user-role"><?= e($roleLabel) ?></div>
                 </div>
             </div>
+            <a href="/2fa/setup" class="sidebar-link mt-1" title="Two-Factor Authentication">
+                <span class="icon">🔐</span> Account Security
+            </a>
             <a href="/logout" class="sidebar-link mt-1" style="color: var(--accent-red);">
                 <span class="icon">🚪</span> Sign Out
             </a>

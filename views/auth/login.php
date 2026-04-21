@@ -54,6 +54,9 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                        placeholder="Enter your password" required>
             </div>
             <button type="submit" class="btn btn-primary login-btn">Sign In</button>
+            <p style="text-align:center;margin-top:12px;font-size:12px;">
+                <a href="/forgot-password" style="color:var(--text-secondary);">Forgot your password?</a>
+            </p>
         </form>
 
         <?php

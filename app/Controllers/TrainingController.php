@@ -14,14 +14,19 @@ class TrainingController {
         $this->requireAdmin();
         $tenantId = (int)currentTenantId();
 
+        $today     = dbToday();
+        $in30Days  = dbDatePlusDays(30);
+        $in60Days  = dbDatePlusDays(60);
+        $minus14   = dbDatePlusDays(-14);
+
         $summary = [
             'total_records' => (int)(Database::fetch("SELECT COUNT(*) c FROM training_records WHERE tenant_id = ?", [$tenantId])['c'] ?? 0),
             'expiring_30d'  => (int)(Database::fetch(
                 "SELECT COUNT(*) c FROM training_records
-                  WHERE tenant_id = ? AND expires_date BETWEEN DATE('now') AND DATE('now','+30 days')", [$tenantId])['c'] ?? 0),
+                  WHERE tenant_id = ? AND expires_date BETWEEN $today AND $in30Days", [$tenantId])['c'] ?? 0),
             'expired'       => (int)(Database::fetch(
                 "SELECT COUNT(*) c FROM training_records
-                  WHERE tenant_id = ? AND expires_date < DATE('now')", [$tenantId])['c'] ?? 0),
+                  WHERE tenant_id = ? AND expires_date < $today", [$tenantId])['c'] ?? 0),
             'in_progress'   => (int)(Database::fetch(
                 "SELECT COUNT(*) c FROM training_records WHERE tenant_id = ? AND result = 'in_progress'", [$tenantId])['c'] ?? 0),
         ];
@@ -32,7 +37,7 @@ class TrainingController {
                JOIN users u ON tr.user_id = u.id
                LEFT JOIN training_types tt ON tr.training_type_id = tt.id
               WHERE tr.tenant_id = ?
-                AND tr.expires_date BETWEEN DATE('now','-14 days') AND DATE('now','+60 days')
+                AND tr.expires_date BETWEEN $minus14 AND $in60Days
               ORDER BY tr.expires_date ASC",
             [$tenantId]
         );
