@@ -4,6 +4,12 @@
  * Vars: $user, $documents, $required
  */
 ?>
+<script>
+function toggleDocPreview(id) {
+    var row = document.getElementById('preview-row-' + id);
+    if (row) row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+}
+</script>
 <div class="card">
     <div class="card-header">
         <div class="card-title">Required Documents for Role</div>
@@ -68,6 +74,8 @@
                 </td>
                 <td>
                     <?php if (!empty($d['file_path'])): ?>
+                    <button type="button" class="btn btn-primary btn-xs"
+                            onclick="toggleDocPreview(<?= (int) $d['id'] ?>)">Preview</button>
                     <a href="/personnel/documents/<?= (int) $d['id'] ?>/download" class="btn btn-outline btn-xs">Download</a>
                     <?php endif; ?>
                     <?php if ($d['status'] === 'pending_approval'): ?>
@@ -90,6 +98,13 @@
                     <?php endif; ?>
                 </td>
             </tr>
+            <?php if (!empty($d['file_path'])): ?>
+            <tr id="preview-row-<?= (int) $d['id'] ?>" style="display:none;">
+                <td colspan="7" style="background:var(--bg-secondary,#0f0f0f);padding:10px;">
+                    <?php $previewHeight = 560; include VIEWS_PATH . '/personnel/_doc_preview.php'; ?>
+                </td>
+            </tr>
+            <?php endif; ?>
             <?php endforeach; ?>
             </tbody>
         </table>

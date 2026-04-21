@@ -28,6 +28,48 @@ class PersonnelApiController {
         ]);
     }
 
+    /**
+     * Serve a document inline for preview in the iPad app.
+     *
+     * Bearer-authenticated. Owner may always view their own document;
+     * reviewers may view any document in the tenant. Only known-safe MIME
+     * types (application/pdf, image/*) are sent as inline — otherwise
+     * attachment is forced so an uploaded HTML can't execute.
+     */
+    public function viewDocument(int $id): void {
+        $user = apiUser();
+        $tenantId = (int) apiTenantId();
+        $doc = CrewDocumentModel::find($id);
+        if (!$doc || (int) $doc['tenant_id'] !== $tenantId) {
+            jsonResponse(['error' => 'Document not found'], 404);
+        }
+
+        $isOwner = (int) $doc['user_id'] === (int) $user['user_id'];
+        if (!$isOwner) {
+            RbacMiddleware::apiRequireRole(self::REVIEW_ROLES);
+        }
+
+        $path = $doc['file_path'];
+        if (!$path || !file_exists(storagePath($path))) {
+            jsonResponse(['error' => 'File missing'], 404);
+        }
+
+        $full = storagePath($path);
+        $mime = $doc['file_mime'] ?: 'application/octet-stream';
+        $safeInline = $mime === 'application/pdf' || str_starts_with($mime, 'image/');
+        $disposition = $safeInline ? 'inline' : 'attachment';
+
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: ' . $disposition . '; filename="' . basename($doc['file_name'] ?: $path) . '"');
+        header('Content-Length: ' . filesize($full));
+        header('X-Content-Type-Options: nosniff');
+        header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; object-src 'self';");
+
+        AuditService::logApi('compliance.document.viewed', 'crew_document', $id);
+        readfile($full);
+        exit;
+    }
+
     public function myEligibility(): void {
         $user = apiUser();
         jsonResponse([

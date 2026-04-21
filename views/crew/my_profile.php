@@ -290,9 +290,15 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
     </p>
 
     <?php if (!empty($documents)): ?>
+    <script>
+    function toggleMyDocPreview(id) {
+        var row = document.getElementById('my-preview-row-' + id);
+        if (row) row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+    }
+    </script>
     <div class="table-wrap">
         <table>
-            <thead><tr><th>Document</th><th>Type</th><th>Expiry</th><th>Status</th></tr></thead>
+            <thead><tr><th>Document</th><th>Type</th><th>Expiry</th><th>Status</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($documents as $d):
                 $c = [
@@ -311,7 +317,21 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
                 <td><span class="status-badge" style="--badge-color:<?= $c ?>">
                     <?= ucwords(str_replace('_',' ',$d['status'])) ?>
                 </span></td>
+                <td>
+                    <?php if (!empty($d['file_path'])): ?>
+                    <button type="button" class="btn btn-outline btn-xs"
+                            onclick="toggleMyDocPreview(<?= (int) $d['id'] ?>)">Preview</button>
+                    <?php endif; ?>
+                </td>
             </tr>
+            <?php if (!empty($d['file_path'])): ?>
+            <tr id="my-preview-row-<?= (int) $d['id'] ?>" style="display:none;">
+                <td colspan="5" style="background:var(--bg-secondary,#0f0f0f);padding:8px;">
+                    <?php $doc = $d; $previewHeight = 480;
+                          include VIEWS_PATH . '/personnel/_doc_preview.php'; ?>
+                </td>
+            </tr>
+            <?php endif; ?>
             <?php endforeach; ?>
             </tbody>
         </table>

@@ -267,6 +267,7 @@ return [
     'GET /personnel/documents'                         => ['CrewDocumentController', 'index'],
     'GET /personnel/documents/user/{id}'               => ['CrewDocumentController', 'forUser'],
     'GET /personnel/documents/{id}/download'           => ['CrewDocumentController', 'download'],
+    'GET /personnel/documents/{id}/view'               => ['CrewDocumentController', 'view'],
     'POST /personnel/documents/{id}/approve'           => ['CrewDocumentController', 'approve'],
     'POST /personnel/documents/{id}/reject'            => ['CrewDocumentController', 'reject'],
     'POST /personnel/documents/{id}/revoke'            => ['CrewDocumentController', 'revoke'],
@@ -288,6 +289,7 @@ return [
 
     // ─── Phase 6: Personnel API (iPad) ───────────────────
     'GET /api/personnel/documents'                     => ['PersonnelApiController', 'myDocuments'],
+    'GET /api/personnel/documents/{id}/view'           => ['PersonnelApiController', 'viewDocument'],
     'GET /api/personnel/required-docs'                 => ['PersonnelApiController', 'myRequiredDocs'],
     'GET /api/personnel/eligibility'                   => ['PersonnelApiController', 'myEligibility'],
     'GET /api/personnel/eligibility/{id}'              => ['PersonnelApiController', 'userEligibility'],

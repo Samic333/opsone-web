@@ -70,6 +70,22 @@ class CrewDocumentController {
     }
 
     public function download(int $id): void {
+        $this->serve($id, inline: false);
+    }
+
+    /** Inline view — renders PDF/image in-browser without forcing download. */
+    public function view(int $id): void {
+        $this->serve($id, inline: true);
+    }
+
+    /**
+     * Common file-serving pipeline.
+     * Tenant + owner/reviewer guarded.
+     * For inline=true, only known-safe MIME types (application/pdf, image/*)
+     * are sent as inline — everything else falls back to attachment so that
+     * an uploaded HTML/SVG can't be executed in the portal origin.
+     */
+    private function serve(int $id, bool $inline): void {
         $doc = CrewDocumentModel::find($id);
         if (!$doc) {
             http_response_code(404);
@@ -97,11 +113,26 @@ class CrewDocumentController {
         }
 
         $full = storagePath($path);
-        header('Content-Type: ' . ($doc['file_mime'] ?: 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . basename($doc['file_name'] ?: $path) . '"');
+        $mime = $doc['file_mime'] ?: 'application/octet-stream';
+
+        // Safe inline render only for PDF + common images.
+        $safeInline = $mime === 'application/pdf' || str_starts_with($mime, 'image/');
+        $disposition = ($inline && $safeInline) ? 'inline' : 'attachment';
+
+        header('Content-Type: ' . $mime);
+        header('Content-Disposition: ' . $disposition . '; filename="' . basename($doc['file_name'] ?: $path) . '"');
         header('Content-Length: ' . filesize($full));
+        // Tight CSP for inline rendering — prevents executable content
+        // masquerading as a document even if MIME sniffing goes wrong.
+        header("X-Content-Type-Options: nosniff");
+        if ($inline) {
+            header("Content-Security-Policy: default-src 'none'; img-src 'self' data:; object-src 'self';");
+        }
         readfile($full);
-        AuditService::log('compliance.document.downloaded', 'crew_document', $id);
+        AuditService::log(
+            $inline ? 'compliance.document.viewed' : 'compliance.document.downloaded',
+            'crew_document', $id
+        );
         exit;
     }
 

@@ -91,9 +91,11 @@ $isResolved = in_array($request['status'], ['approved','rejected','withdrawn'], 
             · expires <?= e($supportingDoc['expiry_date']) ?>
         <?php endif; ?>
     </p>
-    <?php if (!empty($supportingDoc['file_path'])): ?>
-        <a href="/personnel/documents/<?= (int) $supportingDoc['id'] ?>/download" class="btn btn-outline btn-sm">Download scan</a>
-    <?php endif; ?>
+    <?php if (!empty($supportingDoc['file_path'])):
+        $doc = $supportingDoc;   // expected by the preview partial
+        $previewHeight = 620;
+        include VIEWS_PATH . '/personnel/_doc_preview.php';
+    endif; ?>
 </div>
 <?php endif; ?>
 

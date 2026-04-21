@@ -4,6 +4,12 @@
  * Vars: $documents, $pendingCount, $filters, $docTypes
  */
 ?>
+<script>
+function toggleDocPreview(id) {
+    var row = document.getElementById('preview-row-' + id);
+    if (row) row.style.display = (row.style.display === 'none' || row.style.display === '') ? 'table-row' : 'none';
+}
+</script>
 <div class="stats-grid">
     <div class="stat-card <?= $pendingCount > 0 ? 'yellow' : 'blue' ?>">
         <div class="stat-label">Pending Approval</div>
@@ -90,9 +96,20 @@
                     <?= ucwords(str_replace('_',' ',$d['status'])) ?>
                 </span></td>
                 <td>
+                    <?php if (!empty($d['file_path'])): ?>
+                    <button type="button" class="btn btn-primary btn-xs"
+                            onclick="toggleDocPreview(<?= (int) $d['id'] ?>)">Preview</button>
+                    <?php endif; ?>
                     <a href="/personnel/documents/user/<?= (int) $d['user_id'] ?>" class="btn btn-outline btn-xs">Open</a>
                 </td>
             </tr>
+            <?php if (!empty($d['file_path'])): ?>
+            <tr id="preview-row-<?= (int) $d['id'] ?>" style="display:none;">
+                <td colspan="7" style="background:var(--bg-secondary,#0f0f0f);padding:10px;">
+                    <?php $previewHeight = 520; include VIEWS_PATH . '/personnel/_doc_preview.php'; ?>
+                </td>
+            </tr>
+            <?php endif; ?>
             <?php endforeach; ?>
             </tbody>
         </table>
