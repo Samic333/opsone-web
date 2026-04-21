@@ -26,7 +26,79 @@
         <div class="stat-label">Passports Expiring (180d)</div>
         <div class="stat-value"><?= $summary['expiring_passports'] ?></div>
     </div>
+    <div class="stat-card <?= ($pendingChangeRequests ?? 0) > 0 ? 'yellow' : 'blue' ?>">
+        <div class="stat-label">Pending Change Requests</div>
+        <div class="stat-value"><?= (int) ($pendingChangeRequests ?? 0) ?></div>
+    </div>
+    <div class="stat-card <?= ($pendingDocuments ?? 0) > 0 ? 'yellow' : 'blue' ?>">
+        <div class="stat-label">Pending Documents</div>
+        <div class="stat-value"><?= (int) ($pendingDocuments ?? 0) ?></div>
+    </div>
 </div>
+
+<!-- Phase 6: Eligibility / readiness bar -->
+<?php if (!empty($eligibilitySummary)): ?>
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Assignment Readiness</div>
+        <a href="/personnel/eligibility" class="btn btn-outline btn-sm">Open Eligibility →</a>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card green">
+            <div class="stat-label">Eligible</div>
+            <div class="stat-value"><?= (int) $eligibilitySummary['eligible'] ?></div>
+        </div>
+        <div class="stat-card <?= $eligibilitySummary['warning'] > 0 ? 'yellow' : 'blue' ?>">
+            <div class="stat-label">Warning</div>
+            <div class="stat-value"><?= (int) $eligibilitySummary['warning'] ?></div>
+        </div>
+        <div class="stat-card <?= $eligibilitySummary['blocked'] > 0 ? 'red' : 'blue' ?>">
+            <div class="stat-label">Blocked</div>
+            <div class="stat-value"><?= (int) $eligibilitySummary['blocked'] ?></div>
+        </div>
+    </div>
+    <form method="POST" action="/compliance/alert-scan" style="margin-top:10px;">
+        <?= csrfField() ?>
+        <button class="btn btn-outline btn-sm">Run Expiry Alert Scan</button>
+        <span class="text-xs text-muted" style="margin-left:10px;">
+            Records alerts for items expiring or already expired — dispatch is sent to crew, HR, and line manager.
+        </span>
+    </form>
+</div>
+<?php endif; ?>
+
+<!-- Phase 6: Open expiry alerts ledger -->
+<?php if (!empty($openAlerts)): ?>
+<div class="card" style="border-left:3px solid var(--accent-amber,#f59e0b);">
+    <div class="card-header">
+        <div class="card-title">Open Expiry Alerts (<?= count($openAlerts) ?>)</div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Staff</th><th>Entity</th><th>Level</th><th>Expiry</th><th>Sent</th></tr></thead>
+            <tbody>
+            <?php foreach (array_slice($openAlerts, 0, 25) as $a):
+                $c = ['expired' => '#ef4444', 'critical' => '#f59e0b', 'warning' => '#f59e0b'][$a['alert_level']] ?? '#6b7280';
+            ?>
+            <tr>
+                <td><strong><?= e($a['user_name']) ?></strong>
+                    <?php if (!empty($a['employee_id'])): ?><span class="text-xs text-muted"> (<?= e($a['employee_id']) ?>)</span><?php endif; ?>
+                </td>
+                <td><code><?= e($a['entity_type']) ?></code></td>
+                <td><span class="status-badge" style="--badge-color:<?= $c ?>"><?= strtoupper($a['alert_level']) ?></span></td>
+                <td><?= e($a['expiry_date']) ?></td>
+                <td style="font-size:11px;color:var(--text-muted);">
+                    <?= $a['sent_to_user']    ? '👤 user ' : '' ?>
+                    <?= $a['sent_to_hr']      ? '🏢 HR '   : '' ?>
+                    <?= $a['sent_to_manager'] ? '👔 manager' : '' ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ─── Expired Licences ─── -->
 <?php if (!empty($expiredLicenses)): ?>

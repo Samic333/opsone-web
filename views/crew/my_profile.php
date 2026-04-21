@@ -251,4 +251,206 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
     </div><!-- /right col -->
 </div>
 
+<!-- ═══ Phase 6: Eligibility + Documents + Change Requests ══════════════ -->
+<?php if (!empty($eligibility)):
+    $elStatusColor = [
+        'eligible' => '#10b981', 'warning' => '#f59e0b', 'blocked' => '#ef4444',
+    ][$eligibility['status']] ?? '#6b7280';
+?>
+<div class="card mt-3" style="border-left:4px solid <?= $elStatusColor ?>;">
+    <div class="card-header">
+        <div>
+            <div class="card-title">My Assignment Readiness</div>
+            <div class="text-xs text-muted">Roster eligibility based on your current licences, medicals and documents.</div>
+        </div>
+        <span class="status-badge" style="--badge-color:<?= $elStatusColor ?>;font-size:13px;padding:5px 12px;">
+            <?= strtoupper($eligibility['status']) ?>
+        </span>
+    </div>
+    <?php if (!empty($eligibility['reasons'])): ?>
+    <ul style="margin-top:8px;">
+        <?php foreach ($eligibility['reasons'] as $r): ?>
+            <li style="font-size:13px;"><?= e($r) ?></li>
+        <?php endforeach; ?>
+    </ul>
+    <?php else: ?>
+        <p class="text-muted">All good — no issues detected.</p>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
+<!-- ─── My Documents ──────────────────────────────────────── -->
+<div class="card mt-3" id="documents">
+    <div class="card-header">
+        <div class="card-title">My Documents</div>
+        <a href="/my-profile/change-requests" class="btn btn-outline btn-sm">My Change Requests →</a>
+    </div>
+    <p class="text-xs text-muted">
+        Uploads go through approval. Once approved, they replace the prior record.
+    </p>
+
+    <?php if (!empty($documents)): ?>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Document</th><th>Type</th><th>Expiry</th><th>Status</th></tr></thead>
+            <tbody>
+            <?php foreach ($documents as $d):
+                $c = [
+                    'valid' => '#10b981','pending_approval' => '#f59e0b',
+                    'expired' => '#ef4444','rejected' => '#dc2626','revoked' => '#6b7280',
+                ][$d['status']] ?? '#6b7280';
+            ?>
+            <tr>
+                <td><strong><?= e($d['doc_title']) ?></strong>
+                    <?php if (!empty($d['rejection_reason'])): ?>
+                    <br><span class="text-xs" style="color:var(--accent-red);"><?= e($d['rejection_reason']) ?></span>
+                    <?php endif; ?>
+                </td>
+                <td><?= e($d['doc_type']) ?></td>
+                <td><?= e($d['expiry_date'] ?? '—') ?></td>
+                <td><span class="status-badge" style="--badge-color:<?= $c ?>">
+                    <?= ucwords(str_replace('_',' ',$d['status'])) ?>
+                </span></td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php else: ?>
+    <div class="empty-state" style="padding:12px 0 8px;">
+        <p>No documents on file yet. Upload your first via the form below — it will enter approval.</p>
+    </div>
+    <?php endif; ?>
+
+    <h4 style="margin-top:14px;">Upload a new document</h4>
+    <form method="POST" action="/my-profile/change-requests/submit" enctype="multipart/form-data"
+          style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <?= csrfField() ?>
+        <input type="hidden" name="target_entity" value="document">
+        <input type="hidden" name="change_type" value="create">
+
+        <div>
+            <label class="text-xs text-muted">Title *</label>
+            <input type="text" name="doc_title" class="form-control" required>
+        </div>
+        <div>
+            <label class="text-xs text-muted">Type *</label>
+            <select name="doc_type" class="form-control" required>
+                <option value="">— Select —</option>
+                <option value="passport">Passport</option>
+                <option value="visa">Visa</option>
+                <option value="medical">Medical</option>
+                <option value="license">Licence</option>
+                <option value="type_rating">Type Rating</option>
+                <option value="type_auth">Type Authorization</option>
+                <option value="cabin_attestation">Cabin Crew Attestation</option>
+                <option value="company_id">Company ID</option>
+                <option value="airside_permit">Airside Permit</option>
+                <option value="contract">Employment Contract</option>
+                <option value="certificate">Certificate</option>
+                <option value="other">Other</option>
+            </select>
+        </div>
+        <div>
+            <label class="text-xs text-muted">Number</label>
+            <input type="text" name="doc_number" class="form-control">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Issuing Authority</label>
+            <input type="text" name="issuing_authority" class="form-control">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Issue Date</label>
+            <input type="date" name="issue_date" class="form-control">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Expiry Date</label>
+            <input type="date" name="expiry_date" class="form-control">
+        </div>
+        <div style="grid-column:1/-1;">
+            <label class="text-xs text-muted">Scan / PDF</label>
+            <input type="file" name="supporting_file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <div style="grid-column:1/-1;">
+            <button class="btn btn-primary btn-sm">Submit for Approval</button>
+            <span class="text-xs text-muted" style="margin-left:10px;">
+                Your existing document (if any) remains active until a reviewer approves the replacement.
+            </span>
+        </div>
+    </form>
+</div>
+
+<!-- ─── Request change to sensitive compliance field ───── -->
+<div class="card mt-3">
+    <div class="card-header"><div class="card-title">Request Compliance Update</div></div>
+    <p class="text-xs text-muted">
+        Use this when you need to change a field that requires approval — licence number,
+        medical/passport/visa expiry, contract details, etc. Your original record
+        stays in effect until approved.
+    </p>
+    <form method="POST" action="/my-profile/change-requests/submit"
+          style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <?= csrfField() ?>
+        <input type="hidden" name="target_entity" value="profile">
+        <input type="hidden" name="change_type" value="update">
+
+        <div>
+            <label class="text-xs text-muted">Passport Number</label>
+            <input type="text" name="passport_number" class="form-control" value="<?= e($crewProfile['passport_number'] ?? '') ?>">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Passport Expiry</label>
+            <input type="date" name="passport_expiry" class="form-control" value="<?= e($crewProfile['passport_expiry'] ?? '') ?>">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Visa Number</label>
+            <input type="text" name="visa_number" class="form-control" value="<?= e($crewProfile['visa_number'] ?? '') ?>">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Visa Expiry</label>
+            <input type="date" name="visa_expiry" class="form-control" value="<?= e($crewProfile['visa_expiry'] ?? '') ?>">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Medical Class</label>
+            <input type="text" name="medical_class" class="form-control" value="<?= e($crewProfile['medical_class'] ?? '') ?>">
+        </div>
+        <div>
+            <label class="text-xs text-muted">Medical Expiry</label>
+            <input type="date" name="medical_expiry" class="form-control" value="<?= e($crewProfile['medical_expiry'] ?? '') ?>">
+        </div>
+        <div style="grid-column:1/-1;">
+            <button class="btn btn-primary btn-sm">Submit Change Request</button>
+        </div>
+    </form>
+</div>
+
+<!-- ─── My pending change requests summary ────────────── -->
+<?php if (!empty($myChangeRequests)): ?>
+<div class="card mt-3">
+    <div class="card-header">
+        <div class="card-title">Recent Change Requests</div>
+        <a href="/my-profile/change-requests" class="btn btn-outline btn-sm">View all →</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Target</th><th>Status</th><th>Submitted</th></tr></thead>
+            <tbody>
+            <?php foreach (array_slice($myChangeRequests, 0, 5) as $r):
+                $c = ['submitted' => '#f59e0b','under_review' => '#3b82f6','info_requested' => '#8b5cf6',
+                      'approved' => '#10b981','rejected' => '#ef4444','withdrawn' => '#6b7280',][$r['status']] ?? '#6b7280';
+            ?>
+            <tr>
+                <td>#<?= (int) $r['id'] ?></td>
+                <td><code><?= e($r['target_entity']) ?></code></td>
+                <td><span class="status-badge" style="--badge-color:<?= $c ?>">
+                    <?= ucwords(str_replace('_',' ',$r['status'])) ?></span></td>
+                <td><?= formatDateTime($r['submitted_at']) ?></td>
+            </tr>
+            <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php $content = ob_get_clean(); require VIEWS_PATH . '/layouts/app.php'; ?>

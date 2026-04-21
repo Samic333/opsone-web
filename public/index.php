@@ -147,6 +147,10 @@ if ($isApi) {
             'FileController',
             'ComplianceController',
             'UserController',    // airline /users — platform uses /platform/users
+            // Phase 6 — Personnel Records (airline scope)
+            'CrewDocumentController',
+            'ChangeRequestController',
+            'EligibilityController',
         ];
         if (in_array($controllerName, $airlineOnlyControllers, true) && isPlatformOnly()) {
             flash('error', 'That section is scoped to a specific airline. Use controlled access to enter an airline workspace.');

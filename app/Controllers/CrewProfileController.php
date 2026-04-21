@@ -60,6 +60,10 @@ class CrewProfileController {
         $licenses       = CrewProfileModel::getLicenses($userId);
         $qualifications = QualificationModel::forUser($userId);
         $completion     = CrewProfileModel::calcCompletion($userId);
+        // Phase 6
+        $documents      = CrewDocumentModel::forUser($userId);
+        $eligibility    = EligibilityService::computeForUser($userId);
+        $emergencyContacts = EmergencyContactModel::forUser($userId);
 
         // Determine profile type for variant display
         $userRoles   = UserModel::getRoles($userId);
@@ -148,6 +152,11 @@ class CrewProfileController {
         $licenses       = CrewProfileModel::getLicenses($userId);
         $qualifications = QualificationModel::forUser($userId);
         $completion     = CrewProfileModel::calcCompletion($userId);
+        // Phase 6: documents + eligibility + change requests
+        $documents      = CrewDocumentModel::forUser($userId);
+        $eligibility    = EligibilityService::computeForUser($userId);
+        $myChangeRequests = ChangeRequestModel::mineForUser($userId, 10);
+        $emergencyContacts = EmergencyContactModel::forUser($userId);
 
         $userRoles   = UserModel::getRoles($userId);
         $roleSlugs   = array_column($userRoles, 'slug');

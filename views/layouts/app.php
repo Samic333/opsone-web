@@ -210,14 +210,51 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php endif; ?>
 
+            <!-- ─── Personnel Records (Phase 6) ──────────────── -->
+            <?php if (hasAnyRole(['airline_admin','hr','chief_pilot','head_cabin_crew',
+                                   'engineering_manager','safety_officer','training_admin',
+                                   'scheduler','base_manager','super_admin','fdm_analyst'])):
+                $pendingCR = 0; $pendingDocs = 0;
+                try {
+                    if (currentTenantId()) {
+                        $pendingCR   = ChangeRequestModel::pendingCount(currentTenantId());
+                        $pendingDocs = CrewDocumentModel::pendingApprovalCount(currentTenantId());
+                    }
+                } catch (\Throwable $e) {}
+            ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Personnel Records</div>
+                <a href="/compliance" class="sidebar-link <?= $currentPath === '/compliance' ? 'active' : '' ?>">
+                    <span class="icon">🛡</span> Licensing &amp; Compliance
+                </a>
+                <a href="/personnel/documents" class="sidebar-link <?= str_starts_with($currentPath, '/personnel/documents') ? 'active' : '' ?>">
+                    <span class="icon">📄</span> Documents
+                    <?php if ($pendingDocs > 0): ?><span class="badge"><?= $pendingDocs ?></span><?php endif; ?>
+                </a>
+                <a href="/personnel/change-requests" class="sidebar-link <?= str_starts_with($currentPath, '/personnel/change-requests') ? 'active' : '' ?>">
+                    <span class="icon">📝</span> Change Requests
+                    <?php if ($pendingCR > 0): ?><span class="badge"><?= $pendingCR ?></span><?php endif; ?>
+                </a>
+                <a href="/personnel/eligibility" class="sidebar-link <?= str_starts_with($currentPath, '/personnel/eligibility') ? 'active' : '' ?>">
+                    <span class="icon">✅</span> Eligibility Status
+                </a>
+                <a href="/compliance/expiring" class="sidebar-link <?= str_starts_with($currentPath, '/compliance/expiring') ? 'active' : '' ?>">
+                    <span class="icon">⏳</span> Expiry Alerts
+                </a>
+            </div>
+            <?php endif; ?>
+
             <!-- ─── Me (all logged-in crew) ─────────────── -->
             <?php if (hasAnyRole(['pilot','cabin_crew','engineer','scheduler','chief_pilot',
                                    'head_cabin_crew','engineering_manager','base_manager',
                                    'training_admin','fdm_analyst','document_control'])): ?>
             <div class="sidebar-section">
                 <div class="sidebar-section-title">Me</div>
-                <a href="/my-profile" class="sidebar-link <?= str_starts_with($currentPath, '/my-profile') ? 'active' : '' ?>">
+                <a href="/my-profile" class="sidebar-link <?= $currentPath === '/my-profile' ? 'active' : '' ?>">
                     <span class="icon">👤</span> My Profile
+                </a>
+                <a href="/my-profile/change-requests" class="sidebar-link <?= str_starts_with($currentPath, '/my-profile/change-requests') ? 'active' : '' ?>">
+                    <span class="icon">📝</span> My Change Requests
                 </a>
                 <a href="/my-notices" class="sidebar-link <?= str_starts_with($currentPath, '/my-notices') ? 'active' : '' ?>">
                     <span class="icon">📬</span> Operational Notices

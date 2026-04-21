@@ -258,7 +258,42 @@ return [
     'POST /fdm/delete/{id}'                          => ['FdmController', 'deleteUpload'],
 
     // ─── Compliance ─────────────────────
-    'GET /compliance' => ['ComplianceController', 'index'],
+    'GET /compliance'                     => ['ComplianceController', 'index'],
+    'GET /compliance/expiring'            => ['ComplianceController', 'expiring'],
+    'GET /compliance/missing'             => ['ComplianceController', 'missing'],
+    'POST /compliance/alert-scan'         => ['ComplianceController', 'runAlertScan'],
+
+    // ─── Phase 6: Personnel Records ───────────────────────
+    'GET /personnel/documents'                         => ['CrewDocumentController', 'index'],
+    'GET /personnel/documents/user/{id}'               => ['CrewDocumentController', 'forUser'],
+    'GET /personnel/documents/{id}/download'           => ['CrewDocumentController', 'download'],
+    'POST /personnel/documents/{id}/approve'           => ['CrewDocumentController', 'approve'],
+    'POST /personnel/documents/{id}/reject'            => ['CrewDocumentController', 'reject'],
+    'POST /personnel/documents/{id}/revoke'            => ['CrewDocumentController', 'revoke'],
+
+    'GET /personnel/change-requests'                   => ['ChangeRequestController', 'index'],
+    'GET /personnel/change-requests/{id}'              => ['ChangeRequestController', 'review'],
+    'POST /personnel/change-requests/{id}/mark-review' => ['ChangeRequestController', 'markReview'],
+    'POST /personnel/change-requests/{id}/approve'     => ['ChangeRequestController', 'approve'],
+    'POST /personnel/change-requests/{id}/reject'      => ['ChangeRequestController', 'reject'],
+    'POST /personnel/change-requests/{id}/request-info'=> ['ChangeRequestController', 'requestInfo'],
+
+    'GET /personnel/eligibility'                       => ['EligibilityController', 'index'],
+    'GET /personnel/eligibility/{id}'                  => ['EligibilityController', 'show'],
+
+    // ─── Phase 6: Self-service change requests ───────────
+    'GET /my-profile/change-requests'                  => ['ChangeRequestController', 'mine'],
+    'POST /my-profile/change-requests/submit'          => ['ChangeRequestController', 'submit'],
+    'POST /my-profile/change-requests/{id}/withdraw'   => ['ChangeRequestController', 'withdraw'],
+
+    // ─── Phase 6: Personnel API (iPad) ───────────────────
+    'GET /api/personnel/documents'                     => ['PersonnelApiController', 'myDocuments'],
+    'GET /api/personnel/required-docs'                 => ['PersonnelApiController', 'myRequiredDocs'],
+    'GET /api/personnel/eligibility'                   => ['PersonnelApiController', 'myEligibility'],
+    'GET /api/personnel/eligibility/{id}'              => ['PersonnelApiController', 'userEligibility'],
+    'GET /api/personnel/change-requests'               => ['PersonnelApiController', 'myChangeRequests'],
+    'POST /api/personnel/change-request'               => ['PersonnelApiController', 'submitChangeRequest'],
+    'POST /api/personnel/change-requests/{id}/withdraw'=> ['PersonnelApiController', 'withdrawChangeRequest'],
 
     // ─── Platform: Feature Flags ────────
     'GET /platform/feature-flags'              => ['FeatureFlagController', 'index'],
