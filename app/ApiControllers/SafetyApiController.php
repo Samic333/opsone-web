@@ -2,7 +2,7 @@
 /**
  * SafetyApiController — Safety Reporting API (iPad / CrewAssist)
  *
- * All endpoints require bearer-token auth via requireApiAuth().
+ * All endpoints require bearer-token auth (enforced by ApiAuthMiddleware).
  * All responses are JSON. Tenant isolation is enforced throughout.
  *
  * Routes (see config/routes.php):
@@ -28,7 +28,6 @@ class SafetyApiController {
      * Response: { types: [ { slug, name } ] }
      */
     public function types(): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -61,7 +60,6 @@ class SafetyApiController {
      * Response: { reports: [ ReportItem ] }
      */
     public function myReports(): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -77,7 +75,6 @@ class SafetyApiController {
      * Response: { drafts: [ ReportItem ] }
      */
     public function drafts(): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -94,7 +91,6 @@ class SafetyApiController {
      * Response: { report: ReportDetail }
      */
     public function report(int $id): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -132,7 +128,6 @@ class SafetyApiController {
      * Response: { success: true, id: int, reference_no: string, is_draft: bool }
      */
     public function createReport(): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -189,7 +184,6 @@ class SafetyApiController {
      * Response: { success: true }
      */
     public function updateReport(int $id): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -215,7 +209,6 @@ class SafetyApiController {
      * Response: { success: true }
      */
     public function deleteDraft(int $id): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -254,7 +247,6 @@ class SafetyApiController {
      * Response: { success: true, thread_id: int }
      */
     public function addReply(int $id): void {
-        requireApiAuth();
         $user     = apiUser();
         $tenantId = apiTenantId();
 
@@ -310,7 +302,6 @@ class SafetyApiController {
      * Response: { publications: [ PublicationItem ] }
      */
     public function publications(): void {
-        requireApiAuth();
         $tenantId = apiTenantId();
 
         $pubs = SafetyReportModel::getPublications($tenantId, 'published');
@@ -327,7 +318,6 @@ class SafetyApiController {
      * Response: { publication: PublicationDetail }
      */
     public function publication(int $id): void {
-        requireApiAuth();
         $tenantId = apiTenantId();
 
         $pub = SafetyReportModel::getPublication($tenantId, $id);
