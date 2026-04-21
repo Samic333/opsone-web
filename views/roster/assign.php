@@ -56,6 +56,13 @@ $prefillDuty  = $_GET['prefill_duty']  ?? 'flight';
             <input type="text" name="notes" class="form-control" maxlength="255" placeholder="e.g. Route LHR-DXB">
         </div>
 
+        <div class="form-group">
+            <label class="form-check" style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-muted);">
+                <input type="checkbox" name="override_eligibility" value="1">
+                <span>Override eligibility warnings (Phase 8 — will be audited)</span>
+            </label>
+        </div>
+
         <div style="display:flex;gap:12px;margin-top:8px;">
             <button type="submit" class="btn btn-primary">Save Duty</button>
             <a href="/roster" class="btn btn-outline">Cancel</a>

@@ -105,10 +105,27 @@ class RosterController {
             redirect('/roster/assign');
         }
 
+        // Phase 8 — eligibility gate. Operational duty types require valid compliance.
+        $override = !empty($_POST['override_eligibility']);
+        $blockers = EligibilityGate::blockersFor($userId, $date, $dutyType);
+        if ($blockers && !$override) {
+            flash('error',
+                'Eligibility blockers: ' . implode(' · ', $blockers) .
+                ' — resubmit with Override to proceed.'
+            );
+            AuditLog::log('roster_assign_blocked', 'roster', $userId,
+                "Date {$date} {$dutyType}: " . implode('; ', $blockers));
+            redirect('/roster/assign');
+        }
+
         RosterModel::upsert($tenantId, $userId, $date, $dutyType, $dutyCode, $notes);
 
-        AuditLog::log('roster_assigned', 'roster', $userId, "Assigned {$dutyType} on {$date}");
-        flash('success', 'Duty assigned.');
+        $auditNote = "Assigned {$dutyType} on {$date}";
+        if ($override && $blockers) {
+            $auditNote .= ' [override: ' . implode('; ', $blockers) . ']';
+        }
+        AuditLog::log('roster_assigned', 'roster', $userId, $auditNote);
+        flash('success', $override && $blockers ? 'Duty assigned with eligibility override.' : 'Duty assigned.');
 
         [$y, $m] = explode('-', $date);
         redirect("/roster?year={$y}&month=" . ltrim($m, '0'));

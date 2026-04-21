@@ -144,6 +144,17 @@ function formatDateTime(?string $date): string {
 }
 
 /**
+ * Human-readable byte size (1024 base): 1.4 KB, 3.2 MB, etc.
+ */
+function formatBytes(?int $bytes, int $precision = 1): string {
+    $bytes = (int)($bytes ?? 0);
+    if ($bytes <= 0) return '—';
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    $i     = min((int) floor(log($bytes, 1024)), count($units) - 1);
+    return round($bytes / (1024 ** $i), $precision) . ' ' . $units[$i];
+}
+
+/**
  * Render status badge HTML
  */
 function statusBadge(string $status): string {

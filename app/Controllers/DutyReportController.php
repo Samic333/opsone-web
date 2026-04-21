@@ -254,6 +254,11 @@ class DutyReportController {
 
         $tenantId = (int) currentTenantId();
         $settings = DutyReportingSettings::forTenant($tenantId);
+
+        // Promote any records past the reminder + grace window to missed_report.
+        // Replaces a scheduled task on shared hosting where cron isn't available.
+        DutyReportingService::markOverdue($tenantId);
+
         $counters = DutyReport::counters($tenantId, $settings['clock_out_reminder_minutes'] + 360);
         $onDuty   = DutyReport::onDutyNow($tenantId);
         $pendingX = DutyException::pending($tenantId, 10);

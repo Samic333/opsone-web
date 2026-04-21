@@ -304,6 +304,57 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                         <span style="margin-left:auto;background:#6b7280;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $safetyDraftCount ?></span>
                     <?php endif; ?>
                 </a>
+
+                <!-- ─── Phase 5-16: Crew self-service extensions ──── -->
+                <a href="/my-files" class="sidebar-link <?= str_starts_with($currentPath, '/my-files') ? 'active' : '' ?>">
+                    <span class="icon">📄</span> My Documents
+                </a>
+                <a href="/notifications" class="sidebar-link <?= str_starts_with($currentPath, '/notifications') ? 'active' : '' ?>">
+                    <span class="icon">🔔</span> Notifications
+                    <?php
+                    $_notifUnread = 0;
+                    try { $_notifUnread = (int)(Database::fetch(
+                        "SELECT COUNT(*) c FROM notifications WHERE user_id = ? AND tenant_id = ? AND is_read = 0",
+                        [currentUser()['id'], currentTenantId()]
+                    )['c'] ?? 0); } catch (\Throwable $e) {}
+                    if ($_notifUnread > 0): ?>
+                        <span style="margin-left:auto;background:#3b82f6;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $_notifUnread > 99 ? '99+' : $_notifUnread ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php if (hasAnyRole(['pilot'])): ?>
+                <a href="/my-logbook" class="sidebar-link <?= str_starts_with($currentPath, '/my-logbook') ? 'active' : '' ?>">
+                    <span class="icon">📒</span> My Logbook
+                </a>
+                <a href="/my-fdm" class="sidebar-link <?= str_starts_with($currentPath, '/my-fdm') ? 'active' : '' ?>">
+                    <span class="icon">📈</span> My FDM Events
+                    <?php
+                    $_myFdmPending = 0;
+                    try { $_myFdmPending = (int)(Database::fetch(
+                        "SELECT COUNT(*) c FROM fdm_events WHERE tenant_id = ? AND pilot_user_id = ? AND pilot_ack_at IS NULL",
+                        [currentTenantId(), currentUser()['id']]
+                    )['c'] ?? 0); } catch (\Throwable $e) {}
+                    if ($_myFdmPending > 0): ?>
+                        <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $_myFdmPending ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['pilot','cabin_crew','engineer'])): ?>
+                <a href="/my-flights" class="sidebar-link <?= str_starts_with($currentPath, '/my-flights') ? 'active' : '' ?>">
+                    <span class="icon">🛫</span> My Flights
+                </a>
+                <?php endif; ?>
+                <a href="/my-training" class="sidebar-link <?= str_starts_with($currentPath, '/my-training') ? 'active' : '' ?>">
+                    <span class="icon">🎓</span> My Training
+                </a>
+                <a href="/my-per-diem" class="sidebar-link <?= str_starts_with($currentPath, '/my-per-diem') ? 'active' : '' ?>">
+                    <span class="icon">💼</span> My Per Diem
+                </a>
+                <a href="/appraisals" class="sidebar-link <?= str_starts_with($currentPath, '/appraisals') ? 'active' : '' ?>">
+                    <span class="icon">📝</span> Appraisals
+                </a>
+                <a href="/help" class="sidebar-link <?= str_starts_with($currentPath, '/help') ? 'active' : '' ?>">
+                    <span class="icon">❓</span> Help &amp; Guides
+                </a>
             </div>
             <?php endif; ?>
 
@@ -314,6 +365,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
 
                 <?php if (hasAnyRole(['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'])): ?>
                 <!-- Scheduler workbench -->
+                <a href="/flights" class="sidebar-link <?= str_starts_with($currentPath, '/flights') ? 'active' : '' ?>">
+                    <span class="icon">✈️</span> Flights
+                </a>
                 <a href="/roster" class="sidebar-link <?= str_starts_with($currentPath, '/roster') && !str_starts_with($currentPath,'/roster/standby') && !str_starts_with($currentPath,'/roster/changes') && !str_starts_with($currentPath,'/roster/revisions') && !str_starts_with($currentPath,'/roster/coverage') ? 'active' : '' ?>">
                     <span class="icon">🗓</span> Roster Workbench
                 </a>
@@ -483,6 +537,67 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
             </div>
             <?php endif; ?>
 
+            <!-- ─── Fleet (Phase 6) ────────────────────────── -->
+            <?php if (hasAnyRole(['airline_admin','engineering_manager','chief_pilot','base_manager','super_admin'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">Fleet</div>
+                <a href="/aircraft" class="sidebar-link <?= str_starts_with($currentPath, '/aircraft') ? 'active' : '' ?>">
+                    <span class="icon">✈️</span> Aircraft Registry
+                    <?php
+                    $_aogCount = 0;
+                    try { $_aogCount = (int)(Database::fetch(
+                        "SELECT COUNT(*) c FROM aircraft WHERE tenant_id = ? AND status = 'aog'",
+                        [currentTenantId()]
+                    )['c'] ?? 0); } catch (\Throwable $e) {}
+                    if ($_aogCount > 0): ?>
+                        <span style="margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $_aogCount ?> AOG</span>
+                    <?php endif; ?>
+                </a>
+            </div>
+            <?php endif; ?>
+
+            <!-- ─── HR / Training / Finance (Phases 11-14) ──── -->
+            <?php if (hasAnyRole(['airline_admin','hr','training_admin','super_admin'])): ?>
+            <div class="sidebar-section">
+                <div class="sidebar-section-title">People Ops</div>
+                <?php if (hasAnyRole(['airline_admin','hr','super_admin'])): ?>
+                <a href="/hr" class="sidebar-link <?= $currentPath === '/hr' ? 'active' : '' ?>">
+                    <span class="icon">🧑‍💼</span> HR Workflow
+                </a>
+                <a href="/per-diem/claims" class="sidebar-link <?= str_starts_with($currentPath, '/per-diem') ? 'active' : '' ?>">
+                    <span class="icon">💱</span> Per Diem Claims
+                    <?php
+                    $_pdSubmitted = 0;
+                    try { $_pdSubmitted = (int)(Database::fetch(
+                        "SELECT COUNT(*) c FROM per_diem_claims WHERE tenant_id = ? AND status = 'submitted'",
+                        [currentTenantId()]
+                    )['c'] ?? 0); } catch (\Throwable $e) {}
+                    if ($_pdSubmitted > 0): ?>
+                        <span style="margin-left:auto;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;"><?= $_pdSubmitted ?></span>
+                    <?php endif; ?>
+                </a>
+                <a href="/per-diem/rates" class="sidebar-link <?= $currentPath === '/per-diem/rates' ? 'active' : '' ?>">
+                    <span class="icon">🧮</span> Per Diem Rates
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin','hr','training_admin','super_admin','chief_pilot','head_cabin_crew'])): ?>
+                <a href="/training" class="sidebar-link <?= $currentPath === '/training' ? 'active' : '' ?>">
+                    <span class="icon">🎓</span> Training Dashboard
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin','super_admin','chief_pilot','hr','training_admin'])): ?>
+                <a href="/logbook" class="sidebar-link <?= $currentPath === '/logbook' ? 'active' : '' ?>">
+                    <span class="icon">📒</span> Logbook Overview
+                </a>
+                <?php endif; ?>
+                <?php if (hasAnyRole(['airline_admin','super_admin','hr','chief_pilot','head_cabin_crew'])): ?>
+                <a href="/appraisals" class="sidebar-link <?= $currentPath === '/appraisals' ? 'active' : '' ?>">
+                    <span class="icon">📝</span> Appraisals Review
+                </a>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
+
             <!-- ─── Administration ───────────────────────── -->
             <?php if (hasAnyRole(['airline_admin', 'hr', 'base_manager', 'chief_pilot', 'engineering_manager'])): ?>
             <div class="sidebar-section">
@@ -498,7 +613,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 </a>
                 <?php endif; ?>
                 <?php if (hasAnyRole(['airline_admin', 'chief_pilot', 'engineering_manager'])): ?>
-                <a href="/fleets" class="sidebar-link <?= str_starts_with($currentPath, '/fleets') ? 'active' : '' ?>">
+                <a href="/fleets" class="sidebar-link <?= $currentPath === '/fleets' || str_starts_with($currentPath, '/fleets/') ? 'active' : '' ?>">
                     <span class="icon">✈</span> Fleets
                 </a>
                 <?php endif; ?>
@@ -508,6 +623,9 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                 </a>
                 <a href="/airline/profile" class="sidebar-link <?= str_starts_with($currentPath, '/airline') ? 'active' : '' ?>">
                     <span class="icon">⚙️</span> Airline Profile
+                </a>
+                <a href="/integrations" class="sidebar-link <?= str_starts_with($currentPath, '/integrations') ? 'active' : '' ?>">
+                    <span class="icon">🔌</span> Integrations
                 </a>
                 <?php endif; ?>
             </div>
@@ -579,6 +697,27 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
                         border:2px solid var(--bg-main,#111827);
                         pointer-events:none;">0</span>
                 </a>
+
+                <!-- Phase 5 — Notification inbox bell -->
+                <a id="notif-bell-btn" href="/notifications" title="Notifications"
+                   style="position:relative;display:inline-flex;align-items:center;justify-content:center;
+                          width:36px;height:36px;border-radius:8px;background:var(--bg-card,#1e2535);
+                          border:1px solid var(--border-color,rgba(255,255,255,0.08));
+                          color:var(--text-secondary,#94a3b8);text-decoration:none;
+                          font-size:17px;transition:background 0.15s,border-color 0.15s;"
+                   onmouseover="this.style.background='rgba(99,102,241,0.12)';this.style.borderColor='rgba(99,102,241,0.4)'"
+                   onmouseout="this.style.background='var(--bg-card,#1e2535)';this.style.borderColor='var(--border-color,rgba(255,255,255,0.08))'">
+                    🔔
+                    <span id="notif-bell-badge" style="
+                        display:none;
+                        position:absolute;top:-4px;right:-4px;
+                        min-width:16px;height:16px;padding:0 4px;
+                        background:#3b82f6;color:#fff;
+                        font-size:9px;font-weight:800;line-height:16px;
+                        border-radius:8px;text-align:center;
+                        border:2px solid var(--bg-main,#111827);
+                        pointer-events:none;">0</span>
+                </a>
             </div>
         </div>
 
@@ -640,6 +779,38 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
 
     updateBell();                        // run immediately on page load
     setInterval(updateBell, 30000);      // then every 30 seconds
+})();
+
+// ── Notification Inbox Bell (Phase 5) — poll every 30 s ──────────────────
+(function() {
+    var badge = document.getElementById('notif-bell-badge');
+    var btn   = document.getElementById('notif-bell-btn');
+    if (!badge || !btn) return;
+
+    function updateNotif() {
+        fetch('/notifications/unread-count', {credentials: 'same-origin', headers: {'Accept':'application/json'}})
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+                if (!data) return;
+                var n = (parseInt(data.unread, 10) || 0);
+                badge.textContent = n > 99 ? '99+' : String(n);
+                if (n > 0) {
+                    badge.style.display = 'block';
+                    // Loud (critical/important) colours the bell amber
+                    var loud = (parseInt(data.loud, 10) || 0);
+                    btn.style.borderColor = loud > 0 ? 'rgba(245,158,11,0.6)' : 'rgba(59,130,246,0.6)';
+                    badge.style.background = loud > 0 ? '#f59e0b' : '#3b82f6';
+                    btn.title = 'Unread notifications: ' + n + (loud > 0 ? ' (' + loud + ' loud)' : '');
+                } else {
+                    badge.style.display = 'none';
+                    btn.style.borderColor = 'var(--border-color,rgba(255,255,255,0.08))';
+                }
+            })
+            .catch(function() { /* silent */ });
+    }
+
+    updateNotif();
+    setInterval(updateNotif, 30000);
 })();
 </script>
 </body>

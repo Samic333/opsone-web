@@ -71,7 +71,15 @@ class NotificationService {
      * @param string $body
      * @param string $link   Optional deep-link URL or relative path
      */
-    public static function notifyUser(int $userId, string $title, string $body, string $link = ''): void {
+    public static function notifyUser(
+        int $userId,
+        string $title,
+        string $body,
+        string $link = '',
+        string $event = 'notify_user',
+        string $priority = 'normal',
+        bool $ackRequired = false
+    ): void {
         $tenantId = self::resolveTenantId($userId);
         if ($tenantId === null) {
             error_log("[NotificationService] notifyUser(): could not resolve tenant for user_id={$userId}");
@@ -79,16 +87,25 @@ class NotificationService {
         }
 
         $context = [
-            'tenant_id' => $tenantId,
-            'user_id'   => $userId,
-            'title'     => $title,
-            'body'      => $body,
-            'link'      => $link,
+            'tenant_id'    => $tenantId,
+            'user_id'      => $userId,
+            'title'        => $title,
+            'body'         => $body,
+            'link'         => $link,
+            'priority'     => $priority,
+            'ack_required' => $ackRequired,
         ];
 
-        self::dispatch('in_app', 'notify_user', $context);
-        // Extend here: self::dispatch('push',  'notify_user', $context);
-        // Extend here: self::dispatch('email', 'notify_user', $context);
+        self::dispatch('in_app', $event, $context);
+
+        // Route to push for important/critical; silent channel goes push-only.
+        if (in_array($priority, ['important', 'critical', 'silent'], true)) {
+            self::dispatch('push', $event, $context);
+        }
+        // Email reserved for critical operational items.
+        if ($priority === 'critical') {
+            self::dispatch('email', $event, $context);
+        }
     }
 
     /**
@@ -128,11 +145,13 @@ class NotificationService {
      * Insert a row into the `notifications` table (in-app inbox).
      */
     private static function dispatchInApp(string $event, array $context): void {
-        $tenantId = (int) ($context['tenant_id'] ?? 0);
-        $userId   = (int) ($context['user_id']   ?? 0);
-        $title    = $context['title'] ?? '';
-        $body     = $context['body']  ?? '';
-        $link     = $context['link']  ?? null;
+        $tenantId    = (int) ($context['tenant_id'] ?? 0);
+        $userId      = (int) ($context['user_id']   ?? 0);
+        $title       = $context['title']    ?? '';
+        $body        = $context['body']     ?? '';
+        $link        = $context['link']     ?? null;
+        $priority    = self::normalizePriority($context['priority'] ?? 'normal');
+        $ackRequired = !empty($context['ack_required']) ? 1 : 0;
 
         if ($tenantId === 0 || $userId === 0 || $title === '') {
             error_log("[NotificationService] dispatchInApp(): missing required context for event '{$event}'");
@@ -142,19 +161,30 @@ class NotificationService {
         try {
             $db   = self::db();
             $stmt = $db->prepare(
-                'INSERT INTO notifications (tenant_id, user_id, title, body, link)
-                 VALUES (:tenant_id, :user_id, :title, :body, :link)'
+                'INSERT INTO notifications
+                    (tenant_id, user_id, title, body, link, priority, event, ack_required)
+                 VALUES
+                    (:tenant_id, :user_id, :title, :body, :link, :priority, :event, :ack_required)'
             );
             $stmt->execute([
-                ':tenant_id' => $tenantId,
-                ':user_id'   => $userId,
-                ':title'     => $title,
-                ':body'      => $body,
-                ':link'      => ($link !== '' ? $link : null),
+                ':tenant_id'    => $tenantId,
+                ':user_id'      => $userId,
+                ':title'        => $title,
+                ':body'         => $body,
+                ':link'         => ($link !== '' ? $link : null),
+                ':priority'     => $priority,
+                ':event'        => $event,
+                ':ack_required' => $ackRequired,
             ]);
         } catch (\Throwable $e) {
             error_log("[NotificationService] dispatchInApp() DB error for event '{$event}': " . $e->getMessage());
         }
+    }
+
+    /** Coerce any incoming priority to the allowed set. */
+    private static function normalizePriority(string $p): string {
+        $p = strtolower($p);
+        return in_array($p, ['critical', 'important', 'normal', 'silent'], true) ? $p : 'normal';
     }
 
     /**
@@ -222,14 +252,19 @@ class NotificationService {
     }
 
     /**
-     * Returns the shared PDO instance from whatever bootstrap/container this
-     * application uses. Adjust if the app wires the DB differently.
+     * Returns the shared PDO instance.
+     *
+     * Prefers the canonical Database::getInstance() (used throughout the
+     * codebase). Falls back to the legacy `global $pdo` for backwards
+     * compatibility with earlier scripts that wire it that way.
      */
     private static function db(): \PDO {
-        // Convention used throughout this codebase: global $pdo
+        if (class_exists('Database')) {
+            return Database::getInstance();
+        }
         global $pdo;
         if (!$pdo instanceof \PDO) {
-            throw new \RuntimeException('NotificationService: PDO instance not available in $pdo');
+            throw new \RuntimeException('NotificationService: PDO instance not available');
         }
         return $pdo;
     }

@@ -20,7 +20,7 @@ ob_start();
         <thead>
             <tr>
                 <th>Title</th>
-                <th>Category</th>
+                <th>Audience</th>
                 <th>Version</th>
                 <th>Status</th>
                 <th>Ack</th>
@@ -32,16 +32,29 @@ ob_start();
         </thead>
         <tbody>
         <?php foreach ($files as $f): ?>
-        <tr>
+        <tr<?= !empty($f['superseded_at']) ? ' style="opacity:0.55;"' : '' ?>>
             <td>
                 <strong><?= e($f['title']) ?></strong>
-                <div class="text-xs text-muted"><?= e($f['file_name']) ?> · <?= number_format(($f['file_size'] ?? 0) / 1024, 1) ?> KB</div>
+                <?php if (!empty($f['category_name'])): ?>
+                    <span class="text-xs text-muted">· <?= e($f['category_name']) ?></span>
+                <?php endif; ?>
+                <div class="text-xs text-muted">
+                    <?= e($f['file_name']) ?> · <?= number_format(($f['file_size'] ?? 0) / 1024, 1) ?> KB
+                    <?php if (!empty($f['replaces_file_id'])): ?>
+                        · <a href="/files/history/<?= (int)$f['id'] ?>">replaces #<?= (int)$f['replaces_file_id'] ?></a>
+                    <?php endif; ?>
+                    <?php if (!empty($f['superseded_at'])): ?>
+                        · <span style="color:#94a3b8;">superseded</span>
+                    <?php endif; ?>
+                </div>
             </td>
-            <td class="text-sm"><?= e($f['category_name'] ?? '—') ?></td>
+            <td class="text-sm"><?= e($f['audience_summary'] ?? '—') ?></td>
             <td><code><?= e($f['version']) ?></code></td>
             <td><?= statusBadge($f['status']) ?></td>
             <td class="text-sm">
-                <?= $f['requires_ack'] ? '<span style="color:#f59e0b;">⚠ Yes</span>' : '<span class="text-muted">No</span>' ?>
+                <?= $f['requires_ack']
+                    ? '<span style="color:#f59e0b;">⚠ Yes</span>'
+                    : '<span class="text-muted">No</span>' ?>
             </td>
             <td class="text-sm text-muted"><?= $f['effective_date'] ? formatDate($f['effective_date']) : '—' ?></td>
             <td class="text-sm">
@@ -60,6 +73,11 @@ ob_start();
                 <div class="btn-group">
                     <a href="/files/download/<?= $f['id'] ?>" class="btn btn-xs btn-outline">Download</a>
                     <a href="/files/edit/<?= $f['id'] ?>" class="btn btn-xs btn-outline">Edit</a>
+                    <a href="/files/ack-report/<?= $f['id'] ?>" class="btn btn-xs btn-outline">Report</a>
+                    <?php if (empty($f['superseded_at'])): ?>
+                        <a href="/files/upload?replaces=<?= (int)$f['id'] ?>" class="btn btn-xs btn-outline"
+                           title="Upload a new version that replaces this one">New Ver.</a>
+                    <?php endif; ?>
                     <form method="POST" action="/files/toggle/<?= $f['id'] ?>" style="display:inline">
                         <?= csrfField() ?>
                         <button type="submit" class="btn btn-xs <?= $f['status'] === 'published' ? 'btn-warning' : 'btn-success' ?>">

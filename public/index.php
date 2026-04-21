@@ -4,6 +4,16 @@
  * All requests are routed through this file.
  */
 
+// Built-in dev server: let real files in /public (CSS, JS, images) be served
+// directly instead of hitting the router. Apache/Nginx in prod already do this.
+if (PHP_SAPI === 'cli-server') {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $file = __DIR__ . $path;
+    if ($path !== '/' && is_file($file)) {
+        return false;
+    }
+}
+
 // Error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', '1');

@@ -1,5 +1,5 @@
-<?php /** OpsOne — Edit Document Metadata */ ?>
-<div class="card" style="max-width: 860px;">
+<?php /** OpsOne — Edit Document Metadata (Phase 4: role + dept + base targeting) */ ?>
+<div class="card" style="max-width: 880px;">
     <form method="POST" action="/files/update/<?= $file['id'] ?>">
         <?= csrfField() ?>
 
@@ -67,29 +67,72 @@
                 <div><span class="text-xs text-muted">File</span><br><strong><?= e($file['file_name']) ?></strong></div>
                 <div><span class="text-xs text-muted">Size</span><br><?= number_format(($file['file_size'] ?? 0) / 1024, 1) ?> KB</div>
                 <div><span class="text-xs text-muted">Type</span><br><?= e($file['mime_type'] ?? '—') ?></div>
+                <?php if (!empty($file['superseded_at'])): ?>
+                    <div><span class="text-xs text-muted">Superseded</span><br><?= e($file['superseded_at']) ?></div>
+                <?php endif; ?>
             </div>
-            <p class="text-xs text-muted" style="margin:8px 0 0;">To replace the file, delete this document and re-upload.</p>
+            <p class="text-xs text-muted" style="margin:8px 0 0;">
+                To replace the file with a newer revision,
+                <a href="/files/upload?replaces=<?= (int)$file['id'] ?>">upload a new version</a> —
+                that creates a linked v2 and archives this row automatically.
+            </p>
         </div>
 
-        <!-- Role Visibility -->
-        <?php if (!empty($roles)): ?>
-        <div class="form-group">
-            <label>Visible To (leave empty = all roles)</label>
-            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
-                <?php foreach ($roles as $role): ?>
-                <label class="form-check" style="min-width:160px;">
-                    <input type="checkbox" name="visible_roles[]" value="<?= $role['id'] ?>"
-                           <?= in_array($role['id'], $selectedRoles ?? []) ? 'checked' : '' ?>>
-                    <?= e($role['name']) ?>
-                </label>
-                <?php endforeach; ?>
+        <!-- Audience — role + department + base -->
+        <fieldset style="border:1px solid var(--border, #2d3346); border-radius:8px; padding:12px 14px; margin-top:6px;">
+            <legend class="text-sm" style="padding:0 6px;">Audience <span class="text-muted">(empty = all staff; selected rows OR together)</span></legend>
+
+            <?php if (!empty($roles)): ?>
+            <div class="form-group" style="margin-top:6px;">
+                <label class="text-xs text-muted">Roles</label>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    <?php foreach ($roles as $role): ?>
+                    <label class="form-check" style="min-width:160px;">
+                        <input type="checkbox" name="visible_roles[]" value="<?= $role['id'] ?>"
+                               <?= in_array($role['id'], $selectedRoles ?? [], false) ? 'checked' : '' ?>>
+                        <?= e($role['name']) ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
             </div>
-        </div>
-        <?php endif; ?>
+            <?php endif; ?>
+
+            <?php if (!empty($departments)): ?>
+            <div class="form-group">
+                <label class="text-xs text-muted">Departments</label>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    <?php foreach ($departments as $d): ?>
+                    <label class="form-check" style="min-width:160px;">
+                        <input type="checkbox" name="visible_departments[]" value="<?= $d['id'] ?>"
+                               <?= in_array($d['id'], $selectedDepts ?? [], false) ? 'checked' : '' ?>>
+                        <?= e($d['name']) ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <?php if (!empty($bases)): ?>
+            <div class="form-group" style="margin-bottom:0;">
+                <label class="text-xs text-muted">Bases / Stations</label>
+                <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                    <?php foreach ($bases as $b): ?>
+                    <label class="form-check" style="min-width:160px;">
+                        <input type="checkbox" name="visible_bases[]" value="<?= $b['id'] ?>"
+                               <?= in_array($b['id'], $selectedBases ?? [], false) ? 'checked' : '' ?>>
+                        <?= e($b['name']) ?>
+                    </label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+        </fieldset>
 
         <div style="display:flex; gap:12px; margin-top:24px; align-items:center;">
             <button type="submit" class="btn btn-primary">Save Changes</button>
             <a href="/files" class="btn btn-outline">Cancel</a>
+            <a href="/files/history/<?= (int)$file['id'] ?>" class="btn btn-outline">Version History</a>
+            <a href="/files/ack-report/<?= (int)$file['id'] ?>" class="btn btn-outline">Acknowledgement Report</a>
         </div>
     </form>
 </div>

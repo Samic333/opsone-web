@@ -36,8 +36,10 @@ class CrewProfileModel {
     public static function save(int $userId, int $tenantId, array $data): void {
         $fields = [
             'date_of_birth', 'nationality', 'phone',
+            'profile_photo_path', 'address',
             'emergency_name', 'emergency_phone', 'emergency_relation',
             'passport_number', 'passport_country', 'passport_expiry',
+            'visa_number', 'visa_country', 'visa_type', 'visa_expiry',
             'medical_class', 'medical_expiry',
             'contract_type', 'contract_expiry',
         ];

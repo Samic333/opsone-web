@@ -182,18 +182,96 @@ return [
     'GET /safety/notifications/count'                       => [SafetyController::class, 'notificationCount'],
 
     // ─── Files ─────────────────────────
-    'GET /files'               => ['FileController', 'index'],
-    'GET /files/upload'        => ['FileController', 'showUpload'],
-    'POST /files/upload'       => ['FileController', 'upload'],
-    'GET /files/edit/{id}'     => ['FileController', 'edit'],
-    'POST /files/update/{id}'  => ['FileController', 'update'],
-    'POST /files/toggle/{id}'  => ['FileController', 'togglePublish'],
-    'GET /files/download/{id}' => ['FileController', 'download'],
-    'POST /files/delete/{id}'  => ['FileController', 'delete'],
+    'GET /files'                 => ['FileController', 'index'],
+    'GET /files/upload'          => ['FileController', 'showUpload'],
+    'POST /files/upload'         => ['FileController', 'upload'],
+    'GET /files/edit/{id}'       => ['FileController', 'edit'],
+    'POST /files/update/{id}'    => ['FileController', 'update'],
+    'POST /files/toggle/{id}'    => ['FileController', 'togglePublish'],
+    'POST /files/archive/{id}'   => ['FileController', 'archive'],
+    'GET /files/download/{id}'   => ['FileController', 'download'],
+    'POST /files/delete/{id}'    => ['FileController', 'delete'],
+    'GET /files/history/{id}'    => ['FileController', 'history'],
+    'GET /files/ack-report/{id}' => ['FileController', 'ackReport'],
 
     // ─── Crew Files Portal ──────────────────
     'GET /my-files'                             => ['FileController', 'myFiles'],
     'POST /my-files/acknowledge/{id}'           => ['FileController', 'acknowledgeFile'],
+
+    // ─── Integrations (Phase 16) ─────────────────
+    'GET /integrations'               => ['IntegrationsController', 'index'],
+    'POST /integrations/{id}/status'  => ['IntegrationsController', 'setStatus'],
+
+    // ─── Help Hub (Phase 15) ─────────────────────
+    'GET /help'              => ['HelpController', 'index'],
+    'GET /help/topic'        => ['HelpController', 'topic'],
+
+    // ─── HR Workflow (Phase 14) ──────────────────
+    'GET /hr'                                    => ['HrController', 'dashboard'],
+    'POST /hr/users/{id}/employment-status'      => ['HrController', 'setEmploymentStatus'],
+    'POST /hr/users/{id}/deactivate'             => ['HrController', 'deactivate'],
+    'POST /hr/users/{id}/reactivate'             => ['HrController', 'reactivate'],
+
+    // ─── Appraisals (Phase 13) ───────────────────
+    'GET /appraisals'                  => ['AppraisalController', 'index'],
+    'GET /appraisals/new'              => ['AppraisalController', 'showCreate'],
+    'POST /appraisals/store'           => ['AppraisalController', 'store'],
+    'POST /appraisals/{id}/accept'     => ['AppraisalController', 'accept'],
+
+    // ─── Training (Phase 12) ─────────────────────
+    'GET /training'                    => ['TrainingController', 'dashboard'],
+    'POST /training/types/add'         => ['TrainingController', 'addType'],
+    'POST /training/records/add'       => ['TrainingController', 'addRecord'],
+    'GET /my-training'                 => ['TrainingController', 'myTraining'],
+
+    // ─── Per Diem (Phase 11) ─────────────────────
+    'GET /per-diem/rates'                   => ['PerDiemController', 'rates'],
+    'POST /per-diem/rates/add'              => ['PerDiemController', 'addRate'],
+    'GET /per-diem/claims'                  => ['PerDiemController', 'claimsIndex'],
+    'POST /per-diem/claims/{id}/approve'    => ['PerDiemController', 'approveClaim'],
+    'POST /per-diem/claims/{id}/reject'     => ['PerDiemController', 'rejectClaim'],
+    'POST /per-diem/claims/{id}/pay'        => ['PerDiemController', 'payClaim'],
+    'GET /my-per-diem'                      => ['PerDiemController', 'myClaims'],
+    'GET /my-per-diem/new'                  => ['PerDiemController', 'showSubmit'],
+    'POST /my-per-diem/submit'              => ['PerDiemController', 'submitClaim'],
+
+    // ─── Phase 10 — Pilot FDM events ─────────────
+    'GET /my-fdm'                => ['FdmController', 'myEvents'],
+    'POST /my-fdm/ack/{id}'      => ['FdmController', 'ackEvent'],
+
+    // ─── Flights / Flight Bag (Phase 9) ───────────
+    'GET /flights'                         => ['FlightController', 'index'],
+    'GET /flights/create'                  => ['FlightController', 'showCreate'],
+    'POST /flights/store'                  => ['FlightController', 'store'],
+    'GET /flights/{id}'                    => ['FlightController', 'show'],
+    'POST /flights/{id}/publish'           => ['FlightController', 'publish'],
+    'POST /flights/{id}/bag/upload'        => ['FlightController', 'uploadBagFile'],
+    'GET /flights/bag/{id}/download'       => ['FlightController', 'download'],
+    'GET /my-flights'                      => ['FlightController', 'myFlights'],
+
+    // ─── Electronic Logbook (Phase 7) ────────────
+    'GET /my-logbook'          => ['LogbookController', 'myLogbook'],
+    'GET /my-logbook/new'      => ['LogbookController', 'showCreate'],
+    'POST /my-logbook/store'   => ['LogbookController', 'store'],
+    'GET /my-logbook/export'   => ['LogbookController', 'exportCsv'],
+    'GET /logbook'             => ['LogbookController', 'adminIndex'],
+
+    // ─── Aircraft / Fleet (Phase 6) ──────────────
+    'GET /aircraft'                              => ['AircraftController', 'index'],
+    'GET /aircraft/create'                       => ['AircraftController', 'create'],
+    'POST /aircraft/store'                       => ['AircraftController', 'store'],
+    'GET /aircraft/{id}'                         => ['AircraftController', 'show'],
+    'POST /aircraft/{id}/maintenance/add'        => ['AircraftController', 'addMaintenance'],
+    'POST /aircraft/maintenance/{id}/complete'   => ['AircraftController', 'completeMaintenance'],
+    'POST /aircraft/{id}/documents/add'          => ['AircraftController', 'addDocument'],
+
+    // ─── Notification Center (Phase 5) ───────────
+    'GET /notifications'                        => ['NotificationController', 'index'],
+    'GET /notifications/open/{id}'              => ['NotificationController', 'open'],
+    'POST /notifications/mark-read/{id}'        => ['NotificationController', 'markRead'],
+    'POST /notifications/mark-all-read'         => ['NotificationController', 'markAllRead'],
+    'POST /notifications/acknowledge/{id}'      => ['NotificationController', 'acknowledge'],
+    'GET /notifications/unread-count'           => ['NotificationController', 'unreadCount'],
 
     // ─── Notices ───────────────────────
     'GET /notices'                              => ['NoticeController', 'index'],
