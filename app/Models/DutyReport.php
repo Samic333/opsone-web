@@ -123,16 +123,20 @@ class DutyReport {
     /**
      * Open records whose check-in is older than $thresholdMinutes and that
      * have not yet been clocked out — used for overdue clock-out detection.
+     *
+     * Threshold computed in PHP (UTC) so the query stays portable across
+     * MySQL/MariaDB (prod) and SQLite (dev).
      */
     public static function overdueClockOuts(int $tenantId, int $thresholdMinutes): array {
+        $threshold = gmdate('Y-m-d H:i:s', time() - max(0, $thresholdMinutes) * 60);
         return Database::fetchAll(
             "SELECT dr.*, u.name AS user_name
                FROM duty_reports dr
                JOIN users u ON u.id = dr.user_id
               WHERE dr.tenant_id = ?
                 AND dr.state IN ('checked_in','on_duty')
-                AND dr.check_in_at_utc < DATETIME('now', ? )",
-            [$tenantId, "-{$thresholdMinutes} minutes"]
+                AND dr.check_in_at_utc < ?",
+            [$tenantId, $threshold]
         );
     }
 
@@ -233,8 +237,14 @@ class DutyReport {
     /**
      * Admin correction path — overwrites arbitrary fields, marks method
      * admin_corrected, appends correction note. Caller must audit.
+     *
+     * Note composition is done in PHP (portable) rather than via SQL string
+     * concat, which differs between MySQL (CONCAT()) and SQLite (||).
      */
     public static function adminCorrect(int $tenantId, int $id, array $fields, string $note): void {
+        $existing = self::find($tenantId, $id);
+        if (!$existing) return;
+
         $allowed = [
             'check_in_at_utc','check_in_at_local','check_in_base_id',
             'check_out_at_utc','check_out_at_local','duration_minutes','state',
@@ -246,13 +256,16 @@ class DutyReport {
             $sets[] = "{$k} = ?";
             $params[] = $v;
         }
-        if (empty($sets)) return;
+
+        $correctionLine = '[admin correction] ' . $note;
+        $combinedNotes  = empty($existing['notes'])
+            ? $correctionLine
+            : $existing['notes'] . "\n" . $correctionLine;
 
         $sets[] = "check_in_method = 'admin_corrected'";
-        $sets[] = "notes = CASE WHEN notes IS NULL OR notes = '' THEN ? ELSE notes || CHAR(10) || ? END";
+        $sets[] = "notes = ?";
         $sets[] = "updated_at = CURRENT_TIMESTAMP";
-        $params[] = "[admin correction] " . $note;
-        $params[] = "[admin correction] " . $note;
+        $params[] = $combinedNotes;
         $params[] = $tenantId;
         $params[] = $id;
 
@@ -268,9 +281,13 @@ class DutyReport {
     /**
      * Dashboard tiles: on-duty count, checked-in today, checked-out today,
      * overdue (>threshold), pending exceptions.
+     *
+     * Overdue threshold is computed in PHP (UTC) for portability across
+     * MySQL/MariaDB and SQLite.
      */
     public static function counters(int $tenantId, int $overdueMinutes): array {
-        $today = date('Y-m-d');
+        $today            = date('Y-m-d');
+        $overdueThreshold = gmdate('Y-m-d H:i:s', time() - max(0, $overdueMinutes) * 60);
 
         $on = Database::fetch(
             "SELECT COUNT(*) AS c FROM duty_reports
@@ -291,8 +308,8 @@ class DutyReport {
             "SELECT COUNT(*) AS c FROM duty_reports
               WHERE tenant_id = ?
                 AND state IN ('checked_in','on_duty')
-                AND check_in_at_utc < DATETIME('now', ?)",
-            [$tenantId, "-{$overdueMinutes} minutes"]
+                AND check_in_at_utc < ?",
+            [$tenantId, $overdueThreshold]
         );
         $pendingEx = Database::fetch(
             "SELECT COUNT(*) AS c FROM duty_exceptions

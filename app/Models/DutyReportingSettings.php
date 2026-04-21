@@ -42,8 +42,16 @@ class DutyReportingSettings {
     }
 
     public static function ensureRow(int $tenantId): void {
+        // Portable INSERT-if-not-exists. "INSERT OR IGNORE" (SQLite) and
+        // "INSERT IGNORE" (MySQL/MariaDB) have different syntax, so we
+        // do the existence check explicitly in PHP.
+        $row = Database::fetch(
+            "SELECT 1 FROM duty_reporting_settings WHERE tenant_id = ?",
+            [$tenantId]
+        );
+        if ($row) return;
         Database::execute(
-            "INSERT OR IGNORE INTO duty_reporting_settings (tenant_id) VALUES (?)",
+            "INSERT INTO duty_reporting_settings (tenant_id) VALUES (?)",
             [$tenantId]
         );
     }
