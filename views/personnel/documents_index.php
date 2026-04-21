@@ -106,7 +106,8 @@ function toggleDocPreview(id) {
             <?php if (!empty($d['file_path'])): ?>
             <tr id="preview-row-<?= (int) $d['id'] ?>" style="display:none;">
                 <td colspan="7" style="background:var(--bg-secondary,#0f0f0f);padding:10px;">
-                    <?php $previewHeight = 520; include VIEWS_PATH . '/personnel/_doc_preview.php'; ?>
+                    <?php $doc = $d; $previewHeight = 520;
+                          include VIEWS_PATH . '/personnel/_doc_preview.php'; ?>
                 </td>
             </tr>
             <?php endif; ?>
