@@ -62,9 +62,16 @@ $riskLabel = function(int $sev, string $lik): string {
     return 'Acceptable';
 };
 
-$selectedLik = $draft['risk_likelihood'] ?? '';
-$selectedSev = $draft['risk_severity']   ?? '';
-$selectedCode = $draft['initial_risk_code'] ?? '';
+// Risk values may be stored in extra_fields JSON (since no separate DB columns exist)
+$_draftExtra = [];
+if (!empty($draft['extra_fields'])) {
+    $_draftExtra = is_string($draft['extra_fields'])
+        ? (json_decode($draft['extra_fields'], true) ?? [])
+        : (array) $draft['extra_fields'];
+}
+$selectedLik  = $_draftExtra['risk_likelihood']   ?? $draft['risk_likelihood']   ?? '';
+$selectedSev  = $_draftExtra['risk_severity']     ?? $draft['risk_severity']     ?? '';
+$selectedCode = $_draftExtra['initial_risk_code'] ?? $draft['initial_risk_code'] ?? '';
 ?>
 
 <!-- ═══════════════════════════════
@@ -741,8 +748,7 @@ $selectedCode = $draft['initial_risk_code'] ?? '';
         <button type="button" onclick="saveDraft()" class="btn btn-outline" style="display:flex; align-items:center; gap:6px;">
             💾 Save Draft
         </button>
-        <button type="submit" class="btn btn-primary" style="display:flex; align-items:center; gap:6px;"
-                onclick="return confirm('Submit this report to the Safety Team? This action cannot be undone.')">
+        <button type="submit" id="submitReportBtn" class="btn btn-primary" style="display:flex; align-items:center; gap:6px;">
             🔒 Submit Report
         </button>
     </div>
@@ -873,6 +879,16 @@ function saveDraft() {
 
 // Auto-save every 60s if dirty
 setInterval(function() { if (_formDirty) saveDraft(); }, 60000);
+
+// ─── Submit button — disable on submit to prevent double-click & show progress ─
+var _submitBtn = document.getElementById('submitReportBtn');
+if (safetyForm && _submitBtn) {
+    safetyForm.addEventListener('submit', function() {
+        // HTML5 validation already ran if we got here — safe to disable
+        _submitBtn.disabled = true;
+        _submitBtn.innerHTML = '⏳ Submitting…';
+    });
+}
 
 // ─── File drop/select display ─────────────────────────────────────────────
 function showSelectedFiles(input) {

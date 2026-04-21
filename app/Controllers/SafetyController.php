@@ -106,8 +106,8 @@ class SafetyController {
         $user     = currentUser();
         $tenantId = (int) $user['tenant_id'];
 
-        $settings     = SafetyReportModel::getSettings($tenantId);
-        $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
+        try { $settings = SafetyReportModel::getSettings($tenantId); } catch (\Throwable $e) { $settings = []; }
+        $enabledTypes = !empty($settings['enabled_types']) ? $settings['enabled_types'] : array_keys(SafetyReportModel::TYPES);
         $userRoles    = UserModel::getRoles((int) $user['id']);
         $roleSlugs    = array_column($userRoles, 'slug');
 
@@ -1275,6 +1275,16 @@ class SafetyController {
      * suitable for SafetyReportModel::submit() / saveDraft().
      */
     private function collectFormData(array $user): array {
+        // Merge risk matrix values into extra_fields (no dedicated DB columns exist)
+        $extraFields = [];
+        if (!empty($_POST['extra_fields'])) {
+            $posted      = $_POST['extra_fields'];
+            $extraFields = is_array($posted) ? $posted : (json_decode($posted, true) ?? []);
+        }
+        if (!empty($_POST['risk_likelihood']))   $extraFields['risk_likelihood']   = trim($_POST['risk_likelihood']);
+        if (!empty($_POST['risk_severity']))     $extraFields['risk_severity']     = trim($_POST['risk_severity']);
+        if (!empty($_POST['initial_risk_code'])) $extraFields['initial_risk_code'] = trim($_POST['initial_risk_code']);
+
         return [
             'report_type'          => trim($_POST['report_type']          ?? 'general_hazard'),
             'reporter_id'          => (int) $user['id'],
@@ -1294,9 +1304,7 @@ class SafetyController {
             'title'                => trim($_POST['title']                ?? ''),
             'description'          => trim($_POST['description']          ?? ''),
             'severity'             => trim($_POST['severity']             ?? 'unassigned'),
-            'extra_fields'         => !empty($_POST['extra_fields'])
-                                       ? (is_array($_POST['extra_fields']) ? $_POST['extra_fields'] : json_decode($_POST['extra_fields'], true))
-                                       : null,
+            'extra_fields'         => !empty($extraFields) ? $extraFields : null,
             'reporter_position'    => trim($_POST['reporter_position']    ?? '') ?: null,
             'template_version'     => max(1, (int) ($_POST['template_version'] ?? 1)),
         ];
@@ -1337,8 +1345,8 @@ class SafetyController {
     private static function userCanUseType(string $type, int $tenantId, int $userId): bool {
         if (!isset(SafetyReportModel::TYPES[$type])) return false;
 
-        $settings     = SafetyReportModel::getSettings($tenantId);
-        $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
+        try { $settings = SafetyReportModel::getSettings($tenantId); } catch (\Throwable $e) { $settings = []; }
+        $enabledTypes = !empty($settings['enabled_types']) ? $settings['enabled_types'] : array_keys(SafetyReportModel::TYPES);
         if (!in_array($type, $enabledTypes, true)) return false;
 
         $allowed = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
