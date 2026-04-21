@@ -1345,12 +1345,14 @@ class SafetyController {
     private static function userCanUseType(string $type, int $tenantId, int $userId): bool {
         if (!isset(SafetyReportModel::TYPES[$type])) return false;
 
+        // Check role permission FIRST — if the type is open to 'all', no settings check needed
+        $allowed = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
+        if (in_array('all', $allowed, true)) return true;
+
+        // For role-restricted types, also verify the type is enabled for this tenant
         try { $settings = SafetyReportModel::getSettings($tenantId); } catch (\Throwable $e) { $settings = []; }
         $enabledTypes = !empty($settings['enabled_types']) ? $settings['enabled_types'] : array_keys(SafetyReportModel::TYPES);
         if (!in_array($type, $enabledTypes, true)) return false;
-
-        $allowed = SafetyReportModel::TYPE_ROLES[$type] ?? ['all'];
-        if (in_array('all', $allowed, true)) return true;
 
         $userRoles = UserModel::getRoles($userId);
         $roleSlugs = array_column($userRoles, 'slug');
