@@ -77,8 +77,8 @@ class SafetyController {
 
         $tenantId = (int) $user['tenant_id'];
 
-        $settings     = SafetyReportModel::getSettings($tenantId);
-        $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
+        try { $settings = SafetyReportModel::getSettings($tenantId); } catch (\Throwable $e) { $settings = []; }
+        $enabledTypes = !empty($settings['enabled_types']) ? $settings['enabled_types'] : array_keys(SafetyReportModel::TYPES);
 
         $reportTypes = self::filterTypesByRole($enabledTypes, $roleSlugs);
 
