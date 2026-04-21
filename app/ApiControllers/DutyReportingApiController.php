@@ -21,7 +21,7 @@ class DutyReportingApiController {
     // ─── GET /api/duty-reporting/status ───────────────────────────────────────
 
     public function status(): void {
-        requireApiAuth();
+        // Auth already enforced by ApiAuthMiddleware before this action runs (see public/index.php).
         $user     = apiUser();
         $tenantId = apiTenantId();
         $userId   = (int) ($user['user_id'] ?? $user['id'] ?? 0);
@@ -43,7 +43,7 @@ class DutyReportingApiController {
     // ─── POST /api/duty-reporting/check-in ────────────────────────────────────
 
     public function checkIn(): void {
-        requireApiAuth();
+        // Auth already enforced by ApiAuthMiddleware before this action runs (see public/index.php).
         $user     = apiUser();
         $tenantId = apiTenantId();
         $userId   = (int) ($user['user_id'] ?? $user['id'] ?? 0);
@@ -149,7 +149,7 @@ class DutyReportingApiController {
     // ─── POST /api/duty-reporting/clock-out ───────────────────────────────────
 
     public function clockOut(): void {
-        requireApiAuth();
+        // Auth already enforced by ApiAuthMiddleware before this action runs (see public/index.php).
         $user     = apiUser();
         $tenantId = apiTenantId();
         $userId   = (int) ($user['user_id'] ?? $user['id'] ?? 0);
@@ -205,7 +205,7 @@ class DutyReportingApiController {
     // ─── GET /api/duty-reporting/history ──────────────────────────────────────
 
     public function history(): void {
-        requireApiAuth();
+        // Auth already enforced by ApiAuthMiddleware before this action runs (see public/index.php).
         $user     = apiUser();
         $tenantId = apiTenantId();
         $userId   = (int) ($user['user_id'] ?? $user['id'] ?? 0);
@@ -223,7 +223,7 @@ class DutyReportingApiController {
     // ─── GET /api/duty-reporting/bases ────────────────────────────────────────
 
     public function bases(): void {
-        requireApiAuth();
+        // Auth already enforced by ApiAuthMiddleware before this action runs (see public/index.php).
         $user     = apiUser();
         $tenantId = apiTenantId();
 
