@@ -152,21 +152,20 @@ try {
     </div>
 </div>
 
-<!-- iPad sync banner -->
+<!-- iPad sync status -->
 <div class="card" style="background: linear-gradient(135deg, var(--accent-blue) 0%, #6366f1 100%); color: #fff; border: none;">
     <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div>
-            <div style="font-weight:700; font-size:15px; margin-bottom:4px;">📲 Sync your iPad</div>
+            <div style="font-weight:700; font-size:15px; margin-bottom:4px;">📲 iPad sync</div>
             <p style="color: rgba(255,255,255,0.85); font-size:13px; margin:0;">
                 Keep your CrewAssist app up to date for the latest rosters, manuals, and notices.
                 <?php if ($data['sync_status']): ?>
                 Last sync: <?= date('d M Y H:i', strtotime($data['sync_status'])) ?>.
                 <?php else: ?>
-                No sync recorded yet.
+                No sync recorded yet. Your admin will email the iPad setup instructions.
                 <?php endif; ?>
             </p>
         </div>
-        <a href="/install" class="btn" style="background:#fff; color: var(--accent-blue); font-weight:700; white-space:nowrap;">Get iPad Build →</a>
     </div>
 </div>
 

@@ -31,19 +31,44 @@ class ModuleCatalogController {
 
     public function toggleForTenant(int $tenantId, int $moduleId): void {
         RbacMiddleware::requirePlatformSuperAdmin();
+
+        $isAjax = self::isAjaxRequest();
+
         if (!verifyCsrf()) {
-            jsonResponse(['error' => 'Invalid CSRF token'], 400);
+            if ($isAjax) jsonResponse(['error' => 'Invalid CSRF token'], 400);
+            flash('error', 'Invalid form submission.');
+            redirect("/platform/modules/tenant/{$tenantId}");
         }
 
         $tenant = Tenant::find($tenantId);
         $module = Module::find($moduleId);
         if (!$tenant || !$module) {
-            jsonResponse(['error' => 'Not found'], 404);
+            if ($isAjax) jsonResponse(['error' => 'Not found'], 404);
+            flash('error', 'Airline or module not found.');
+            redirect('/tenants');
         }
 
         $enabled = TenantModule::toggle($tenantId, $moduleId);
         AuditService::logModuleToggle($tenantId, $tenant['name'], $module['code'], $enabled);
 
-        jsonResponse(['success' => true, 'enabled' => $enabled, 'module' => $module['code']]);
+        if ($isAjax) {
+            jsonResponse(['success' => true, 'enabled' => $enabled, 'module' => $module['code']]);
+        }
+
+        flash('success', sprintf(
+            'Module "%s" %s for %s.',
+            $module['name'], $enabled ? 'enabled' : 'disabled', $tenant['name']
+        ));
+        redirect("/platform/modules/tenant/{$tenantId}");
+    }
+
+    /**
+     * True when the request wants JSON back (XHR or Accept: application/json).
+     */
+    private static function isAjaxRequest(): bool {
+        $xhr = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        if ($xhr === 'xmlhttprequest') return true;
+        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+        return str_contains($accept, 'application/json');
     }
 }

@@ -8,10 +8,18 @@ class DeviceController {
     }
 
     public function index(): void {
-        $tenantId = currentTenantId();
         $statusFilter = $_GET['status'] ?? null;
-        $devices = Device::allForTenant($tenantId, $statusFilter);
-        $stats = Device::countByStatus($tenantId);
+
+        // Platform admins (no tenant) see every device across all airlines.
+        if (isPlatformOnly()) {
+            $devices = Device::allForPlatform($statusFilter);
+            $stats   = Device::countByStatus(null);
+        } else {
+            $tenantId = (int) currentTenantId();
+            $devices  = Device::allForTenant($tenantId, $statusFilter);
+            $stats    = Device::countByStatus($tenantId);
+        }
+
         $statsMap = [];
         foreach ($stats as $s) {
             $statsMap[$s['approval_status']] = (int) $s['count'];

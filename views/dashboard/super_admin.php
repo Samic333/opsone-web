@@ -281,32 +281,9 @@ $tierColors = [
 </div>
 <?php endif; ?>
 
-<!-- ─── Quick Links ───────────────────────────────────────────────────────── -->
-<div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:1rem; margin-top:1.5rem;">
-    <?php
-    $quickLinks = [
-        ['icon' => '🏢', 'label' => 'Airline Registry',  'url' => '/tenants',           'color' => '#3b82f6'],
-        ['icon' => '✈',  'label' => 'Onboarding',        'url' => '/platform/onboarding','color' => '#f59e0b'],
-        ['icon' => '🧩', 'label' => 'Module Catalog',    'url' => '/platform/modules',  'color' => '#6366f1'],
-        ['icon' => '👤', 'label' => 'Platform Staff',    'url' => '/platform/users',    'color' => '#10b981'],
-        ['icon' => '🔒', 'label' => 'Audit Log',         'url' => '/audit-log',         'color' => '#ef4444'],
-        ['icon' => '🔑', 'label' => 'Login Activity',    'url' => '/audit-log/logins',  'color' => '#f97316'],
-        ['icon' => '📱', 'label' => 'All Devices',       'url' => '/devices',           'color' => '#06b6d4'],
-        ['icon' => '📲', 'label' => 'App Builds',        'url' => '/install',           'color' => '#8b5cf6'],
-    ];
-    ?>
-    <?php foreach ($quickLinks as $ql): ?>
-    <a href="<?= $ql['url'] ?>" style="text-decoration:none;">
-        <div class="card" style="padding:12px 14px; display:flex; align-items:center; gap:10px;
-                                  transition:border-color .15s; border:1px solid transparent;"
-             onmouseover="this.style.borderColor='<?= $ql['color'] ?>'"
-             onmouseout="this.style.borderColor='transparent'">
-            <span style="font-size:1.3rem;"><?= $ql['icon'] ?></span>
-            <span style="font-size:12px; font-weight:600; color:var(--text);"><?= e($ql['label']) ?></span>
-        </div>
-    </a>
-    <?php endforeach; ?>
-</div>
+<!-- Navigation shortcuts removed — the sidebar already covers platform admin,
+     onboarding, modules, staff, audit, devices. Dashboard focuses on data now. -->
+
 
 <?php
 $content = ob_get_clean();

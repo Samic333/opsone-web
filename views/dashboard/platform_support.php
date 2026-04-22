@@ -161,27 +161,9 @@ $tierColors = [
     </div>
 </div>
 
-<!-- ─── Quick Access ──────────────────────────────────────────────────────── -->
-<div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1rem; margin-top:1.5rem;">
-    <?php
-    $links = [
-        ['🏢', 'Airline Registry',  '/tenants',          '#3b82f6'],
-        ['📱', 'All Devices',       '/devices',          '#06b6d4'],
-        ['🔒', 'Audit Log',         '/audit-log',        '#ef4444'],
-        ['🔑', 'Login Activity',    '/audit-log/logins', '#f97316'],
-        ['📲', 'App Builds',        '/install',          '#8b5cf6'],
-        ['🧩', 'Module Catalog',    '/platform/modules', '#6366f1'],
-    ];
-    foreach ($links as [$icon, $label, $url, $color]):
-    ?>
-    <a href="<?= $url ?>" style="text-decoration:none;">
-        <div class="card" style="padding:11px 14px; display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.2rem;"><?= $icon ?></span>
-            <span style="font-size:12px; font-weight:600; color:var(--text);"><?= e($label) ?></span>
-        </div>
-    </a>
-    <?php endforeach; ?>
-</div>
+<!-- Navigation shortcuts removed — sidebar already covers airline registry,
+     devices, audit log, login activity. Dashboard focuses on operational data. -->
+
 
 <?php
 $content = ob_get_clean();

@@ -230,24 +230,51 @@ class TenantController {
     }
 
     /**
-     * Toggle a module on/off for a specific tenant (AJAX-friendly POST).
+     * Toggle a module on/off for a specific tenant.
+     * Works as a normal form POST (redirects with flash) OR as AJAX (returns JSON).
      */
     public function toggleModule(int $tenantId, int $moduleId): void {
         RbacMiddleware::requirePlatformSuperAdmin();
+
+        $xhr    = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '');
+        $accept = strtolower($_SERVER['HTTP_ACCEPT'] ?? '');
+        $isAjax = ($xhr === 'xmlhttprequest') || str_contains($accept, 'application/json');
+
+        // Redirect target: back to wherever the user clicked the toggle from
+        // (the Module Catalog page or the Airline Detail page). Only trust
+        // same-origin paths we manage.
+        $referer = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH) ?? '';
+        $returnTo = (str_starts_with($referer, '/platform/modules/tenant/')
+                     || $referer === "/tenants/{$tenantId}")
+            ? $referer
+            : "/tenants/{$tenantId}";
+
         if (!verifyCsrf()) {
-            jsonResponse(['error' => 'Invalid CSRF token'], 400);
+            if ($isAjax) jsonResponse(['error' => 'Invalid CSRF token'], 400);
+            flash('error', 'Invalid form submission.');
+            redirect($returnTo);
         }
 
         $tenant = Tenant::find($tenantId);
         $module = Module::find($moduleId);
         if (!$tenant || !$module) {
-            jsonResponse(['error' => 'Not found'], 404);
+            if ($isAjax) jsonResponse(['error' => 'Not found'], 404);
+            flash('error', 'Airline or module not found.');
+            redirect('/tenants');
         }
 
         $enabled = TenantModule::toggle($tenantId, $moduleId);
         AuditService::logModuleToggle($tenantId, $tenant['name'], $module['code'], $enabled);
 
-        jsonResponse(['success' => true, 'enabled' => $enabled, 'module' => $module['code']]);
+        if ($isAjax) {
+            jsonResponse(['success' => true, 'enabled' => $enabled, 'module' => $module['code']]);
+        }
+
+        flash('success', sprintf(
+            'Module "%s" %s for %s.',
+            $module['name'], $enabled ? 'enabled' : 'disabled', $tenant['name']
+        ));
+        redirect($returnTo);
     }
 
     /**

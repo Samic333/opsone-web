@@ -43,6 +43,10 @@ return [
     'GET /'           => ['PublicController', 'home'],
     'GET /dashboard'  => ['DashboardController', 'index'],
 
+    // ─── Account (self-service for every logged-in user) ──
+    'GET /account/settings'         => ['AccountController', 'settings'],
+    'POST /account/settings/update' => ['AccountController', 'update'],
+
     // ─── Tenants (Platform Super Admin) ─────────
     'GET /tenants'              => ['TenantController', 'index'],
     'GET /tenants/create'       => ['TenantController', 'create'],

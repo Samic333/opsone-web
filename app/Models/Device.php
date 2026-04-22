@@ -39,6 +39,25 @@ class Device {
         return Database::fetchAll($sql, $params);
     }
 
+    /**
+     * Platform-wide device list (super admin / support). Joins tenant name.
+     */
+    public static function allForPlatform(?string $status = null): array {
+        $sql = "SELECT d.*, u.name as user_name, u.email as user_email, u.employee_id,
+                       ab.name as approved_by_name, t.name as tenant_name, t.code as tenant_code
+                FROM devices d
+                JOIN users u ON d.user_id = u.id
+                LEFT JOIN users ab ON d.approved_by = ab.id
+                LEFT JOIN tenants t ON t.id = d.tenant_id";
+        $params = [];
+        if ($status) {
+            $sql .= " WHERE d.approval_status = ?";
+            $params[] = $status;
+        }
+        $sql .= " ORDER BY d.created_at DESC";
+        return Database::fetchAll($sql, $params);
+    }
+
     public static function register(array $data): int {
         $id = Database::insert(
             "INSERT INTO devices (tenant_id, user_id, device_uuid, platform, model, os_version, app_version, approval_status, first_login_at)
@@ -90,7 +109,13 @@ class Device {
         Database::execute("UPDATE devices SET last_sync_at = CURRENT_TIMESTAMP WHERE id = ?", [$id]);
     }
 
-    public static function countByStatus(int $tenantId): array {
+    public static function countByStatus(?int $tenantId): array {
+        if ($tenantId === null) {
+            // Platform-wide aggregation
+            return Database::fetchAll(
+                "SELECT approval_status, COUNT(*) as count FROM devices GROUP BY approval_status"
+            );
+        }
         return Database::fetchAll(
             "SELECT approval_status, COUNT(*) as count FROM devices WHERE tenant_id = ? GROUP BY approval_status",
             [$tenantId]

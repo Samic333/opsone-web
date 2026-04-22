@@ -1,0 +1,79 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 975 >>
+stream
+BT
+/F2 22 Tf
+72 760 Td
+(Operational Notice — Mandatory Acknowledgement) Tj
+-72 -760 Td
+/F1 12 Tf
+72 735 Td
+(Issued: 2026-04-20  ·  Flight Operations) Tj
+-72 -735 Td
+/F1 9 Tf
+72 720 Td
+(OpsOne Demo Airline — for testing only) Tj
+-72 -720 Td
+/F1 11 Tf
+72 690 Td
+(CHANGES TO DUTY REPORTING PROCEDURE) Tj
+-72 -690 Td
+/F1 11 Tf
+72 666 Td
+(Starting 01 May 2026, all pilots, cabin crew, and engineers must check in via the CrewAssist iP) Tj
+-72 -666 Td
+/F1 11 Tf
+72 650 Td
+(ad app or web portal within 30 minutes of their scheduled report time.) Tj
+-72 -650 Td
+/F1 11 Tf
+72 626 Td
+(Exceptions \(late arrivals, substitutions\) must be raised through the Duty Exceptions queue; you) Tj
+-72 -626 Td
+/F1 11 Tf
+72 610 Td
+(r manager or scheduler will action the request.) Tj
+-72 -610 Td
+/F1 11 Tf
+72 586 Td
+(This notice MUST be acknowledged before 30 April 2026. Unacknowledged status will be flagged on) Tj
+-72 -586 Td
+/F1 11 Tf
+72 570 Td
+( your Compliance card.) Tj
+-72 -570 Td
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000019 00000 n 
+0000000068 00000 n 
+0000000125 00000 n 
+0000000261 00000 n 
+0000001287 00000 n 
+0000001357 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1432
+%%EOF
