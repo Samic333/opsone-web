@@ -4,7 +4,13 @@
  */
 class DeviceController {
     public function __construct() {
-        RbacMiddleware::requireRole(['super_admin', 'airline_admin', 'hr']);
+        // Platform Support needs read access to devices to assist airlines;
+        // Platform Security audits device enrolment. Airline admins/HR manage
+        // their own tenant's devices as before.
+        RbacMiddleware::requireRole([
+            'super_admin', 'platform_support', 'platform_security',
+            'airline_admin', 'hr',
+        ]);
     }
 
     public function index(): void {

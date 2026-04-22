@@ -117,23 +117,28 @@ return [
         ],
 
         // ── PEOPLE ──────────────────────────────────────────────
+        //
+        // Sidebar role lists below are ALIGNED WITH CONTROLLER GUARDS so menu
+        // items are only visible when the controller will actually serve them.
+        // Never expose a link that returns 302 / "no permission".
         [
             'title'   => 'People',
             'airline' => true,
-            'roles'   => ['airline_admin','hr','training_admin','chief_pilot',
-                          'head_cabin_crew','engineering_manager','base_manager','safety_officer'],
+            'roles'   => ['airline_admin','hr','chief_pilot','head_cabin_crew',
+                          'engineering_manager','base_manager','safety_officer'],
             'items'   => [
                 ['label' => 'Users',         'href' => '/users',         'icon' => '👥',
                  'match' => '/users',
-                 'roles' => ['airline_admin','hr','training_admin']],
+                 // UserController: super_admin, airline_admin, hr
+                 'roles' => ['airline_admin','hr']],
                 ['label' => 'Crew Profiles', 'href' => '/crew-profiles', 'icon' => '🪪',
                  'match' => '/crew-profiles',
-                 'roles' => ['airline_admin','hr','training_admin','chief_pilot',
-                             'head_cabin_crew','engineering_manager','base_manager','safety_officer']],
+                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
+                             'engineering_manager','base_manager','safety_officer','training_admin']],
                 ['label' => 'iPad Devices',  'href' => '/devices',       'icon' => '📱',
                  'match' => '/devices', 'badge' => 'pending_devices',
-                 'roles' => ['airline_admin','hr','training_admin','chief_pilot',
-                             'head_cabin_crew','engineering_manager','base_manager','safety_officer']],
+                 // DeviceController: super_admin, platform_*, airline_admin, hr
+                 'roles' => ['airline_admin','hr']],
             ],
         ],
 
@@ -142,23 +147,33 @@ return [
             'title'   => 'Personnel Records',
             'airline' => true,
             'roles'   => ['airline_admin','hr','chief_pilot','head_cabin_crew',
-                          'engineering_manager','safety_officer','training_admin',
-                          'scheduler','base_manager','fdm_analyst'],
+                          'engineering_manager','safety_officer','training_admin','fdm_analyst'],
             'items'   => [
                 ['label' => 'Licensing & Compliance', 'href' => '/compliance', 'icon' => '🛡',
                  'match' => '/compliance', 'match_exact' => true,
-                 'module' => 'compliance'],
+                 'module' => 'compliance',
+                 // ComplianceController::index: airline_admin, hr, chief_pilot, safety_officer, fdm_analyst
+                 'roles' => ['airline_admin','hr','chief_pilot','safety_officer','fdm_analyst']],
                 ['label' => 'Personnel Documents', 'href' => '/personnel/documents', 'icon' => '📁',
-                 'match' => '/personnel/documents', 'badge' => 'pending_personnel_docs'],
+                 'match' => '/personnel/documents', 'badge' => 'pending_personnel_docs',
+                 // CrewDocumentController::REVIEW_ROLES
+                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
+                             'engineering_manager','training_admin']],
                 ['label' => 'Change Requests', 'href' => '/personnel/change-requests', 'icon' => '📝',
                  'match' => '/personnel/change-requests', 'badge' => 'pending_change_requests',
+                 // ChangeRequestController::REVIEW_ROLES
+                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
+                             'engineering_manager','training_admin']],
+                ['label' => 'Eligibility Status', 'href' => '/personnel/eligibility', 'icon' => '✅',
+                 'match' => '/personnel/eligibility',
                  'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
                              'engineering_manager','safety_officer','training_admin','fdm_analyst']],
-                ['label' => 'Eligibility Status', 'href' => '/personnel/eligibility', 'icon' => '✅',
-                 'match' => '/personnel/eligibility'],
                 ['label' => 'Expiry Alerts', 'href' => '/compliance/expiring', 'icon' => '⏳',
                  'match' => '/compliance/expiring',
-                 'module' => 'compliance'],
+                 'module' => 'compliance',
+                 // ComplianceController::expiring accepts the broader list
+                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
+                             'safety_officer','fdm_analyst']],
             ],
         ],
 
@@ -175,7 +190,10 @@ return [
                 ['label' => 'My Change Requests', 'href' => '/my-profile/change-requests', 'icon' => '📝',
                  'match' => '/my-profile/change-requests'],
                 ['label' => 'Operational Notices', 'href' => '/my-notices', 'icon' => '📬',
-                 'match' => '/my-notices', 'module' => 'notices'],
+                 'match' => '/my-notices', 'module' => 'notices',
+                 // /my-notices requires notices.view capability; seeded only
+                 // for operational crew roles
+                 'roles' => ['pilot','cabin_crew','engineer']],
                 ['label' => 'My Safety Reports', 'href' => '/safety/my-reports', 'icon' => '🛡️',
                  'match' => '/safety/my-reports', 'match_prefixes' => ['/safety/report/'],
                  'badge' => 'safety_pending_replies',
@@ -185,7 +203,11 @@ return [
                  'badge' => 'safety_draft_count',
                  'module' => 'safety_reports'],
                 ['label' => 'My Documents', 'href' => '/my-files', 'icon' => '📄',
-                 'match' => '/my-files'],
+                 'match' => '/my-files',
+                 // /my-files requires manuals.view capability; seeded only
+                 // for operational crew roles (pilot/cabin_crew/engineer).
+                 // Management roles use the admin /files library instead.
+                 'roles' => ['pilot','cabin_crew','engineer']],
                 ['label' => 'Notifications', 'href' => '/notifications', 'icon' => '🔔',
                  'match' => '/notifications', 'badge' => 'notif_unread'],
                 ['label' => 'My Logbook', 'href' => '/my-logbook', 'icon' => '📒',
@@ -210,41 +232,46 @@ return [
         ],
 
         // ── SCHEDULING ─────────────────────────────────────────
+        // Item role lists mirror RosterController / FlightController guards.
+        // Any time a controller tightens, tighten the sidebar item to match.
         [
             'title'   => 'Scheduling',
             'airline' => true,
             'roles'   => ['airline_admin','scheduler','chief_pilot','head_cabin_crew',
                           'base_manager','pilot','cabin_crew','engineer'],
             'items'   => [
-                // Workbench (admin-ish)
+                // FlightController::requireScheduler: super, airline_admin, scheduler, chief_pilot, base_manager
                 ['label' => 'Flights', 'href' => '/flights', 'icon' => '✈️',
                  'match' => '/flights',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager']],
+                 'roles' => ['airline_admin','scheduler','chief_pilot','base_manager']],
+                // RosterController::index allows: scheduler, airline_admin, chief_pilot, head_cabin_crew
                 ['label' => 'Roster Workbench', 'href' => '/roster', 'icon' => '🗓',
                  'match' => '/roster', 'match_exact' => true,
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew'],
                  'module' => 'rostering'],
+                // periods / standby are narrower — scheduler + airline_admin only
                 ['label' => 'Roster Periods', 'href' => '/roster/periods', 'icon' => '📅',
                  'match' => '/roster/periods',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler'],
                  'module' => 'rostering'],
+                // revisions/coverage/changes: scheduler, airline_admin, chief_pilot, head_cabin_crew
                 ['label' => 'Revisions', 'href' => '/roster/revisions', 'icon' => '✏️',
                  'match' => '/roster/revisions', 'badge' => 'roster_draft_revisions',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew'],
                  'module' => 'rostering'],
                 ['label' => 'Reserve / Standby', 'href' => '/roster/standby', 'icon' => '🛡',
                  'match' => '/roster/standby',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler'],
                  'module' => 'standby_pool'],
                 ['label' => 'Coverage & Conflicts', 'href' => '/roster/coverage', 'icon' => '📊',
                  'match' => '/roster/coverage',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew'],
                  'module' => 'rostering'],
                 ['label' => 'Change Requests', 'href' => '/roster/changes', 'icon' => '💬',
                  'match' => '/roster/changes', 'badge' => 'roster_pending_changes',
-                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew','base_manager'],
+                 'roles' => ['airline_admin','scheduler','chief_pilot','head_cabin_crew'],
                  'module' => 'rostering'],
-                // Crew-side
+                // Crew-side (and managers who want to see their own roster)
                 ['label' => 'My Roster', 'href' => '/my-roster', 'icon' => '📋',
                  'match' => '/my-roster',
                  'roles' => ['pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew','base_manager']],
@@ -252,6 +279,13 @@ return [
         ],
 
         // ── DUTY REPORTING ────────────────────────────────────
+        // DutyReportController additionally checks duty_reporting.view capability
+        // via AuthorizationService::requireModuleAccess. Some admin roles
+        // (hr, scheduler) pass the role check but fail the capability check
+        // because the seed templates don't grant duty_reporting.view. Keep
+        // the sidebar aligned to the roles that actually have the capability
+        // (chief_pilot, head_cabin_crew, engineering_manager, base_manager)
+        // plus airline_admin (which has the broad 'view' fallback).
         [
             'title'   => 'Duty Reporting',
             'airline' => true,
@@ -263,12 +297,12 @@ return [
                 ['label' => 'On Duty Now', 'href' => '/duty-reporting', 'icon' => '🟢',
                  'match' => '/duty-reporting', 'match_exact' => true,
                  'match_prefixes' => ['/duty-reporting/report','/duty-reporting/history'],
-                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
-                             'engineering_manager','base_manager','scheduler']],
+                 'roles' => ['airline_admin','chief_pilot','head_cabin_crew',
+                             'engineering_manager','base_manager']],
                 ['label' => 'Duty Exceptions', 'href' => '/duty-reporting/exceptions', 'icon' => '⚠️',
                  'match' => '/duty-reporting/exceptions', 'badge' => 'duty_exceptions_pending',
-                 'roles' => ['airline_admin','hr','chief_pilot','head_cabin_crew',
-                             'engineering_manager','base_manager','scheduler']],
+                 'roles' => ['airline_admin','chief_pilot','head_cabin_crew',
+                             'engineering_manager','base_manager']],
                 ['label' => 'Settings', 'href' => '/duty-reporting/settings', 'icon' => '⚙️',
                  'match' => '/duty-reporting/settings',
                  'roles' => ['airline_admin']],
@@ -280,13 +314,13 @@ return [
             'title'   => 'Content',
             'airline' => true,
             'roles'   => ['airline_admin','hr','document_control','safety_officer','chief_pilot',
-                          'head_cabin_crew','engineering_manager','base_manager','training_admin','fdm_analyst'],
+                          'head_cabin_crew','engineering_manager','training_admin'],
             'items'   => [
                 ['label' => 'Documents Library', 'href' => '/files', 'icon' => '📄',
                  'match' => '/files',
                  'module' => 'manuals',
-                 'roles' => ['airline_admin','hr','document_control','safety_officer','chief_pilot',
-                             'head_cabin_crew','engineering_manager','base_manager','training_admin','fdm_analyst']],
+                 // FileController::requireAdmin: super, airline_admin, hr, document_control, safety_officer
+                 'roles' => ['airline_admin','hr','document_control','safety_officer']],
                 ['label' => 'Notices', 'href' => '/notices', 'icon' => '📢',
                  'match' => '/notices',
                  'module' => 'notices',

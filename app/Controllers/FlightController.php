@@ -228,13 +228,15 @@ class FlightController {
         $tenantId = (int)currentTenantId();
         $userId   = (int)currentUser()['id'];
 
+        // dbDatePlusDays() emits driver-correct syntax (CURDATE()/DATE('now',…))
+        $cutoff = dbDatePlusDays(-30);
         $flights = Database::fetchAll(
             "SELECT f.*, a.registration AS reg, a.aircraft_type
                FROM flights f
                LEFT JOIN aircraft a ON f.aircraft_id = a.id
               WHERE f.tenant_id = ? AND f.status IN ('published','in_flight','completed')
                 AND (f.captain_id = ? OR f.fo_id = ?)
-                AND f.flight_date >= DATE('now','-30 days')
+                AND f.flight_date >= $cutoff
               ORDER BY f.flight_date DESC, f.std DESC",
             [$tenantId, $userId, $userId]
         );
