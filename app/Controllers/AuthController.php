@@ -105,10 +105,18 @@ class AuthController {
         // Stash the user id in a short-lived "pending" slot and divert to
         // /2fa/challenge. TwoFactorController will finish the login after
         // a valid code or backup code.
-        $twoFa = Database::fetch(
-            "SELECT enabled_at FROM user_2fa WHERE user_id = ? AND enabled_at IS NOT NULL",
-            [(int)$user['id']]
-        );
+        // Wrapped in try/catch: if migration 035 hasn't been applied yet
+        // (user_2fa table missing), we transparently skip the 2FA check so
+        // that login isn't broken by a deploy-without-import.
+        $twoFa = null;
+        try {
+            $twoFa = Database::fetch(
+                "SELECT enabled_at FROM user_2fa WHERE user_id = ? AND enabled_at IS NOT NULL",
+                [(int)$user['id']]
+            );
+        } catch (\Throwable $e) {
+            error_log('[OpsOne 2FA lookup skipped] ' . $e->getMessage());
+        }
         if ($twoFa) {
             // Regenerate to harden the partially-authed session, but do NOT set user data yet.
             session_regenerate_id(true);

@@ -30,18 +30,25 @@ class PasswordResetService {
         $hash = hash('sha256', $raw);
 
         // Expire any outstanding tokens for this user to prevent stacking.
-        Database::execute(
-            "UPDATE password_reset_tokens SET used_at = " . dbNow() . "
-              WHERE user_id = ? AND used_at IS NULL",
-            [(int)$user['id']]
-        );
+        // Wrapped in try/catch so this gracefully no-ops until migration 035 is imported.
+        try {
+            Database::execute(
+                "UPDATE password_reset_tokens SET used_at = " . dbNow() . "
+                  WHERE user_id = ? AND used_at IS NULL",
+                [(int)$user['id']]
+            );
 
-        $expiresAt = date('Y-m-d H:i:s', time() + self::TOKEN_LIFETIME_HOURS * 3600);
-        Database::insert(
-            "INSERT INTO password_reset_tokens (user_id, token_hash, email, requested_ip, expires_at)
-             VALUES (?, ?, ?, ?, ?)",
-            [(int)$user['id'], $hash, $email, $_SERVER['REMOTE_ADDR'] ?? '', $expiresAt]
-        );
+            $expiresAt = date('Y-m-d H:i:s', time() + self::TOKEN_LIFETIME_HOURS * 3600);
+            Database::insert(
+                "INSERT INTO password_reset_tokens (user_id, token_hash, email, requested_ip, expires_at)
+                 VALUES (?, ?, ?, ?, ?)",
+                [(int)$user['id'], $hash, $email, $_SERVER['REMOTE_ADDR'] ?? '', $expiresAt]
+            );
+        } catch (\Throwable $e) {
+            error_log('[OpsOne password-reset persist skipped] ' . $e->getMessage());
+            return ['ok' => true, 'token_for_log' => null, 'user_id' => null];
+        }
+        $expiresAt = $expiresAt ?? date('Y-m-d H:i:s', time() + self::TOKEN_LIFETIME_HOURS * 3600);
 
         return [
             'ok'            => true,
@@ -57,12 +64,17 @@ class PasswordResetService {
      */
     public static function consume(string $rawToken): ?array {
         $hash = hash('sha256', trim($rawToken));
-        $row  = Database::fetch(
-            "SELECT * FROM password_reset_tokens
-              WHERE token_hash = ? AND used_at IS NULL
-              LIMIT 1",
-            [$hash]
-        );
+        try {
+            $row  = Database::fetch(
+                "SELECT * FROM password_reset_tokens
+                  WHERE token_hash = ? AND used_at IS NULL
+                  LIMIT 1",
+                [$hash]
+            );
+        } catch (\Throwable $e) {
+            error_log('[OpsOne password-reset consume skipped] ' . $e->getMessage());
+            return null;
+        }
         if (!$row) return null;
         if (strtotime($row['expires_at']) < time()) return null;
 

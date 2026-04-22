@@ -1,9 +1,32 @@
 <?php
 // Renders inside layouts/app.php — $content wraps this file.
-// Variables: $isEnabled (bool), $secret, $provisioningUri, $error, $success, $justGeneratedBackup
-$qrDataUri = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data='
-           . urlencode($provisioningUri);
+// Variables: $isEnabled (bool), $secret, $provisioningUri, $error, $success,
+//            $justGeneratedBackup, $migrationPending (optional bool)
+$migrationPending = $migrationPending ?? false;
+$qrDataUri = !empty($provisioningUri)
+    ? 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($provisioningUri)
+    : '';
 ?>
+<?php if ($migrationPending): ?>
+    <div style="max-width: 720px; margin: 0 auto;">
+        <div class="card">
+            <div class="card-header"><div class="card-title">Two-Factor Authentication is not yet available</div></div>
+            <div class="card-body">
+                <p style="color:var(--text-secondary);">
+                    The 2FA database migration has not been imported on this environment.
+                    A platform administrator needs to run
+                    <code>database/migrations/035_password_reset_and_2fa.sql</code> via phpMyAdmin
+                    before this page becomes functional.
+                </p>
+                <p style="color:var(--text-muted);font-size:13px;margin-top:8px;">
+                    Until then, password authentication continues to work normally.
+                </p>
+                <p style="margin-top:16px;"><a href="/dashboard" class="btn btn-outline">← Back to Dashboard</a></p>
+            </div>
+        </div>
+    </div>
+    <?php return; ?>
+<?php endif; ?>
 <div style="max-width: 720px; margin: 0 auto;">
     <?php if (!empty($error)): ?>
         <div class="alert alert-error" style="margin-bottom:16px;">⚠ <?= e($error) ?></div>

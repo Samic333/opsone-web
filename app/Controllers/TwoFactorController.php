@@ -125,7 +125,27 @@ class TwoFactorController {
         $userId = (int) $_SESSION['user']['id'];
         $email  = (string) $_SESSION['user']['email'];
 
-        $row = Database::fetch("SELECT * FROM user_2fa WHERE user_id = ?", [$userId]);
+        // If migration 035 hasn't been applied yet, render a friendly placeholder
+        // instead of a 500 — points the operator at the deploy step they missed.
+        try {
+            $row = Database::fetch("SELECT * FROM user_2fa WHERE user_id = ?", [$userId]);
+        } catch (\Throwable $e) {
+            error_log('[OpsOne 2FA showSetup skipped] ' . $e->getMessage());
+            $pageTitle    = 'Two-Factor Authentication';
+            $pageSubtitle = 'Module not yet enabled — database migration pending';
+            $isEnabled = false;
+            $secret = '';
+            $provisioningUri = '';
+            $migrationPending = true;
+            $error    = flash('error');
+            $success  = flash('success');
+            $justGeneratedBackup = null;
+            ob_start();
+            require VIEWS_PATH . '/auth/2fa_setup.php';
+            $content = ob_get_clean();
+            require VIEWS_PATH . '/layouts/app.php';
+            return;
+        }
         $isEnabled = $row && !empty($row['enabled_at']);
 
         // Generate secret if none — stored immediately but enabled_at is null until confirmed.
@@ -138,6 +158,7 @@ class TwoFactorController {
         } else {
             $secret = $row['secret'];
         }
+        $migrationPending = false;
 
         $brand = file_exists(CONFIG_PATH . '/branding.php')
             ? require CONFIG_PATH . '/branding.php'
