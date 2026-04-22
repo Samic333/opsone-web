@@ -49,7 +49,8 @@ class RosterController {
         $pageTitle    = 'Crew Roster';
         $pageSubtitle = date('F Y', mktime(0, 0, 0, $month, 1, $year));
         $headerAction = hasAnyRole(['scheduler', 'airline_admin', 'super_admin'])
-            ? '<a href="/roster/assign" class="btn btn-primary">＋ Assign Duty</a>
+            ? '<a href="/roster/generate" class="btn btn-primary">⚡ Generate Month</a>
+               <a href="/roster/assign" class="btn btn-outline" style="margin-left:8px;">＋ Single</a>
                <a href="/roster/bulk-assign" class="btn btn-outline" style="margin-left:8px;">Bulk Assign</a>
                <a href="/roster/periods" class="btn btn-outline" style="margin-left:8px;">Periods</a>'
             : '';
@@ -108,6 +109,24 @@ class RosterController {
         // Phase 8 — eligibility gate. Operational duty types require valid compliance.
         $override = !empty($_POST['override_eligibility']);
         $blockers = EligibilityGate::blockersFor($userId, $date, $dutyType);
+
+        // Phase 16 (V2) — additional operational rules: existing duty conflict,
+        // rest-period, consecutive-duty cap. Returned reasons are merged into
+        // the same list as the compliance blockers above.
+        $opRules = RosterEligibilityService::check($tenantId, $userId, $date, $dutyType, [
+            'overwrite' => $override,
+        ]);
+        if (!empty($opRules['reasons'])) {
+            // Promote to "blockers" list when severity == block
+            if (($opRules['severity'] ?? '') === 'block') {
+                $blockers = array_merge($blockers, $opRules['reasons']);
+            } else {
+                // warn only — surface but don't auto-block
+                AuditLog::log('roster_assign_warning', 'roster', $userId,
+                    "Date {$date} {$dutyType}: " . implode('; ', $opRules['reasons']));
+            }
+        }
+
         if ($blockers && !$override) {
             flash('error',
                 'Eligibility blockers: ' . implode(' · ', $blockers) .
@@ -125,7 +144,13 @@ class RosterController {
             $auditNote .= ' [override: ' . implode('; ', $blockers) . ']';
         }
         AuditLog::log('roster_assigned', 'roster', $userId, $auditNote);
-        flash('success', $override && $blockers ? 'Duty assigned with eligibility override.' : 'Duty assigned.');
+        $msg = $override && $blockers
+            ? 'Duty assigned with eligibility override.'
+            : 'Duty assigned.';
+        if (!empty($opRules['reasons']) && ($opRules['severity'] ?? '') === 'warn') {
+            $msg .= ' Warning: ' . implode(' · ', $opRules['reasons']);
+        }
+        flash('success', $msg);
 
         [$y, $m] = explode('-', $date);
         redirect("/roster?year={$y}&month=" . ltrim($m, '0'));

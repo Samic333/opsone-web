@@ -104,19 +104,44 @@ class RosterModel {
     }
 
     /**
-     * All crew who have ANY roster entry for this tenant (for the crew list in grid).
-     * Also returns crew with NO entries so the scheduler can assign them.
+     * Default set of schedulable role slugs.
+     * Anything that has a working day pattern goes in here so the
+     * scheduler can also roster ground staff like base managers,
+     * engineering teams, document control, etc.
      */
-    public static function getCrewList(int $tenantId, ?int $baseId = null, ?string $roleSlug = null): array {
+    public static function defaultSchedulableRoleSlugs(): array {
+        return [
+            // Flying crew
+            'pilot','cabin_crew','engineer',
+            'chief_pilot','head_cabin_crew',
+            // Ground / ops / parts personnel
+            'base_manager','engineering_manager',
+            'doc_control','document_control',
+            'safety_officer','training_admin',
+            'fdm_analyst',
+        ];
+    }
+
+    /**
+     * All schedulable people for this tenant (for the crew list in grid).
+     * Also returns people with NO entries so the scheduler can assign them.
+     *
+     * @param int[]|null $allowedRoleSlugs override the default schedulable set
+     */
+    public static function getCrewList(int $tenantId, ?int $baseId = null,
+                                       $roleSlug = null, ?array $allowedRoleSlugs = null): array {
+        $allowed = $allowedRoleSlugs ?: self::defaultSchedulableRoleSlugs();
+        $allowedPlaceholders = implode(',', array_fill(0, count($allowed), '?'));
+
         $sql = "SELECT DISTINCT u.id, u.name AS user_name,
                     u.employee_id, u.base_id, r.name AS role_name, r.slug AS role_slug
              FROM users u
              JOIN user_roles ur ON ur.user_id = u.id
              JOIN roles r ON r.id = ur.role_id
              WHERE u.tenant_id = ? AND u.status = 'active'
-               AND r.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')";
-               
-        $params = [$tenantId];
+               AND r.slug IN ($allowedPlaceholders)";
+
+        $params = array_merge([$tenantId], $allowed);
 
         if ($baseId) {
             $sql .= " AND u.base_id = ?";
@@ -124,11 +149,18 @@ class RosterModel {
         }
 
         if ($roleSlug) {
-            $sql .= " AND r.slug = ?";
-            $params[] = $roleSlug;
+            // Allow either a single slug (string) or array of slugs to filter further.
+            if (is_array($roleSlug)) {
+                $rsPlaceholders = implode(',', array_fill(0, count($roleSlug), '?'));
+                $sql .= " AND r.slug IN ($rsPlaceholders)";
+                $params = array_merge($params, $roleSlug);
+            } else {
+                $sql .= " AND r.slug = ?";
+                $params[] = $roleSlug;
+            }
         }
 
-        $sql .= " ORDER BY u.name";
+        $sql .= " ORDER BY r.name, u.name";
         return Database::fetchAll($sql, $params);
     }
 
@@ -273,7 +305,10 @@ class RosterModel {
              JOIN roles ro ON ro.id = ur.role_id
              WHERE r.tenant_id = ? AND r.roster_date = ? AND r.duty_type = 'standby'
                AND u.status = 'active'
-               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
+               -- schedulable roles: see RosterModel::defaultSchedulableRoleSlugs() for the canonical list
+               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew',
+                               'base_manager','engineering_manager','doc_control','document_control',
+                               'safety_officer','training_admin','fdm_analyst')
              ORDER BY ro.slug, u.name",
             [$tenantId, $date]
         );
@@ -307,7 +342,10 @@ class RosterModel {
              LEFT JOIN rosters r ON r.user_id = u.id AND r.tenant_id = ? AND r.roster_date = ?
              WHERE u.tenant_id = ? AND u.status = 'active'
                AND u.id != ?
-               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
+               -- schedulable roles: see RosterModel::defaultSchedulableRoleSlugs() for the canonical list
+               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew',
+                               'base_manager','engineering_manager','doc_control','document_control',
+                               'safety_officer','training_admin','fdm_analyst')
              ORDER BY ro.slug, u.name",
             [$tenantId, $date, $tenantId, $excludeUserId]
         );
@@ -658,7 +696,10 @@ class RosterModel {
              JOIN user_roles ur ON ur.user_id = u.id
              JOIN roles ro ON ro.id = ur.role_id
              WHERE r.tenant_id = ? AND r.roster_date BETWEEN ? AND ?
-               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew')
+               -- schedulable roles: see RosterModel::defaultSchedulableRoleSlugs() for the canonical list
+               AND ro.slug IN ('pilot','cabin_crew','engineer','chief_pilot','head_cabin_crew',
+                               'base_manager','engineering_manager','doc_control','document_control',
+                               'safety_officer','training_admin','fdm_analyst')
              ORDER BY r.roster_date",
             [$tenantId, $from, $to]
         );

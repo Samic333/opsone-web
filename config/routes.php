@@ -310,6 +310,10 @@ return [
     'GET /roster/bulk-assign'               => ['RosterController', 'bulkAssignForm'],
     'POST /roster/bulk-assign'              => ['RosterController', 'bulkAssign'],
 
+    // ─── Roster: Generator (whole-month, copy / pattern) ────
+    'GET /roster/generate'                  => ['RosterGeneratorController', 'form'],
+    'POST /roster/generate'                 => ['RosterGeneratorController', 'generate'],
+
     // ─── Roster: Periods ───────────────
     'GET /roster/periods'                   => ['RosterController', 'periods'],
     'GET /roster/periods/create'            => ['RosterController', 'createPeriodForm'],
