@@ -363,9 +363,8 @@ return [
                  'match' => '/fdm', 'match_exact' => true,
                  'module' => 'fdm',
                  'roles' => ['airline_admin','safety_officer','fdm_analyst']],
-                ['label' => 'Compliance', 'href' => '/compliance', 'icon' => '✅',
-                 'match' => '/compliance',
-                 'module' => 'compliance'],
+                // "Compliance" removed here — Personnel Records >
+                // "Licensing & Compliance" already links to /compliance.
             ],
         ],
 

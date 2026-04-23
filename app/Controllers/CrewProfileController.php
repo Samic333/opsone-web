@@ -20,6 +20,7 @@ class CrewProfileController {
 
     public function index(): void {
         RbacMiddleware::requireRole(['airline_admin', 'hr', 'chief_pilot', 'head_cabin_crew',
+                                     'engineering_manager', 'base_manager',
                                      'training_admin', 'safety_officer', 'super_admin']);
 
         $tenantId = currentTenantId();

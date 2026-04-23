@@ -6,7 +6,8 @@ class AircraftController {
 
     private function requireAdmin(): void {
         RbacMiddleware::requireRole([
-            'super_admin', 'airline_admin', 'engineering_manager', 'chief_pilot'
+            'super_admin', 'airline_admin', 'engineering_manager', 'chief_pilot',
+            'base_manager'
         ]);
     }
 

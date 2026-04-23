@@ -165,6 +165,7 @@ try {
             'crew_profiles'   => ['view'],
             'compliance'      => ['view','export'],
             'notices'         => ['view'],
+            'duty_reporting'  => ['view','view_history'],
             'mobile_ipad_access' => ['view'],
         ],
         'chief_pilot' => [
@@ -176,6 +177,8 @@ try {
             'notices'         => ['view','create','edit','publish'],
             'compliance'      => ['view','export','view_audit'],
             'fdm'             => ['view','export'],
+            'safety_reports'  => ['view','review','export'],
+            'duty_reporting'  => ['view','view_history','approve_exception'],
             'mobile_ipad_access' => ['view','manage_settings'],
         ],
         'head_cabin_crew' => [
@@ -186,6 +189,8 @@ try {
             'manuals'         => ['view','upload','publish'],
             'notices'         => ['view','create','edit','publish'],
             'compliance'      => ['view','export'],
+            'safety_reports'  => ['view','review','export'],
+            'duty_reporting'  => ['view','view_history','approve_exception'],
             'mobile_ipad_access' => ['view','manage_settings'],
         ],
         'engineering_manager' => [
@@ -195,6 +200,8 @@ try {
             'manuals'         => ['view','upload','publish','export'],
             'notices'         => ['view','create','edit','publish'],
             'compliance'      => ['view','export'],
+            'safety_reports'  => ['view','review','export'],
+            'duty_reporting'  => ['view','view_history','approve_exception'],
         ],
         'safety_officer' => [
             'safety_reports'  => ['view','create','edit','submit','review','approve','export','view_audit'],
@@ -219,8 +226,11 @@ try {
             'crew_profiles'   => ['view','create','edit','delete','export','view_audit'],
             'licensing'       => ['view','create','edit','delete','export','view_audit'],
             'compliance'      => ['view','export','view_audit'],
+            'manuals'         => ['view','upload'],
             'notices'         => ['view','create','edit','publish'],
+            'safety_reports'  => ['view','export'],
             'training'        => ['view','create','edit','assign','export'],
+            'duty_reporting'  => ['view','view_history','view_all'],
             'mobile_ipad_access' => ['view','manage_settings'],
         ],
         'training_admin' => [
@@ -229,13 +239,18 @@ try {
             'licensing'       => ['view'],
             'notices'         => ['view','create'],
             'manuals'         => ['view'],
+            'compliance'      => ['view','export'],
+            'mobile_ipad_access' => ['view'],
         ],
         'base_manager' => [
             'crew_profiles'   => ['view'],
             'rostering'       => ['view','export'],
             'standby_pool'    => ['view'],
             'notices'         => ['view','create'],
+            'manuals'         => ['view'],
             'compliance'      => ['view'],
+            'duty_reporting'  => ['view','view_history','approve_exception'],
+            'mobile_ipad_access' => ['view'],
         ],
         'airline_admin' => [
             'crew_profiles'   => ['view','create','edit','delete','export','view_audit'],
@@ -248,6 +263,7 @@ try {
             'fdm'             => ['view','upload','create','edit','delete','export'],
             'compliance'      => ['view','export','view_audit'],
             'training'        => ['view','create','edit','delete','assign','approve','export'],
+            'duty_reporting'  => ['view','view_history','view_all','approve_exception','correct_record','manage_settings','export','view_audit'],
             'mobile_ipad_access' => ['view','manage_settings','sync_now'],
             'sync_control'    => ['view','sync_now'],
             'document_control'=> ['view','upload','approve','publish','delete','request_change','export','view_audit'],

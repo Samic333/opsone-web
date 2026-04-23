@@ -21,6 +21,12 @@ class FileController {
         RbacMiddleware::requireRole([
             'super_admin', 'airline_admin', 'hr', 'document_control', 'safety_officer'
         ]);
+        // Strict module + capability check. HR's manuals.view cap was added
+        // via the 2026-04-22 role capability backfill (see database/seeders/
+        // backfill_role_capabilities_2026_04_22.php).
+        if (!isPlatformUser()) {
+            AuthorizationService::requireModuleAccess('manuals', 'view');
+        }
     }
 
     // ─── Admin list ─────────────────────────────────────────────────────

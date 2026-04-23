@@ -24,11 +24,28 @@
  */
 class NoticeController {
 
+    /**
+     * Shared guard for every admin entry point:
+     *   1. Role must be one of the allowed admin slugs (RBAC).
+     *   2. For airline users, the 'notices' module must be enabled.
+     *      Platform admins bypass the module gate.
+     */
+    private function requireAdmin(array $roles = [
+        'airline_admin','hr','chief_pilot','head_cabin_crew','engineering_manager',
+        'safety_officer','document_control','training_admin','super_admin'
+    ]): void {
+        RbacMiddleware::requireRole($roles);
+        // Strict module + capability check. All listed roles have notices.view
+        // in the seed (verified in phase0_seed.php after the 2026-04-22 updates).
+        if (!isPlatformUser()) {
+            AuthorizationService::requireModuleAccess('notices', 'view');
+        }
+    }
+
     // ─── Admin: List ─────────────────────────────────────────
 
     public function index(): void {
-        RbacMiddleware::requireRole(['airline_admin', 'hr', 'chief_pilot', 'head_cabin_crew',
-                                     'safety_officer', 'document_control', 'training_admin', 'super_admin']);
+        $this->requireAdmin();
         $tenantId   = currentTenantId();
         $category   = $_GET['category'] ?? null;
         $priority   = $_GET['priority'] ?? null;

@@ -135,6 +135,26 @@ class AuthorizationService {
     }
 
     /**
+     * Abort if the given module is not enabled for the current tenant.
+     * Unlike requireModuleAccess(), this does NOT also check the per-role
+     * capability template — it's intended for controllers whose own role
+     * guard has already decided the user is an authorised admin, and we
+     * just need to confirm the module itself is switched on for the tenant.
+     */
+    public static function requireModuleEnabled(string $moduleCode): void {
+        if (self::isPlatformUser()) return;
+        $tenantId = (int) currentTenantId();
+        if ($tenantId > 0 && self::isModuleEnabledForTenant($moduleCode, $tenantId)) return;
+
+        AuditService::log('auth.module_disabled_access', 'module', null, $moduleCode, 'blocked');
+        if (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
+            jsonResponse(['error' => "Module '$moduleCode' is not enabled for this airline"], 403);
+        }
+        flash('error', "The '$moduleCode' module is not enabled for this airline.");
+        redirect('/dashboard');
+    }
+
+    /**
      * Abort if the user cannot access the given module+capability.
      */
     public static function requireModuleAccess(string $moduleCode, string $capability = 'view'): void {

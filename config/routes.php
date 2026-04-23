@@ -136,6 +136,7 @@ return [
 
     // ─── Roles ─────────────────────────
     'GET /roles'                          => ['RoleController', 'index'],
+    'POST /roles/store'                   => ['RoleController', 'store'],
     'GET /roles/{id}'                     => ['RoleController', 'show'],
     'POST /roles/capabilities/{id}'       => ['RoleController', 'updateCapabilities'],
 

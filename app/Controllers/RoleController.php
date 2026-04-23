@@ -12,32 +12,88 @@ class RoleController {
 
     public function index(): void {
         $tenantId = currentTenantId();
-        
+
+        // Legacy seeding produced duplicate (tenant_id, slug) rows; show one row
+        // per slug (the lowest-id wins).
         $roles = Database::fetchAll(
-            "SELECT * FROM roles WHERE tenant_id = ? ORDER BY role_type, name",
+            "SELECT r.* FROM roles r
+               WHERE r.tenant_id = ?
+                 AND r.id = (SELECT MIN(r2.id) FROM roles r2
+                              WHERE r2.tenant_id = r.tenant_id AND r2.slug = r.slug)
+               ORDER BY r.role_type, r.name",
             [$tenantId]
         );
-        
+
         // Group by role_type (tenant vs end_user)
-        $grouped = [
-            'tenant' => [],
-            'end_user' => []
-        ];
-        
+        $grouped = ['tenant' => [], 'end_user' => []];
         foreach ($roles as $role) {
-            $type = $role['role_type'];
-            if (isset($grouped[$type])) {
-                $grouped[$type][] = $role;
-            }
+            $type = $role['role_type'] ?? 'tenant';
+            if (isset($grouped[$type])) $grouped[$type][] = $role;
         }
-        
+
         $pageTitle = 'Role Management';
-        $pageSubtitle = 'Rename roles and review base permissions';
-        
+        $pageSubtitle = 'Rename roles, review base permissions, and create custom roles';
+
         ob_start();
         require VIEWS_PATH . '/roles/index.php';
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * Create a custom role scoped to the current tenant. Airline super admins
+     * can add roles like "Flight Dispatcher" or "Ops Duty Officer" that
+     * inherit the permission model but have a distinct display name.
+     *
+     * The slug is generated from the role name but prefixed with `c_` +
+     * tenant_id so it can never collide with system slugs (pilot, hr, etc.).
+     */
+    public function store(): void {
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid form submission.');
+            redirect('/roles');
+        }
+        $tenantId = (int) currentTenantId();
+        $name     = trim($_POST['name'] ?? '');
+        $roleType = $_POST['role_type'] ?? 'tenant';
+        $desc     = trim($_POST['description'] ?? '');
+
+        if ($name === '' || strlen($name) > 80) {
+            flash('error', 'Role name is required (1-80 chars).');
+            redirect('/roles');
+        }
+        if (!in_array($roleType, ['tenant', 'end_user'], true)) {
+            flash('error', 'Invalid role type.');
+            redirect('/roles');
+        }
+
+        // Slug: c_<tenant>_<lower-kebab>  e.g.  c_1_flight_dispatcher
+        $slugBase = preg_replace('/[^a-z0-9]+/', '_', strtolower($name));
+        $slugBase = trim($slugBase, '_');
+        if ($slugBase === '') {
+            flash('error', 'Role name must contain letters or digits.');
+            redirect('/roles');
+        }
+        $slug = "c_{$tenantId}_{$slugBase}";
+
+        // Uniqueness inside this tenant
+        $existing = Database::fetch(
+            "SELECT id FROM roles WHERE tenant_id = ? AND slug = ?",
+            [$tenantId, $slug]
+        );
+        if ($existing) {
+            flash('error', 'A role with that name already exists.');
+            redirect('/roles');
+        }
+
+        Database::insert(
+            "INSERT INTO roles (tenant_id, slug, name, description, role_type)
+             VALUES (?, ?, ?, ?, ?)",
+            [$tenantId, $slug, $name, $desc ?: null, $roleType]
+        );
+        AuditLog::log('Created Role', 'tenant', $tenantId, "Created custom role {$name} ({$slug})");
+        flash('success', "Role \"{$name}\" created. Assign capabilities from the Edit & Permissions screen.");
+        redirect('/roles');
     }
 
     public function show(int $id): void {
