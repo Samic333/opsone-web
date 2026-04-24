@@ -78,8 +78,24 @@ class FlightFolderController {
         $myRoles = is_array($me) ? (array)($me['roles'] ?? []) : [];
         $canReview = (bool) array_intersect($myRoles, self::REVIEWER_ROLES);
 
+        $docLabels = self::labels();
+
         $pageTitle = "Flight Folder — {$flight['flight_number']} {$flight['departure']} → {$flight['arrival']}";
         require VIEWS_PATH . '/flights/folder/index.php';
+    }
+
+    /** @return array<string,string> User-facing labels for each doc_type. */
+    private static function labels(): array {
+        return [
+            'journey_log'         => 'Journey Log',
+            'risk_assessment'     => 'Flight Risk Assessment',
+            'crew_briefing'       => 'Crew Briefing',
+            'navlog'              => 'Navigation Log',
+            'post_arrival'        => 'Post-Arrival Report',
+            'verification'        => 'Verification Form',
+            'after_mission_pilot' => 'After-Mission (Pilot)',
+            'after_mission_cabin' => 'After-Mission (Cabin Crew)',
+        ];
     }
 
     /** POST /flights/{id}/folder/{doc_type}/review */
