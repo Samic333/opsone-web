@@ -35,10 +35,11 @@ class NoticeController {
         'safety_officer','document_control','training_admin','super_admin'
     ]): void {
         RbacMiddleware::requireRole($roles);
-        // Strict module + capability check. All listed roles have notices.view
-        // in the seed (verified in phase0_seed.php after the 2026-04-22 updates).
+        // Module-enabled check only. Role list above is the authoritative
+        // admin gate; a per-role capability template check would silently
+        // 302 any role whose template row hasn't been backfilled yet.
         if (!isPlatformUser()) {
-            AuthorizationService::requireModuleAccess('notices', 'view');
+            AuthorizationService::requireModuleEnabled('notices');
         }
     }
 

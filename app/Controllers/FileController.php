@@ -21,11 +21,14 @@ class FileController {
         RbacMiddleware::requireRole([
             'super_admin', 'airline_admin', 'hr', 'document_control', 'safety_officer'
         ]);
-        // Strict module + capability check. HR's manuals.view cap was added
-        // via the 2026-04-22 role capability backfill (see database/seeders/
-        // backfill_role_capabilities_2026_04_22.php).
+        // Module-enabled check only. The role list above is the authoritative
+        // admin gate; adding a per-role capability-template check on top (via
+        // requireModuleAccess) was fragile — it silently 302s any role whose
+        // role_capability_templates row is missing or not yet backfilled.
+        // We only need to confirm the manuals module is turned on for this
+        // tenant; the rest is the role guard's job.
         if (!isPlatformUser()) {
-            AuthorizationService::requireModuleAccess('manuals', 'view');
+            AuthorizationService::requireModuleEnabled('manuals');
         }
     }
 

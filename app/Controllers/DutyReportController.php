@@ -250,7 +250,7 @@ class DutyReportController {
 
     public function index(): void {
         RbacMiddleware::requireRole(self::VIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
 
         $tenantId = (int) currentTenantId();
         $settings = DutyReportingSettings::forTenant($tenantId);
@@ -277,7 +277,7 @@ class DutyReportController {
 
     public function history(): void {
         RbacMiddleware::requireRole(self::VIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
 
         $tenantId = (int) currentTenantId();
         $fromDate = $_GET['from'] ?? date('Y-m-d', strtotime('-30 days'));
@@ -301,7 +301,7 @@ class DutyReportController {
 
     public function exceptions(): void {
         RbacMiddleware::requireRole(self::VIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
 
         $tenantId = (int) currentTenantId();
         $status   = $_GET['status'] ?? 'pending';
@@ -322,7 +322,7 @@ class DutyReportController {
 
     public function detail(int $id): void {
         RbacMiddleware::requireRole(self::VIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
 
         $tenantId = (int) currentTenantId();
         $report = DutyReport::find($tenantId, $id);
@@ -363,7 +363,7 @@ class DutyReportController {
 
     private function reviewException(int $id, string $decision): void {
         RbacMiddleware::requireRole(self::REVIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
         if (!verifyCsrf()) {
             flash('error', 'Invalid security token. Please try again.');
             redirect('/duty-reporting/exceptions');
@@ -410,7 +410,7 @@ class DutyReportController {
 
     public function correctRecord(int $id): void {
         RbacMiddleware::requireRole(self::REVIEW_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
         if (!verifyCsrf()) {
             flash('error', 'Invalid security token. Please try again.');
             redirect('/duty-reporting/report/' . $id);
@@ -446,7 +446,7 @@ class DutyReportController {
 
     public function settings(): void {
         RbacMiddleware::requireRole(self::SETTINGS_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
 
         $tenantId = (int) currentTenantId();
         $settings = DutyReportingSettings::forTenant($tenantId);
@@ -472,7 +472,7 @@ class DutyReportController {
 
     public function saveSettings(): void {
         RbacMiddleware::requireRole(self::SETTINGS_ROLES);
-        AuthorizationService::requireModuleAccess('duty_reporting', 'view');
+        AuthorizationService::requireModuleEnabled('duty_reporting');
         if (!verifyCsrf()) {
             flash('error', 'Invalid security token. Please try again.');
             redirect('/duty-reporting/settings');
