@@ -95,6 +95,28 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
     }
 })();
 
+// ── Sidebar: keep the active menu item in view on page load ──────────────
+// Without this, after clicking a link near the bottom of the sidebar the
+// page reloads and the sidebar scrolls back to the top — the user has to
+// hunt for their current section. This scrolls the active link into the
+// centre of the sidebar viewport so the user's place is preserved.
+(function() {
+    const nav = document.querySelector('#sidebar .sidebar-nav');
+    const active = document.querySelector('#sidebar .sidebar-link.active');
+    if (!nav || !active) return;
+
+    // Skip if the active item is already fully visible (no need to scroll).
+    const navRect = nav.getBoundingClientRect();
+    const itemRect = active.getBoundingClientRect();
+    const alreadyVisible = itemRect.top >= navRect.top && itemRect.bottom <= navRect.bottom;
+    if (alreadyVisible) return;
+
+    // Centre it manually so the scroll stays inside the sidebar (scrollIntoView
+    // on some browsers scrolls the document/main pane instead of the aside).
+    const targetScroll = active.offsetTop - (nav.clientHeight / 2) + (active.offsetHeight / 2);
+    nav.scrollTop = Math.max(0, targetScroll);
+})();
+
 // ── Safety Notification Bell — live poll every 30 s ──────────────────────
 (function() {
     var badge = document.getElementById('safety-bell-badge');
