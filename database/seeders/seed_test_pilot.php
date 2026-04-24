@@ -7,13 +7,13 @@
  * alerts, training, pending acks) have something to render during dogfood.
  *
  * Fully idempotent — every INSERT is guarded by an existence check so this
- * script can be re-run safely.  Prints what it inserted vs. skipped.
+ * script can be re-run safely.
  *
  * Run:
  *   php database/seeders/seed_test_pilot.php
  *
- * Target tenant + pilot are resolved by email, so this script works against
- * whichever tenant owns the demo.pilot account.
+ * Schema-aware: columns match the live opsone-web production database
+ * (verified 2026-04-25 against /home/fruinxrj/acentoza.com).
  */
 
 require dirname(__DIR__, 2) . '/config/app.php';
@@ -22,8 +22,6 @@ require dirname(__DIR__, 2) . '/app/Helpers/functions.php';
 require dirname(__DIR__, 2) . '/config/database.php';
 
 const PILOT_EMAIL = 'demo.pilot@acentoza.com';
-
-$db = Database::getInstance();
 
 $insertCount = 0;
 $skipCount   = 0;
@@ -38,7 +36,7 @@ $pilot = Database::fetch(
     [PILOT_EMAIL]
 );
 if (!$pilot) {
-    echo "✗ Test pilot $PILOT_EMAIL not found — run seed.php first.\n";
+    echo "✗ Test pilot " . PILOT_EMAIL . " not found — run seed.php first.\n";
     exit(1);
 }
 $pilotId   = (int)$pilot['id'];
@@ -49,20 +47,22 @@ $pilotName = (string)$pilot['name'];
 echo "🌱 Seeding dashboard data for $pilotName (user#$pilotId, tenant#$tenantId)\n\n";
 
 // ─── 1. Roster period (next 14 days) ───────────────────────────
+// Live schema: id, tenant_id, name, start_date, end_date, status, notes, crew_group
 echo "Roster period...\n";
 $periodStart = date('Y-m-d');
 $periodEnd   = date('Y-m-d', strtotime('+14 days'));
+$periodName  = 'Rotation ' . date('M j') . ' – ' . date('M j', strtotime('+14 days'));
 
 $existingPeriod = Database::fetch(
     "SELECT id FROM roster_periods
-      WHERE tenant_id = ? AND period_start = ? AND period_end = ?",
+      WHERE tenant_id = ? AND start_date = ? AND end_date = ?",
     [$tenantId, $periodStart, $periodEnd]
 );
 if (!$existingPeriod) {
     $periodId = Database::insert(
-        "INSERT INTO roster_periods (tenant_id, period_start, period_end, status)
-         VALUES (?, ?, ?, 'published')",
-        [$tenantId, $periodStart, $periodEnd]
+        "INSERT INTO roster_periods (tenant_id, name, start_date, end_date, status)
+         VALUES (?, ?, ?, ?, 'published')",
+        [$tenantId, $periodName, $periodStart, $periodEnd]
     );
     note('ADD', "roster_period #$periodId ($periodStart → $periodEnd)");
     $insertCount++;
@@ -72,12 +72,15 @@ if (!$existingPeriod) {
     $skipCount++;
 }
 
-// ─── 2. Roster entries for today / tomorrow / day-after ────────
+// ─── 2. Roster entries (today / tomorrow / day-after) ──────────
+// Live schema: tenant_id, user_id, roster_date, duty_type, duty_code, notes,
+//              roster_period_id, base_id, ...
+// duty_type ENUM('flight','standby','off','training','sim','leave','rest')
 echo "\nRoster entries...\n";
 $rosterDays = [
-    [date('Y-m-d'),                 'flight', 'FLT'],
-    [date('Y-m-d', strtotime('+1 day')), 'standby', 'STBY'],
-    [date('Y-m-d', strtotime('+2 day')), 'off',    'OFF'],
+    [date('Y-m-d'),                        'flight',  'FLT'],
+    [date('Y-m-d', strtotime('+1 day')),   'standby', 'STBY'],
+    [date('Y-m-d', strtotime('+2 day')),   'off',     'OFF'],
 ];
 foreach ($rosterDays as [$d, $type, $code]) {
     $exists = Database::fetch(
@@ -86,9 +89,9 @@ foreach ($rosterDays as [$d, $type, $code]) {
     );
     if ($exists) { note('SKIP', "roster $d ($code)"); $skipCount++; continue; }
     Database::insert(
-        "INSERT INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, notes)
-         VALUES (?,?,?,?,?,?)",
-        [$tenantId, $pilotId, $d, $type, $code, null]
+        "INSERT INTO rosters (tenant_id, user_id, roster_date, duty_type, duty_code, roster_period_id, base_id)
+         VALUES (?,?,?,?,?,?,?)",
+        [$tenantId, $pilotId, $d, $type, $code, $periodId, $baseId]
     );
     note('ADD', "roster $d → $code");
     $insertCount++;
@@ -147,7 +150,9 @@ foreach ($flightPlans as $p) {
 }
 
 // ─── 4. Notice requiring acknowledgement ───────────────────────
-echo "\nNotice (ack_required)...\n";
+// Live schema: notices.priority ENUM('normal','urgent','critical')
+// Live schema: notices.requires_ack (NOT ack_required)
+echo "\nNotice (requires_ack)...\n";
 $noticeTitle = 'Updated duty-time crew rest policy';
 $existing = Database::fetch(
     "SELECT id FROM notices WHERE tenant_id = ? AND title = ? LIMIT 1",
@@ -159,24 +164,25 @@ if ($existing) {
 } else {
     Database::insert(
         "INSERT INTO notices
-            (tenant_id, title, body, priority, category, ack_required, published, published_at)
+            (tenant_id, title, body, priority, category, requires_ack, published, published_at)
          VALUES (?,?,?,?,?,?,?,NOW())",
         [
             $tenantId, $noticeTitle,
             'Please review the revised crew rest requirements before your next duty. Acknowledge to confirm.',
-            'important', 'operations', 1, 1,
+            'urgent', 'operations', 1, 1,
         ]
     );
-    note('ADD', "notice \"$noticeTitle\" (ack required)");
+    note('ADD', "notice \"$noticeTitle\" (requires_ack)");
     $insertCount++;
 }
 
 // ─── 5. Crew document expiring in 12 days ──────────────────────
+// Live schema: crew_documents.doc_type (NOT document_type), doc_title required
 echo "\nCrew document (expiring soon)...\n";
 $expiryDate = date('Y-m-d', strtotime('+12 days'));
 $existingDoc = Database::fetch(
     "SELECT id FROM crew_documents
-      WHERE user_id = ? AND document_type = 'medical' AND expiry_date = ?",
+      WHERE user_id = ? AND doc_type = 'medical' AND expiry_date = ?",
     [$pilotId, $expiryDate]
 );
 if ($existingDoc) {
@@ -185,14 +191,16 @@ if ($existingDoc) {
 } else {
     Database::insert(
         "INSERT INTO crew_documents
-            (tenant_id, user_id, document_type, file_name, file_mime, file_path, file_size,
-             status, expiry_date)
-         VALUES (?,?,?,?,?,?,?,'valid',?)",
+            (tenant_id, user_id, doc_type, doc_title, doc_number,
+             issue_date, expiry_date, status, uploaded_by)
+         VALUES (?,?,?,?,?,?,?, 'valid', ?)",
         [
             $tenantId, $pilotId, 'medical',
-            'seed_medical_class1.pdf', 'application/pdf',
-            'seeded/medical_class1.pdf', 0,
+            'Medical Class 1 Certificate',
+            'MED-2026-' . $pilotId,
+            date('Y-m-d', strtotime('-11 months')),
             $expiryDate,
+            $pilotId,
         ]
     );
     note('ADD', "medical class 1 expiring $expiryDate");
@@ -200,16 +208,17 @@ if ($existingDoc) {
 }
 
 // ─── 6. Training record expiring in 45 days ────────────────────
+// Live schema: training_types.code (NOT type_code); training_records has its own type_code denormalized
 echo "\nTraining record...\n";
 $trainingExpiry = date('Y-m-d', strtotime('+45 days'));
 $ttype = Database::fetch(
     "SELECT id FROM training_types
-      WHERE tenant_id = ? AND (type_code = 'RECURRENT' OR name LIKE '%recurrent%') LIMIT 1",
+      WHERE tenant_id = ? AND (code = 'RECURRENT' OR name LIKE '%recurrent%') LIMIT 1",
     [$tenantId]
 );
 if (!$ttype) {
     $typeId = Database::insert(
-        "INSERT INTO training_types (tenant_id, name, type_code, validity_months)
+        "INSERT INTO training_types (tenant_id, name, code, validity_months)
          VALUES (?,?,?,?)",
         [$tenantId, 'Recurrent Training', 'RECURRENT', 12]
     );
@@ -232,10 +241,11 @@ if ($existingRec) {
 } else {
     Database::insert(
         "INSERT INTO training_records
-            (tenant_id, user_id, training_type_id, completed_date, expires_date, provider, result)
-         VALUES (?,?,?,?,?,?, 'pass')",
+            (tenant_id, user_id, training_type_id, type_code,
+             completed_date, expires_date, provider, result)
+         VALUES (?,?,?,?,?,?,?, 'pass')",
         [
-            $tenantId, $pilotId, $typeId,
+            $tenantId, $pilotId, $typeId, 'RECURRENT',
             date('Y-m-d', strtotime('-11 months')),
             $trainingExpiry,
             'CAE Approved',
@@ -248,9 +258,4 @@ if ($existingRec) {
 echo "\n";
 echo "─────────────────────────────────────────\n";
 echo "✓ Done — $insertCount added, $skipCount skipped.\n";
-echo "Log in as $PILOT_EMAIL on mobile — the dashboard should now have:\n";
-echo "   • A \"NEXT FLIGHT\" hero banner for the upcoming flight\n";
-echo "   • Today's duty in the Today's Assignment card\n";
-echo "   • An Expiry Alert for the medical (12 days)\n";
-echo "   • A Training expiry entry (45 days)\n";
-echo "   • A pending acknowledgement in Pending Acknowledgements\n";
+echo "Log in as " . PILOT_EMAIL . " on mobile to verify.\n";
