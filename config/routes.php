@@ -480,6 +480,12 @@ return [
     'GET /api/flights/mine'                   => ['FlightApiController', 'mine'],
     'GET /api/flights/bag/{id}/download'      => ['FlightApiController', 'download'],
     'GET /api/flights/{id}/bag'               => ['FlightApiController', 'bag'],
+    'GET /flights/{id}/folder'                        => ['FlightFolderController', 'index'],
+    'POST /flights/{id}/folder/{doc_type}/review'     => ['FlightFolderController', 'review'],
+    'GET /api/flights/{id}/folder'            => ['FlightFolderApiController', 'index'],
+    'GET /api/flights/{id}/folder/{doc_type}' => ['FlightFolderApiController', 'show'],
+    'PUT /api/flights/{id}/folder/{doc_type}' => ['FlightFolderApiController', 'save'],
+    'POST /api/flights/{id}/folder/{doc_type}/submit' => ['FlightFolderApiController', 'submit'],
     'GET /api/flights/{id}'                   => ['FlightApiController', 'show'],
 
     // ─── API: FDM (pilot inbox) ──────────────────────────────

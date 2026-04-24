@@ -11,6 +11,76 @@ class FlightController {
         ]);
     }
 
+    /**
+     * Flight Folder aggregate — counts Flight Folder documents by status
+     * across all 7 tables for the given flight. Returned keys:
+     *   not_started, draft, submitted, accepted, rejected, returned, total_docs
+     *
+     * `total_docs` is always 7 (six per-flight tables + after_mission which
+     * stores pilot + cabin crew in the same table but is counted as 2 roles
+     * when rows exist for each).
+     */
+    public static function folderSummary(int $tenantId, int $flightId): array {
+        $counts = [
+            'not_started' => 0,
+            'draft'       => 0,
+            'submitted'   => 0,
+            'accepted'    => 0,
+            'rejected'    => 0,
+            'returned'    => 0,
+        ];
+
+        // Tables storing a single row per flight.
+        $single = [
+            'flight_journey_logs',
+            'flight_risk_assessments',
+            'crew_briefing_sheets',
+            'flight_navlogs',
+            'post_arrival_reports',
+            'flight_verification_forms',
+        ];
+        $presentSlots = 0;
+        foreach ($single as $table) {
+            $row = Database::fetch(
+                "SELECT status FROM `$table` WHERE tenant_id = ? AND flight_id = ? LIMIT 1",
+                [$tenantId, $flightId]
+            );
+            if ($row) {
+                self::incrementBucket($counts, (string)$row['status']);
+                $presentSlots++;
+            }
+        }
+
+        // After-mission rows exist per role. Each flight has up to 2 potential
+        // slots (pilot + cabin_crew) — count present rows plus their status.
+        $amr = Database::fetchAll(
+            "SELECT status FROM after_mission_reports WHERE tenant_id = ? AND flight_id = ?",
+            [$tenantId, $flightId]
+        );
+        foreach ($amr as $r) {
+            self::incrementBucket($counts, (string)$r['status']);
+            $presentSlots++;
+        }
+
+        // Not-started slots: 6 fixed + 2 after-mission possibilities - present.
+        $totalSlots = 6 + 2;
+        $counts['not_started'] = max(0, $totalSlots - $presentSlots);
+        $counts['total_docs']  = $totalSlots;
+
+        return $counts;
+    }
+
+    private static function incrementBucket(array &$counts, string $status): void {
+        switch ($status) {
+            case 'submitted':         $counts['submitted']++;  break;
+            case 'accepted':          $counts['accepted']++;   break;
+            case 'rejected':          $counts['rejected']++;   break;
+            case 'returned_for_info': $counts['returned']++;   break;
+            case 'draft':
+            default:                  $counts['draft']++;      break;
+        }
+    }
+
     // ─── Admin / scheduler views ────────────────────────────────
 
     public function index(): void {
@@ -131,6 +201,11 @@ class FlightController {
         );
 
         $canUpload = hasAnyRole(['super_admin','airline_admin','scheduler','chief_pilot','base_manager']) || $isAssigned;
+
+        // Flight Folder aggregate: count submissions across the 7 doc tables so
+        // the show view can render a status line + "Review Flight Folder" CTA
+        // without hitting each table separately from the view.
+        $folderSummary = self::folderSummary($tenantId, $id);
 
         $pageTitle    = "Flight " . $flight['flight_number'];
         $pageSubtitle = $flight['flight_date'] . ' · ' . ($flight['departure'] ?? '???') . ' → ' . ($flight['arrival'] ?? '???');

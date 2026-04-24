@@ -59,17 +59,42 @@ class Device {
     }
 
     public static function register(array $data): int {
-        $id = Database::insert(
-            "INSERT INTO devices (tenant_id, user_id, device_uuid, platform, model, os_version, app_version, approval_status, first_login_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)",
-            [
-                $data['tenant_id'], $data['user_id'], $data['device_uuid'],
-                $data['platform'] ?? null, $data['model'] ?? null,
-                $data['os_version'] ?? null, $data['app_version'] ?? null,
-            ]
-        );
+        // Caller may inject a non-'pending' initial status (e.g. the
+        // simulator auto-approval path).  Default remains 'pending'.
+        $status = $data['approval_status'] ?? 'pending';
+        $autoApproved = $status === 'approved';
+
+        if ($autoApproved) {
+            $id = Database::insert(
+                "INSERT INTO devices
+                    (tenant_id, user_id, device_uuid, platform, model, os_version, app_version,
+                     approval_status, approved_at, first_login_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                [
+                    $data['tenant_id'], $data['user_id'], $data['device_uuid'],
+                    $data['platform'] ?? null, $data['model'] ?? null,
+                    $data['os_version'] ?? null, $data['app_version'] ?? null,
+                ]
+            );
+        } else {
+            $id = Database::insert(
+                "INSERT INTO devices
+                    (tenant_id, user_id, device_uuid, platform, model, os_version, app_version,
+                     approval_status, first_login_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', CURRENT_TIMESTAMP)",
+                [
+                    $data['tenant_id'], $data['user_id'], $data['device_uuid'],
+                    $data['platform'] ?? null, $data['model'] ?? null,
+                    $data['os_version'] ?? null, $data['app_version'] ?? null,
+                ]
+            );
+        }
+
         // Log registration
-        self::log($id, $data['tenant_id'], 'registered', null, 'Device registered via mobile app');
+        $note = $autoApproved
+            ? 'Device auto-approved (simulator + tenant flag)'
+            : 'Device registered via mobile app';
+        self::log($id, $data['tenant_id'], $autoApproved ? 'auto_approved' : 'registered', null, $note);
         return $id;
     }
 

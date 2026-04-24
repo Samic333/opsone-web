@@ -21,6 +21,35 @@
             <button class="btn btn-primary" type="submit">Publish & Notify Crew</button>
         </form>
     <?php endif; ?>
+
+    <?php /* Flight Folder — review summary + link for managers only. */ ?>
+    <?php if (hasAnyRole(['super_admin','airline_admin','scheduler','chief_pilot','base_manager','safety_officer'])
+              && isset($folderSummary)): ?>
+      <div style="margin-top:16px; padding:12px; border:1px solid #e5e7eb; border-radius:10px; background:#f9fafb;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:1.1px; color:#6b7280; text-transform:uppercase;">
+              Flight Folder
+            </div>
+            <div style="font-size:13px; color:#111; margin-top:4px;">
+              <?php
+                $parts = [];
+                if (($folderSummary['submitted']  ?? 0) > 0) $parts[] = $folderSummary['submitted'] . ' submitted';
+                if (($folderSummary['accepted']   ?? 0) > 0) $parts[] = $folderSummary['accepted']  . ' accepted';
+                if (($folderSummary['returned']   ?? 0) > 0) $parts[] = $folderSummary['returned']  . ' need info';
+                if (($folderSummary['rejected']   ?? 0) > 0) $parts[] = $folderSummary['rejected']  . ' rejected';
+                $not_started = (int)($folderSummary['not_started'] ?? 0);
+                if ($not_started > 0) $parts[] = $not_started . ' not started';
+                echo $parts ? e(implode(' · ', $parts)) : 'No crew submissions yet';
+              ?>
+            </div>
+          </div>
+          <a href="/flights/<?= (int)$flight['id'] ?>/folder" class="btn btn-primary btn-sm">
+            Review Flight Folder
+          </a>
+        </div>
+      </div>
+    <?php endif; ?>
   </div>
 
   <?php if ($canUpload): ?>

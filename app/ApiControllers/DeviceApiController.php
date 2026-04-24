@@ -32,15 +32,22 @@ class DeviceApiController {
             ]);
         }
 
+        // Dev convenience: when the tenant has
+        //   settings.auto_approve_simulator_devices = true
+        // AND the registering device looks like an iOS Simulator, mark it
+        // `approved` directly.  Production tenants stay opt-out.
+        $autoApprove = $this->shouldAutoApproveSimulator($tenantId, $input);
+
         // Register new device
         $deviceId = \Device::register([
-            'tenant_id' => $tenantId,
-            'user_id' => $user['user_id'],
-            'device_uuid' => $deviceUuid,
-            'platform' => $input['platform'] ?? null,
-            'model' => $input['model'] ?? null,
+            'tenant_id'  => $tenantId,
+            'user_id'    => $user['user_id'],
+            'device_uuid'=> $deviceUuid,
+            'platform'   => $input['platform']   ?? null,
+            'model'      => $input['model']      ?? null,
             'os_version' => $input['os_version'] ?? null,
-            'app_version' => $input['app_version'] ?? null,
+            'app_version'=> $input['app_version']?? null,
+            'approval_status' => $autoApprove ? 'approved' : 'pending',
         ]);
 
         // Link token to device
@@ -50,14 +57,52 @@ class DeviceApiController {
         }
 
         $platform = $input['platform'] ?? 'unknown';
-        \AuditLog::apiLog('Device Registered', 'device', $deviceId, "New device: $deviceUuid ($platform)");
+        $msg = $autoApprove
+            ? "New device auto-approved (simulator): $deviceUuid ($platform)"
+            : "New device: $deviceUuid ($platform)";
+        \AuditLog::apiLog(
+            $autoApprove ? 'Device Auto-Approved' : 'Device Registered',
+            'device', $deviceId, $msg
+        );
 
         jsonResponse([
             'success' => true,
             'device_id' => $deviceId,
-            'approval_status' => 'pending',
-            'message' => 'Device registered and awaiting approval',
+            'approval_status' => $autoApprove ? 'approved' : 'pending',
+            'message' => $autoApprove
+                ? 'Device auto-approved (simulator)'
+                : 'Device registered and awaiting approval',
         ], 201);
+    }
+
+    /**
+     * Decide whether to auto-approve this device.  Guarded on BOTH:
+     *   - tenant has explicit opt-in via `tenants.settings.auto_approve_simulator_devices`
+     *   - device identifies itself as a simulator
+     *
+     * Both guards matter — the tenant flag without a simulator check would
+     * auto-approve real production devices; the simulator check without the
+     * tenant flag would auto-approve any fake payload.
+     */
+    private function shouldAutoApproveSimulator(int $tenantId, array $input): bool {
+        try {
+            $row = \Database::fetch("SELECT settings FROM tenants WHERE id = ?", [$tenantId]);
+        } catch (\Throwable $e) {
+            return false;
+        }
+        $settings = [];
+        if ($row && !empty($row['settings'])) {
+            $decoded = json_decode((string)$row['settings'], true);
+            if (is_array($decoded)) $settings = $decoded;
+        }
+        if (empty($settings['auto_approve_simulator_devices'])) return false;
+
+        $platform = strtolower((string)($input['platform']   ?? ''));
+        $model    = strtolower((string)($input['model']      ?? ''));
+        $isSim = str_contains($platform, 'simulator')
+              || str_contains($model,    'simulator')
+              || $platform === 'ios simulator';
+        return $isSim;
     }
 
     public function status(): void {
