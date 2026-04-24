@@ -155,8 +155,17 @@ foreach ($routes as $pattern => $handler) {
 
     if ($routeMethod !== $method) continue;
 
-    // Convert {id} placeholders to regex
-    $regex = preg_replace('/\{(\w+)\}/', '(\d+)', $routePath);
+    // Convert {name} placeholders to regex.
+    //   {id}           → digits only  (\d+)
+    //   any other name → word chars   ([\w\-]+)   ← slugs like doc_type
+    // The narrower \d+ stays first so numeric-only ids never accidentally
+    // collide with their string neighbours (e.g. /flights/{id}/bag vs
+    // /flights/{id}/folder/{doc_type}).
+    $regex = preg_replace_callback(
+        '/\{(\w+)\}/',
+        fn($m) => $m[1] === 'id' ? '(\d+)' : '([\w\-]+)',
+        $routePath
+    );
     $regex = '#^' . $regex . '$#';
 
     if (preg_match($regex, $uri, $matches)) {
