@@ -1,93 +1,97 @@
 -- Migration 041 — Demo airline (tenant_id=1) phase-18 seed.
 --
--- Phase 0 audit found that the demo pilot account (demo.pilot@acentoza.com,
--- user_id=341) had no rows in: training_records, licenses, per_diem_claims,
--- appraisals, and was NOT assigned as captain on the single existing flight
--- (id=1). That made every mobile tab look "empty" on iPad/iPhone, so phase-18
--- spot checks couldn't actually exercise the data layer.
+-- Phase 0 audit found that the demo pilot account
+-- (demo.pilot@acentoza.com) had no rows in training_records, licenses,
+-- per_diem_claims, appraisals, and was NOT assigned as captain on the
+-- single existing flight. That made every mobile tab look "empty" on
+-- iPad/iPhone, so phase-18 spot checks couldn't actually exercise the
+-- data layer.
 --
--- This migration is **idempotent** — every statement is INSERT IGNORE or
--- guarded with a NOT EXISTS check, and the UPDATE only writes if the row
--- still has NULL captain_id. Re-running it is safe.
+-- This migration is **idempotent** — every statement is INSERT IGNORE
+-- or guarded with a NOT EXISTS check. Re-running it is safe.
 --
--- After this runs, the demo pilot has:
---   - 2 assigned flights (today's HKJK→HUEN + tomorrow's HUEN→HKJK)
---   - 2 training records (completed 6-monthly Sim + CRM refresher)
---   - 2 licenses (ATPL + Medical Class 1, both within 90 days of expiry so
---     the iPad expiry-alerts widget actually fires)
---   - 1 submitted per-diem claim
---   - 1 submitted appraisal received from the demo chief pilot
--- And the tenant has 3 per-diem rates (UAE/KEN/UGA) so the mobile claim
--- form's rate dropdown is populated.
+-- ⚠️  IMPORTANT: numeric user IDs differ between local SQLite (where the
+-- demo pilot is id=341) and production MySQL. We resolve users by EMAIL
+-- via session variables so the same SQL works in both environments.
+-- Set the variables once at the top, then use them throughout.
 
 START TRANSACTION;
 
--- 1. Make sure the existing flight (id=1) actually has the demo pilot as
---    captain. Without this, /flights/mine returns nothing for him.
+-- Resolve demo accounts by email (tenant-scoped). LIMIT 1 keeps the
+-- assignment well-defined even if a duplicate ever sneaks in.
+SELECT @pilot_id := id FROM `users`
+  WHERE email = 'demo.pilot@acentoza.com'      AND tenant_id = 1 LIMIT 1;
+SELECT @chief_id := id FROM `users`
+  WHERE email = 'demo.chiefpilot@acentoza.com' AND tenant_id = 1 LIMIT 1;
+
+-- 1. Make sure the existing flight (id=1) actually has the demo pilot
+--    as captain. Without this, /api/flights/mine returns nothing for
+--    him.
 UPDATE `flights`
-   SET captain_id = 341
+   SET captain_id = @pilot_id
  WHERE tenant_id = 1
    AND id        = 1
-   AND captain_id IS NULL;
+   AND captain_id IS NULL
+   AND @pilot_id IS NOT NULL;
 
--- 2. Add a second flight for tomorrow (return leg) so the roster shows more
---    than one entry. Date is computed in PHP at deploy-time would be ideal,
---    but for a one-shot demo seed a fixed near-future date is fine.
+-- 2. Add a second flight for tomorrow (return leg) so the roster shows
+--    more than one entry.
 INSERT IGNORE INTO `flights`
   (tenant_id, flight_date, flight_number, departure, arrival, std, sta,
    aircraft_id, captain_id, fo_id, status)
-VALUES
-  (1, '2026-04-26', 'MZ-225', 'HUEN', 'HKJK', '09:00', '11:00',
-   2, 341, NULL, 'published');
+SELECT 1, '2026-04-26', 'MZ-225', 'HUEN', 'HKJK', '09:00', '11:00',
+       2, @pilot_id, NULL, 'published'
+ WHERE @pilot_id IS NOT NULL;
 
--- 3. Training records for the demo pilot. INSERT IGNORE on (user_id,
---    training_type_id, completed_date) — the schema's UNIQUE clause is
---    only on (tenant_id, code) for training_types, so we de-dup via a
---    NOT EXISTS guard instead.
+-- 3. Training records.
 INSERT INTO `training_records`
   (tenant_id, user_id, training_type_id, type_code, completed_date,
    expires_date, provider, result, notes)
-SELECT 1, 341, 1, '6MO_SIM', '2026-02-15', '2026-08-15',
+SELECT 1, @pilot_id, 1, '6MO_SIM', '2026-02-15', '2026-08-15',
        'OpsOne Sim Centre', 'pass', 'Recurrent 6-monthly simulator check.'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `training_records`
-    WHERE user_id = 341 AND type_code = '6MO_SIM'
-      AND completed_date = '2026-02-15'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `training_records`
+      WHERE user_id = @pilot_id AND type_code = '6MO_SIM'
+        AND completed_date = '2026-02-15'
+   );
 
 INSERT INTO `training_records`
   (tenant_id, user_id, training_type_id, type_code, completed_date,
    expires_date, provider, result, notes)
-SELECT 1, 341, 2, 'CRM_REFR', '2026-01-10', '2027-01-10',
+SELECT 1, @pilot_id, 2, 'CRM_REFR', '2026-01-10', '2027-01-10',
        'OpsOne CRM Faculty', 'pass', 'Annual CRM refresher.'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `training_records`
-    WHERE user_id = 341 AND type_code = 'CRM_REFR'
-      AND completed_date = '2026-01-10'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `training_records`
+      WHERE user_id = @pilot_id AND type_code = 'CRM_REFR'
+        AND completed_date = '2026-01-10'
+   );
 
--- 4. Licenses for the demo pilot.
+-- 4. Licenses.
 INSERT INTO `licenses`
   (tenant_id, user_id, license_type, license_number, issuing_authority,
    issue_date, expiry_date, status, notes)
-SELECT 1, 341, 'ATPL', 'UAE-ATPL-4821', 'UAE GCAA',
+SELECT 1, @pilot_id, 'ATPL', 'UAE-ATPL-4821', 'UAE GCAA',
        '2021-09-15', '2026-09-15', 'valid', 'Airline Transport Pilot License.'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `licenses`
-    WHERE user_id = 341 AND license_type = 'ATPL'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `licenses`
+      WHERE user_id = @pilot_id AND license_type = 'ATPL'
+   );
 
 INSERT INTO `licenses`
   (tenant_id, user_id, license_type, license_number, issuing_authority,
    issue_date, expiry_date, status, notes)
-SELECT 1, 341, 'Medical Class 1', 'MED-2026-0312', 'UAE GCAA AME',
+SELECT 1, @pilot_id, 'Medical Class 1', 'MED-2026-0312', 'UAE GCAA AME',
        '2025-08-30', '2026-08-30', 'valid', 'Class 1 medical, 12-month validity.'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `licenses`
-    WHERE user_id = 341 AND license_type = 'Medical Class 1'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `licenses`
+      WHERE user_id = @pilot_id AND license_type = 'Medical Class 1'
+   );
 
--- 5. Per-diem rates for the tenant (UAE / Kenya / Uganda — the demo route).
+-- 5. Per-diem rates (UAE / Kenya / Uganda — the demo route).
 INSERT INTO `per_diem_rates`
   (tenant_id, country, station, currency, daily_rate, effective_from, notes)
 SELECT 1, 'UAE', 'Dubai (DXB)', 'USD', 80.00, '2026-01-01', 'Standard outstation rate.'
@@ -116,29 +120,30 @@ SELECT 1, 'Uganda', 'Entebbe (HUEN)', 'USD', 50.00, '2026-01-01', 'Entebbe outst
 INSERT INTO `per_diem_claims`
   (tenant_id, user_id, period_from, period_to, station, country,
    days, rate, currency, amount, status, notes)
-SELECT 1, 341, '2026-04-22', '2026-04-24', 'Entebbe (HUEN)', 'Uganda',
+SELECT 1, @pilot_id, '2026-04-22', '2026-04-24', 'Entebbe (HUEN)', 'Uganda',
        2, 50.00, 'USD', 100.00, 'submitted',
        'HKJK-HUEN-HKJK rotation, 2 nights down-route.'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `per_diem_claims`
-    WHERE user_id = 341 AND period_from = '2026-04-22' AND period_to = '2026-04-24'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `per_diem_claims`
+      WHERE user_id = @pilot_id AND period_from = '2026-04-22' AND period_to = '2026-04-24'
+   );
 
--- 7. One submitted appraisal received by the demo pilot from the demo chief
---    pilot (user_id=334).
+-- 7. One submitted appraisal: chief pilot → demo pilot.
 INSERT INTO `appraisals`
   (tenant_id, subject_id, appraiser_id, rotation_ref, period_from, period_to,
-   status, rating_overall, strengths, improvements, comments,
-   submitted_at)
-SELECT 1, 341, 334, '2026-Q1', '2026-01-01', '2026-03-31',
+   status, rating_overall, strengths, improvements, comments, submitted_at)
+SELECT 1, @pilot_id, @chief_id, '2026-Q1', '2026-01-01', '2026-03-31',
        'submitted', 4,
        'Excellent CRM, calm under pressure, sets strong example for FOs.',
        'Continue refining short-field landing technique on grass strips.',
        'Solid quarter. Recommend SimT instructor track when current cycle completes.',
        '2026-04-05 09:00:00'
- WHERE NOT EXISTS (
-   SELECT 1 FROM `appraisals`
-    WHERE subject_id = 341 AND appraiser_id = 334 AND rotation_ref = '2026-Q1'
- );
+ WHERE @pilot_id IS NOT NULL
+   AND @chief_id IS NOT NULL
+   AND NOT EXISTS (
+     SELECT 1 FROM `appraisals`
+      WHERE subject_id = @pilot_id AND appraiser_id = @chief_id AND rotation_ref = '2026-Q1'
+   );
 
 COMMIT;
