@@ -18,17 +18,30 @@ class FlightApiController {
         $userId   = (int) $user['user_id'];
         $since30  = dbDatePlusDays(-30);
 
+        // Cabin crew + engineers + observers are linked via the
+        // flight_crew_assignments join (migration 042). Captain and
+        // FO remain on the parent table for backwards-compat. EXISTS
+        // keeps the row count correct (avoids JOIN duplication when
+        // a user has multiple roles on a flight).
         $rows = Database::fetchAll(
             "SELECT f.*, a.registration AS aircraft_reg, a.aircraft_type AS aircraft_type_name,
                     (SELECT COUNT(*) FROM flight_bag_files fb WHERE fb.flight_id = f.id) AS bag_count
                FROM flights f
                LEFT JOIN aircraft a ON f.aircraft_id = a.id
               WHERE f.tenant_id = ?
-                AND (f.captain_id = ? OR f.fo_id = ?)
+                AND (
+                      f.captain_id = ?
+                   OR f.fo_id      = ?
+                   OR EXISTS (
+                        SELECT 1 FROM flight_crew_assignments fca
+                         WHERE fca.flight_id = f.id
+                           AND fca.user_id   = ?
+                      )
+                    )
                 AND f.status IN ('published','in_flight','completed')
                 AND f.flight_date >= $since30
               ORDER BY f.flight_date DESC, f.std DESC",
-            [$tenantId, $userId, $userId]
+            [$tenantId, $userId, $userId, $userId]
         );
 
         jsonResponse(['flights' => array_map([self::class, 'formatFlight'], $rows)]);
@@ -52,10 +65,11 @@ class FlightApiController {
         );
         if (!$f) jsonResponse(['error' => 'Flight not found'], 404);
 
-        $isAssigned = in_array($userId, [(int)$f['captain_id'], (int)$f['fo_id']], true);
-        $roles = apiUserRoles();
-        $isScheduler = (bool) array_intersect($roles, ['super_admin','airline_admin','scheduler','chief_pilot','base_manager']);
-        if (!$isAssigned && !$isScheduler) jsonResponse(['error' => 'Forbidden'], 403);
+        // Cabin crew / engineers are assigned via flight_crew_assignments
+        // (migration 042); captain + FO stay on the parent table.
+        if (!self::userCanViewFlight($userId, (int)$f['id'], $f)) {
+            jsonResponse(['error' => 'Forbidden'], 403);
+        }
 
         $bag = Database::fetchAll(
             "SELECT id, flight_id, file_type, title, file_name, file_size, created_at
@@ -81,10 +95,11 @@ class FlightApiController {
         $f = Database::fetch("SELECT captain_id, fo_id FROM flights WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$f) jsonResponse(['error' => 'Flight not found'], 404);
 
-        $isAssigned = in_array($userId, [(int)$f['captain_id'], (int)$f['fo_id']], true);
-        $roles = apiUserRoles();
-        $isScheduler = (bool) array_intersect($roles, ['super_admin','airline_admin','scheduler','chief_pilot','base_manager']);
-        if (!$isAssigned && !$isScheduler) jsonResponse(['error' => 'Forbidden'], 403);
+        // Cabin crew / engineers are assigned via flight_crew_assignments
+        // (migration 042); captain + FO stay on the parent table.
+        if (!self::userCanViewFlight($userId, (int)$f['id'], $f)) {
+            jsonResponse(['error' => 'Forbidden'], 403);
+        }
 
         $bag = Database::fetchAll(
             "SELECT id, flight_id, file_type, title, file_name, file_size, created_at
@@ -109,10 +124,9 @@ class FlightApiController {
         );
         if (!$row) jsonResponse(['error' => 'File not found'], 404);
 
-        $isAssigned = in_array($userId, [(int)$row['captain_id'], (int)$row['fo_id']], true);
-        $roles = apiUserRoles();
-        $isScheduler = (bool) array_intersect($roles, ['super_admin','airline_admin','scheduler','chief_pilot','base_manager']);
-        if (!$isAssigned && !$isScheduler) jsonResponse(['error' => 'Forbidden'], 403);
+        if (!self::userCanViewFlight($userId, (int)$row['flight_id'], ['captain_id'=>$row['captain_id'], 'fo_id'=>$row['fo_id']])) {
+            jsonResponse(['error' => 'Forbidden'], 403);
+        }
 
         $full = storagePath($row['file_path']);
         if (!is_file($full)) jsonResponse(['error' => 'File missing on server'], 404);
@@ -142,6 +156,32 @@ class FlightApiController {
             'fo_id'               => isset($r['fo_id'])      ? (int)$r['fo_id']      : null,
             'bag_count'           => (int)($r['bag_count']   ?? 0),
         ];
+    }
+
+    // ─── Access ─────────────────────────────────────────────────
+    /**
+     * Returns true if the user is rostered on the flight (captain, FO, or
+     * any role in flight_crew_assignments) OR holds a scheduler/admin
+     * role. Centralised here so cabin/engineer access stays consistent
+     * across mine(), show(), and bag download.
+     */
+    private static function userCanViewFlight(int $userId, int $flightId, array $flight): bool {
+        $captain = isset($flight['captain_id']) ? (int) $flight['captain_id'] : 0;
+        $fo      = isset($flight['fo_id'])      ? (int) $flight['fo_id']      : 0;
+        if ($userId === $captain || $userId === $fo) return true;
+
+        $assn = Database::fetch(
+            "SELECT 1 FROM flight_crew_assignments
+              WHERE flight_id = ? AND user_id = ? LIMIT 1",
+            [$flightId, $userId]
+        );
+        if ($assn) return true;
+
+        $roles = apiUserRoles();
+        return (bool) array_intersect(
+            $roles,
+            ['super_admin','airline_admin','scheduler','chief_pilot','base_manager']
+        );
     }
 
     private static function formatBag(array $r): array {
