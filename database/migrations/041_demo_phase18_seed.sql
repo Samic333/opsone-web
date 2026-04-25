@@ -35,19 +35,30 @@ UPDATE `flights`
    AND @pilot_id IS NOT NULL;
 
 -- 2. Add a second flight for tomorrow (return leg) so the roster shows
---    more than one entry.
+--    more than one entry. aircraft_id is resolved to whatever aircraft
+--    exists for the demo tenant (production registration IDs differ
+--    from local).
+SELECT @aircraft_id := id FROM `aircraft`
+  WHERE tenant_id = 1 ORDER BY id LIMIT 1;
+
 INSERT IGNORE INTO `flights`
   (tenant_id, flight_date, flight_number, departure, arrival, std, sta,
    aircraft_id, captain_id, fo_id, status)
 SELECT 1, '2026-04-26', 'MZ-225', 'HUEN', 'HKJK', '09:00', '11:00',
-       2, @pilot_id, NULL, 'published'
+       @aircraft_id, @pilot_id, NULL, 'published'
  WHERE @pilot_id IS NOT NULL;
 
 -- 3. Training records.
+--    training_type_id is intentionally LEFT-JOIN-resolved by tenant_id+code.
+--    If the type isn't seeded on this environment, NULL is fine — the
+--    nullable FK lets the record stand and the `type_code` column carries
+--    the display label for the mobile UI.
 INSERT INTO `training_records`
   (tenant_id, user_id, training_type_id, type_code, completed_date,
    expires_date, provider, result, notes)
-SELECT 1, @pilot_id, 1, '6MO_SIM', '2026-02-15', '2026-08-15',
+SELECT 1, @pilot_id,
+       (SELECT id FROM `training_types` WHERE tenant_id = 1 AND code = '6MO_SIM' LIMIT 1),
+       '6MO_SIM', '2026-02-15', '2026-08-15',
        'OpsOne Sim Centre', 'pass', 'Recurrent 6-monthly simulator check.'
  WHERE @pilot_id IS NOT NULL
    AND NOT EXISTS (
@@ -59,7 +70,9 @@ SELECT 1, @pilot_id, 1, '6MO_SIM', '2026-02-15', '2026-08-15',
 INSERT INTO `training_records`
   (tenant_id, user_id, training_type_id, type_code, completed_date,
    expires_date, provider, result, notes)
-SELECT 1, @pilot_id, 2, 'CRM_REFR', '2026-01-10', '2027-01-10',
+SELECT 1, @pilot_id,
+       (SELECT id FROM `training_types` WHERE tenant_id = 1 AND code = 'CRM_REFR' LIMIT 1),
+       'CRM_REFR', '2026-01-10', '2027-01-10',
        'OpsOne CRM Faculty', 'pass', 'Annual CRM refresher.'
  WHERE @pilot_id IS NOT NULL
    AND NOT EXISTS (
