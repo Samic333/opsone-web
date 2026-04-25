@@ -416,9 +416,11 @@ return [
     'GET /api/devices/status'    => ['DeviceApiController', 'status'],
 
     // ─── API: User ─────────────────────
-    'GET /api/user/profile'       => ['UserApiController', 'profile'],
-    'GET /api/user/modules'       => ['UserApiController', 'modules'],
-    'GET /api/user/capabilities'  => ['UserApiController', 'capabilities'],  // Phase 10: richer entitlements
+    'GET /api/user/profile'           => ['UserApiController', 'profile'],
+    'GET /api/user/modules'           => ['UserApiController', 'modules'],
+    'GET /api/user/capabilities'      => ['UserApiController', 'capabilities'],  // Phase 10: richer entitlements
+    'POST /api/user/profile/photo'    => ['UserApiController', 'uploadPhoto'],
+    'GET /api/user/photo/{filename}'  => ['UserApiController', 'viewPhoto'],
 
     // ─── API: Roster ───────────────────
     'GET /api/roster' => ['RosterApiController', 'index'],
@@ -475,6 +477,7 @@ return [
     'POST /api/safety/report/(\d+)/reply'     => ['SafetyApiController', 'addReply'],
     'GET /api/safety/publications'            => ['SafetyApiController', 'publications'],
     'GET /api/safety/publication/(\d+)'       => ['SafetyApiController', 'publication'],
+    'GET /api/safety/airstrip-feed'           => ['SafetyApiController', 'airstripFeed'],
 
     // ─── API: Flights + Flight Bag (mobile) ──────────────────
     'GET /api/flights/mine'                   => ['FlightApiController', 'mine'],
@@ -491,6 +494,7 @@ return [
     // ─── API: FDM (pilot inbox) ──────────────────────────────
     'GET /api/fdm/mine'                       => ['FdmApiController', 'mine'],
     'POST /api/fdm/event/{id}/ack'            => ['FdmApiController', 'ack'],
+    'POST /api/fdm/event/{id}/comment'        => ['FdmApiController', 'comment'],
 
     // ─── API: Per Diem ───────────────────────────────────────
     'GET /api/per-diem/mine'                  => ['PerDiemApiController', 'mine'],
@@ -519,4 +523,5 @@ return [
     // ─── API: Help Hub ───────────────────────────────────────
     'GET /api/help/topics'                    => ['HelpApiController', 'topics'],
     'GET /api/help/topic'                     => ['HelpApiController', 'topic'],
+    'POST /api/help/support-request'          => ['HelpApiController', 'supportRequest'],
 ];

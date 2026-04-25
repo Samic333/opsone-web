@@ -160,4 +160,115 @@ class UserApiController {
             'api_version'     => '2',
         ]);
     }
+
+    // ─── POST /api/user/profile/photo ────────────────────────────────────────
+    // Multipart upload of the user's avatar image.
+    //   field name: "file"  (max 5 MB, jpg/jpeg/png/heic)
+    // Writes to storage/uploads/profile_photos/tenant_{T}/u_{ID}.{ext}
+    // and updates crew_profiles.profile_photo_path.
+    public function uploadPhoto(): void {
+        $user     = apiUser();
+        $tenantId = (int) apiTenantId();
+        $userId   = (int) $user['user_id'];
+
+        if (empty($_FILES['file']['name']) || ($_FILES['file']['error'] ?? -1) !== UPLOAD_ERR_OK) {
+            jsonResponse(['error' => 'No file uploaded'], 422);
+        }
+        $f = $_FILES['file'];
+        if ($f['size'] > 5 * 1024 * 1024) {
+            jsonResponse(['error' => 'File too large (max 5MB)'], 413);
+        }
+
+        $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg','jpeg','png','heic'], true)) {
+            jsonResponse(['error' => "File type .$ext not allowed"], 415);
+        }
+
+        // Light MIME sanity check.
+        $mime = function_exists('mime_content_type') ? mime_content_type($f['tmp_name']) : '';
+        if ($mime && !preg_match('#^image/#', $mime)) {
+            jsonResponse(['error' => "Detected MIME '$mime' is not an image"], 415);
+        }
+
+        $dir = storagePath("uploads/profile_photos/tenant_$tenantId");
+        if (!is_dir($dir) && !mkdir($dir, 0755, true)) {
+            jsonResponse(['error' => 'Could not create storage directory'], 500);
+        }
+        // Stable filename so re-upload overwrites the previous photo.
+        $rel  = "uploads/profile_photos/tenant_$tenantId/u_$userId.$ext";
+        $full = storagePath($rel);
+
+        // Remove any older photo at a different extension so we don't keep stale files.
+        foreach (['jpg','jpeg','png','heic'] as $oldExt) {
+            if ($oldExt === $ext) continue;
+            $stale = storagePath("uploads/profile_photos/tenant_$tenantId/u_$userId.$oldExt");
+            if (file_exists($stale)) @unlink($stale);
+        }
+
+        if (!move_uploaded_file($f['tmp_name'], $full)) {
+            jsonResponse(['error' => 'Failed to save uploaded file'], 500);
+        }
+
+        // Path the mobile app retrieves via the view endpoint below.
+        // Store as `/api/user/photo/{user_id}.{ext}` so the mobile CrewAvatar's
+        // existing absolute-vs-relative URL handler resolves correctly.
+        $publicPath = "/api/user/photo/$userId.$ext";
+
+        // Upsert crew_profiles row.
+        $existing = Database::fetch(
+            "SELECT user_id FROM crew_profiles WHERE user_id = ? LIMIT 1",
+            [$userId]
+        );
+        if ($existing) {
+            Database::query(
+                "UPDATE crew_profiles SET profile_photo_path = ? WHERE user_id = ?",
+                [$publicPath, $userId]
+            );
+        } else {
+            Database::insert(
+                "INSERT INTO crew_profiles (user_id, tenant_id, profile_photo_path) VALUES (?,?,?)",
+                [$userId, $tenantId, $publicPath]
+            );
+        }
+
+        AuditLog::log('profile_photo_uploaded', 'user', $userId, $rel);
+
+        jsonResponse([
+            'success'            => true,
+            'profile_photo_path' => $publicPath,
+            'size'               => (int)$f['size'],
+        ]);
+    }
+
+    // ─── GET /api/user/photo/{filename} ──────────────────────────────────────
+    // Streams a stored profile photo. The "filename" route param is
+    // "{user_id}.{ext}" — auth-required so other tenants can't read.
+    public function viewPhoto(string $filename): void {
+        $tenantId = (int) apiTenantId();
+        $callerId = (int) apiUser()['user_id'];
+
+        if (!preg_match('/^(\d+)\.(jpg|jpeg|png|heic)$/i', $filename, $m)) {
+            http_response_code(400); echo 'Bad filename'; return;
+        }
+        $targetUserId = (int)$m[1];
+        $ext          = strtolower($m[2]);
+
+        // Tenant isolation: target user must be in the caller's tenant.
+        $u = Database::fetch(
+            "SELECT id FROM users WHERE id = ? AND tenant_id = ?",
+            [$targetUserId, $tenantId]
+        );
+        if (!$u) { http_response_code(404); echo 'Not found'; return; }
+
+        $path = storagePath("uploads/profile_photos/tenant_$tenantId/u_$targetUserId.$ext");
+        if (!file_exists($path)) { http_response_code(404); echo 'Photo not found'; return; }
+
+        $contentType = $ext === 'png' ? 'image/png'
+                     : ($ext === 'heic' ? 'image/heic' : 'image/jpeg');
+        header("Content-Type: $contentType");
+        header('Cache-Control: private, max-age=3600');
+        header('Content-Length: ' . filesize($path));
+        readfile($path);
+        exit;
+    }
 }

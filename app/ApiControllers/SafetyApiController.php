@@ -458,4 +458,62 @@ class SafetyApiController {
             'created_at'  => $p['created_at'],
         ];
     }
+
+    /**
+     * GET /api/safety/airstrip-feed?base=ICAO
+     *
+     * Returns approved airstrip / runway-condition reports flagged
+     * `visible_to_base = 1` for the supplied base ICAO (or the caller's
+     * assigned base when no `base` query is given).  Used by the iPad
+     * Airstrip Reports screen to surface what other crew have reported at
+     * the next base before flying in.
+     */
+    public function airstripFeed(): void {
+        $tenantId = apiTenantId();
+        $base     = trim((string)($_GET['base'] ?? ''));
+        if ($base === '') {
+            $userId = (int) apiUser()['user_id'];
+            $u = Database::fetch(
+                "SELECT b.code FROM users u
+                   LEFT JOIN bases b ON b.id = u.base_id
+                  WHERE u.id = ? LIMIT 1",
+                [$userId]
+            );
+            $base = (string)($u['code'] ?? '');
+        }
+        if ($base === '') {
+            jsonResponse(['reports' => [], 'note' => 'No base specified or assigned to caller']);
+        }
+
+        $rows = Database::fetchAll(
+            "SELECT r.id, r.title, r.description, r.severity, r.icao_code,
+                    r.event_date, r.aircraft_registration, r.submitted_at,
+                    u.name AS reporter_name
+               FROM safety_reports r
+               LEFT JOIN users u ON u.id = r.reporter_id
+              WHERE r.tenant_id = ?
+                AND r.visible_to_base = 1
+                AND r.report_type IN ('airstrip','operational')
+                AND r.icao_code = ?
+                AND r.is_draft = 0
+                AND r.is_anonymous = 0
+              ORDER BY COALESCE(r.event_date, r.submitted_at) DESC, r.id DESC
+              LIMIT 50",
+            [$tenantId, strtoupper($base)]
+        );
+
+        $out = array_map(fn($r) => [
+            'id'                    => (int)$r['id'],
+            'title'                 => (string)$r['title'],
+            'description'           => (string)($r['description'] ?? ''),
+            'severity'              => (string)($r['severity'] ?? 'unassigned'),
+            'icao_code'             => (string)($r['icao_code'] ?? ''),
+            'event_date'            => $r['event_date'] ?? null,
+            'aircraft_registration' => $r['aircraft_registration'] ?? null,
+            'submitted_at'          => $r['submitted_at'] ?? null,
+            'reporter_name'         => $r['reporter_name'] ?? null,
+        ], $rows);
+
+        jsonResponse(['reports' => $out, 'base' => $base]);
+    }
 }

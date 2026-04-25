@@ -74,9 +74,9 @@ class FlightFolderController {
             [$tenantId, $id]
         );
 
-        $me = currentUser();
-        $myRoles = is_array($me) ? (array)($me['roles'] ?? []) : [];
-        $canReview = (bool) array_intersect($myRoles, self::REVIEWER_ROLES);
+        // Roles live in $_SESSION['user_roles'] (see hasAnyRole helper) — not on
+        // the $user array directly.  Reusing the canonical helper avoids drift.
+        $canReview = hasAnyRole(self::REVIEWER_ROLES);
 
         $docLabels = self::labels();
 
