@@ -120,17 +120,29 @@ class UserApiController {
         $tenantId = apiTenantId();
         $roles    = apiUserRoles();   // array of role slugs
 
-        // Role capabilities from role_capabilities table
+        // Resolve role capabilities via role_capability_templates (the canonical
+        // source — see AuthorizationService::canAccessModule). The legacy
+        // `role_capabilities` table never existed in this schema; the previous
+        // query was a phantom-table bug that returned 500 for every caller.
+        // Per-tenant overrides in tenant_role_capabilities can flip `allowed`
+        // off for a (tenant, role, capability) triple — those are filtered out.
         $capRows = \Database::fetchAll(
             "SELECT DISTINCT mc.capability, m.code AS module_code
              FROM user_roles ur
              JOIN roles r ON r.id = ur.role_id
-             JOIN role_capabilities rc ON rc.role_id = r.id
-             JOIN module_capabilities mc ON mc.id = rc.module_capability_id
+             JOIN role_capability_templates rct ON rct.role_slug = r.slug
+             JOIN module_capabilities mc ON mc.id = rct.module_capability_id
              JOIN modules m ON m.id = mc.module_id
              WHERE ur.user_id = ?
+               AND NOT EXISTS (
+                   SELECT 1 FROM tenant_role_capabilities trc
+                    WHERE trc.tenant_id = ?
+                      AND trc.role_slug = r.slug
+                      AND trc.module_capability_id = mc.id
+                      AND trc.allowed = 0
+               )
              ORDER BY m.code, mc.capability",
-            [$user['user_id']]
+            [$user['user_id'], $tenantId]
         );
 
         // Group by module
