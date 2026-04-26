@@ -78,9 +78,13 @@ class PerDiemController {
         require VIEWS_PATH . '/layouts/app.php';
     }
 
-    public function approveClaim(int $id): void { $this->reviewClaim($id, 'approved'); }
-    public function rejectClaim(int $id): void  { $this->reviewClaim($id, 'rejected'); }
-    public function payClaim(int $id): void     { $this->reviewClaim($id, 'paid'); }
+    // Defence-in-depth: explicit guard at the route entry point so a future
+    // refactor of reviewClaim() cannot silently drop the role check. The
+    // delegated $this->requireFinance() inside reviewClaim() remains the
+    // canonical guard; this is belt-and-braces.
+    public function approveClaim(int $id): void { $this->requireFinance(); $this->reviewClaim($id, 'approved'); }
+    public function rejectClaim(int $id): void  { $this->requireFinance(); $this->reviewClaim($id, 'rejected'); }
+    public function payClaim(int $id): void     { $this->requireFinance(); $this->reviewClaim($id, 'paid'); }
 
     private function reviewClaim(int $id, string $decision): void {
         $this->requireFinance();

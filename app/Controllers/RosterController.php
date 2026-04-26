@@ -9,6 +9,16 @@ class RosterController {
     // ─── Monthly Grid ─────────────────────────────────────────────────────────
 
     public function index(): void {
+        // D7 (Phase 5 remediation, 2026-04-26): roster grid is for planners /
+        // managers. End-user crew see their own assignments via /api/roster
+        // and /flights/{id}, not this grid. Without an explicit guard any
+        // logged-in user could browse the full tenant roster.
+        RbacMiddleware::requireRole([
+            'super_admin', 'airline_admin',
+            'scheduler', 'chief_pilot', 'head_cabin_crew',
+            'engineering_manager', 'base_manager',
+        ]);
+
         $tenantId = currentTenantId();
 
         $year  = (int) ($_GET['year']  ?? date('Y'));
