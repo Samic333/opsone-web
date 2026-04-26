@@ -25,7 +25,7 @@ class NoticeApiController {
         }
 
         // Filter by user's roles so role-targeted notices are respected
-        $userRoles = UserModel::getRoles($user['id']);
+        $userRoles = UserModel::getRoles($user['user_id']);
         $roleSlugs = array_column($userRoles, 'slug');
         $notices   = Notice::forUserRoles($tenantId, $roleSlugs);
 
@@ -37,7 +37,7 @@ class NoticeApiController {
                 "SELECT notice_id, read_at, acknowledged_at
                  FROM notice_reads
                  WHERE user_id = ? AND notice_id IN ($ids)",
-                [$user['id']]
+                [$user['user_id']]
             );
             foreach ($reads as $r) {
                 $readMap[(int)$r['notice_id']] = $r;
@@ -89,18 +89,21 @@ class NoticeApiController {
             return;
         }
 
-        $now = dbNow();
+        // PHP-formatted UTC timestamp — dbNow() emits a SQL fragment that's
+        // only safe when interpolated, not when bound as a parameter (PDO
+        // would persist the literal "datetime('now')" string verbatim).
+        $now = date('Y-m-d H:i:s');
 
         $existing = Database::fetch(
             "SELECT id, read_at FROM notice_reads WHERE notice_id = ? AND user_id = ?",
-            [$noticeId, $user['id']]
+            [$noticeId, $user['user_id']]
         );
 
         if (!$existing) {
             Database::insert(
                 "INSERT INTO notice_reads (notice_id, user_id, tenant_id, read_at)
                  VALUES (?, ?, ?, ?)",
-                [$noticeId, $user['id'], $tenantId, $now]
+                [$noticeId, $user['user_id'], $tenantId, $now]
             );
         }
         // Idempotent — if already read, do not overwrite read_at
@@ -134,23 +137,25 @@ class NoticeApiController {
             return;
         }
 
-        $now = dbNow();
+        // PHP-formatted UTC timestamp — see markRead() above for the
+        // dbNow()-as-parameter caveat.
+        $now = date('Y-m-d H:i:s');
 
         $existing = Database::fetch(
             "SELECT id, acknowledged_at FROM notice_reads WHERE notice_id = ? AND user_id = ?",
-            [$noticeId, $user['id']]
+            [$noticeId, $user['user_id']]
         );
 
         if (!$existing) {
             Database::insert(
                 "INSERT INTO notice_reads (notice_id, user_id, tenant_id, read_at, acknowledged_at)
                  VALUES (?, ?, ?, ?, ?)",
-                [$noticeId, $user['id'], $tenantId, $now, $now]
+                [$noticeId, $user['user_id'], $tenantId, $now, $now]
             );
         } else {
             Database::execute(
                 "UPDATE notice_reads SET acknowledged_at = ? WHERE notice_id = ? AND user_id = ?",
-                [$now, $noticeId, $user['id']]
+                [$now, $noticeId, $user['user_id']]
             );
         }
 

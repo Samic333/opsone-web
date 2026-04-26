@@ -10,7 +10,7 @@ class FileApiController {
         $tenantId = apiTenantId();
         $roles = apiUserRoles();
 
-        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+        if (!AuthorizationService::isModuleEnabledForTenant('manuals', $tenantId)) {
             jsonResponse(['success' => true, 'files' => [], 'count' => 0, 'module_disabled' => true]);
         }
 
@@ -48,7 +48,7 @@ class FileApiController {
         $user = apiUser();
         $tenantId = apiTenantId();
 
-        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+        if (!AuthorizationService::isModuleEnabledForTenant('manuals', $tenantId)) {
             jsonResponse(['error' => 'Module disabled'], 403);
         }
 
@@ -84,7 +84,7 @@ class FileApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
-        if (!AuthorizationService::isModuleEnabledForTenant('documents', $tenantId)) {
+        if (!AuthorizationService::isModuleEnabledForTenant('manuals', $tenantId)) {
             jsonResponse(['error' => 'Module disabled'], 403);
             return;
         }
@@ -103,13 +103,17 @@ class FileApiController {
             return;
         }
 
-        $now = dbNow();
+        // dbNow() returns a SQL fragment ("NOW()" / "datetime('now')") meant
+        // for interpolation, NOT for binding as a parameter. When passed as a
+        // PDO parameter it's stored verbatim as the literal string. Use a
+        // PHP-formatted UTC timestamp instead — works on both drivers.
+        $now = date('Y-m-d H:i:s');
 
         // Upsert — re-acknowledging after a version change updates the record
         $existing = Database::fetch(
             "SELECT id, acknowledged_at, version FROM file_acknowledgements
              WHERE file_id = ? AND user_id = ?",
-            [$id, $user['id']]
+            [$id, $user['user_id']]
         );
 
         if (!$existing) {
@@ -117,7 +121,7 @@ class FileApiController {
                 "INSERT INTO file_acknowledgements
                     (file_id, user_id, tenant_id, version, device_id, acknowledged_at)
                  VALUES (?, ?, ?, ?, ?, ?)",
-                [$id, $user['id'], $tenantId, $file['version'], null, $now]
+                [$id, $user['user_id'], $tenantId, $file['version'], null, $now]
             );
         } else {
             // Update if re-acknowledging a new version
@@ -125,7 +129,7 @@ class FileApiController {
                 "UPDATE file_acknowledgements
                  SET acknowledged_at = ?, version = ?
                  WHERE file_id = ? AND user_id = ?",
-                [$now, $file['version'], $id, $user['id']]
+                [$now, $file['version'], $id, $user['user_id']]
             );
         }
 

@@ -34,7 +34,7 @@ class SafetyApiController {
         $settings     = SafetyReportModel::getSettings($tenantId);
         $enabledTypes = $settings['enabled_types'] ?? array_keys(SafetyReportModel::TYPES);
 
-        $userRoles = UserModel::getRoles((int) $user['id']);
+        $userRoles = UserModel::getRoles((int) $user['user_id']);
         $roleSlugs = array_column($userRoles, 'slug');
 
         $result = [];
@@ -63,7 +63,7 @@ class SafetyApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
-        $rows = SafetyReportModel::forUser($tenantId, (int) $user['id']);
+        $rows = SafetyReportModel::forUser($tenantId, (int) $user['user_id']);
         jsonResponse(['reports' => array_map([self::class, 'formatReport'], $rows)]);
     }
 
@@ -78,7 +78,7 @@ class SafetyApiController {
         $user     = apiUser();
         $tenantId = apiTenantId();
 
-        $rows = SafetyReportModel::draftsForUser($tenantId, (int) $user['id']);
+        $rows = SafetyReportModel::draftsForUser($tenantId, (int) $user['user_id']);
         jsonResponse(['drafts' => array_map([self::class, 'formatReport'], $rows)]);
     }
 
@@ -102,7 +102,7 @@ class SafetyApiController {
         }
 
         // Reporter can only see their own report; safety team can see all
-        if ((int) $report['reporter_id'] !== (int) $user['id']) {
+        if ((int) $report['reporter_id'] !== (int) $user['user_id']) {
             jsonResponse(['error' => 'Access denied'], 403);
             return;
         }
@@ -134,7 +134,7 @@ class SafetyApiController {
         $body = $this->parseBody();
         $type = trim($body['report_type'] ?? 'general_hazard');
 
-        if (!$this->userCanUseType($type, $tenantId, (int) $user['id'])) {
+        if (!$this->userCanUseType($type, $tenantId, (int) $user['user_id'])) {
             jsonResponse(['error' => 'You do not have access to that report type'], 403);
             return;
         }
@@ -190,7 +190,7 @@ class SafetyApiController {
         $body = $this->parseBody();
         $data = $this->collectData($body, $user);
 
-        $ok = SafetyReportModel::updateDraft($tenantId, $id, (int) $user['id'], $data);
+        $ok = SafetyReportModel::updateDraft($tenantId, $id, (int) $user['user_id'], $data);
 
         if (!$ok) {
             jsonResponse(['error' => 'Draft not found, already submitted, or not owned by you'], 422);
@@ -224,7 +224,7 @@ class SafetyApiController {
             return;
         }
 
-        if ((int) $report['reporter_id'] !== (int) $user['id']) {
+        if ((int) $report['reporter_id'] !== (int) $user['user_id']) {
             jsonResponse(['error' => 'Access denied'], 403);
             return;
         }
@@ -257,7 +257,7 @@ class SafetyApiController {
             return;
         }
 
-        if ((int) $report['reporter_id'] !== (int) $user['id']) {
+        if ((int) $report['reporter_id'] !== (int) $user['user_id']) {
             jsonResponse(['error' => 'Access denied'], 403);
             return;
         }
@@ -270,7 +270,7 @@ class SafetyApiController {
             return;
         }
 
-        $threadId = SafetyReportModel::addThread($id, (int) $user['id'], $text, false);
+        $threadId = SafetyReportModel::addThread($id, (int) $user['user_id'], $text, false);
         AuditService::logApi('safety.reply_added', 'safety_reports', $id);
 
         // Notify assigned user or safety managers
@@ -352,7 +352,7 @@ class SafetyApiController {
     private function collectData(array $body, array $user): array {
         return [
             'report_type'           => trim($body['report_type']           ?? 'general_hazard'),
-            'reporter_id'           => (int) $user['id'],
+            'reporter_id'           => (int) $user['user_id'],
             'is_anonymous'          => !empty($body['is_anonymous']),
             'event_date'            => trim($body['event_date']            ?? '') ?: null,
             'event_utc_time'        => trim($body['event_utc_time']        ?? '') ?: null,
