@@ -203,6 +203,17 @@ if ($isApi) {
 } elseif ($controllerName === 'PasswordResetController') {
     // Forgot/reset password flow — public by design, but still protected
     // by per-IP rate limit + single-use, time-limited tokens.
+} elseif ($controllerName === 'ActivationController') {
+    // First-time account activation from an invitation token. The whole
+    // point is that the user has no account yet, so this MUST be public.
+    // Token validity (single-use + expiry) is enforced inside the
+    // controller. Without this exclusion, WebAuthMiddleware below would
+    // bounce the user to /login and onboarding would silently break —
+    // discovered during the 2026-04-26 remediation Scenario 24 (DemoAir
+    // re-onboard after teardown).
+} elseif ($controllerName === 'InstallController') {
+    // Public OTA install pages for distributing the iPad enterprise build.
+    // Same rationale as PasswordResetController.
 } else {
     // Web routes: session auth (except login page)
     if ($controllerName !== 'AuthController' && $controllerName !== 'TwoFactorController') {

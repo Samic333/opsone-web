@@ -130,10 +130,11 @@ class FlightFolderApiController {
         if (!$existing) {
             jsonResponse(['error' => 'No draft to submit — save draft first'], 422);
         }
+        $now = dbNow(); // driver-agnostic — datetime('now') on SQLite, NOW() on MySQL
         Database::query(
             "UPDATE `$table`
                 SET status = 'submitted',
-                    submitted_at = NOW(),
+                    submitted_at = $now,
                     submitted_by_user_id = ?
               WHERE id = ?",
             [$userId, (int)$existing['id']]

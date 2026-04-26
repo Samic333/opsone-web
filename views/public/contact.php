@@ -15,6 +15,7 @@
                         </div>
                     <?php endif; ?>
                     <form method="POST" action="/contact">
+                        <?= csrfField() ?>
                         <div class="form-group">
                             <label for="contact-name">Full Name</label>
                             <input type="text" id="contact-name" name="name" placeholder="Your name" required>

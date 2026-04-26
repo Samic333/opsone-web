@@ -816,13 +816,16 @@ class SafetyReportModel {
      */
     public static function markOverdueActions(int $tenantId): void {
         try {
+            // CURDATE() is MySQL — emit the SQLite current-date literal when
+            // running on SQLite so local dev exercises this code path too.
+            $today = (env('DB_DRIVER', 'mysql') === 'sqlite') ? "date('now')" : 'CURDATE()';
             Database::execute(
                 "UPDATE safety_actions
                     SET status = 'overdue'
                   WHERE tenant_id = ?
                     AND status IN ('open','in_progress')
                     AND due_date IS NOT NULL
-                    AND due_date < CURDATE()",
+                    AND due_date < $today",
                 [$tenantId]
             );
         } catch (\Throwable $e) {

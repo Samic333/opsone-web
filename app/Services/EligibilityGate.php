@@ -45,18 +45,28 @@ class EligibilityGate {
             }
         }
 
-        // 3. Qualifications (if the table exists)
+        // 3. Qualifications. Canonical table is `qualifications` (migration 014)
+        // with columns (qual_type, qual_name, expiry_date, status). Earlier
+        // this queried `user_qualifications.qualification_type` which never
+        // existed; the try/catch silently swallowed the error so expired
+        // qualifications never blocked crew assignment.
         try {
             $qualExpired = Database::fetchAll(
-                "SELECT qualification_type, expiry_date
-                   FROM user_qualifications
-                  WHERE user_id = ? AND expiry_date IS NOT NULL AND expiry_date <= ?",
+                "SELECT qual_type, qual_name, expiry_date
+                   FROM qualifications
+                  WHERE user_id = ?
+                    AND expiry_date IS NOT NULL
+                    AND expiry_date <= ?
+                    AND status = 'active'",
                 [$userId, $date]
             );
             foreach ($qualExpired as $q) {
-                $blockers[] = "Qualification {$q['qualification_type']} expired on {$q['expiry_date']}";
+                $label = $q['qual_name'] ?: $q['qual_type'];
+                $blockers[] = "Qualification {$label} expired on {$q['expiry_date']}";
             }
-        } catch (\Throwable $e) { /* table may not exist in all tenants */ }
+        } catch (\Throwable $e) {
+            error_log('[OpsOne EligibilityGate qualifications skipped] ' . $e->getMessage());
+        }
 
         return $blockers;
     }

@@ -58,6 +58,12 @@ class PublicController {
     }
 
     public function submitContact(): void {
+        if (!verifyCsrf()) {
+            $_SESSION['_contact_flash'] = ['error', 'Invalid form submission. Please reload and try again.'];
+            header('Location: /contact');
+            exit;
+        }
+
         $name    = trim($_POST['name']         ?? '');
         $email   = trim($_POST['email']        ?? '');
         $org     = trim($_POST['organization'] ?? '');

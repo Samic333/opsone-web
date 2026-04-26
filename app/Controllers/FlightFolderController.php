@@ -133,9 +133,10 @@ class FlightFolderController {
 
         $me = currentUser();
         $reviewer = (int)($me['id'] ?? 0);
+        $now = dbNow(); // driver-agnostic
         Database::query(
             "UPDATE `$table`
-                SET status = ?, reviewed_by_user_id = ?, reviewed_at = NOW()
+                SET status = ?, reviewed_by_user_id = ?, reviewed_at = $now
               WHERE id = ?",
             [$newStatus, $reviewer, (int)$existing['id']]
         );

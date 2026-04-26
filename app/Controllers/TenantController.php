@@ -149,7 +149,27 @@ class TenantController {
                 'airline_admin',
                 $actor['id'] ?? null
             );
-            // TODO Phase 1: send $token via email with activation link
+
+            // Local-mode fallback when SMTP is not wired: write the activation
+            // link to a dedicated log file AND record it in the audit log so
+            // a platform admin can copy it from the audit trail.  Replaces
+            // the previous "TODO Phase 1" comment.  When SMTP is configured,
+            // a future hook can add an actual mail send next to this block.
+            $appUrl = env('APP_URL', 'http://localhost:8081');
+            $activationLink = rtrim($appUrl, '/') . '/activate?token=' . urlencode($token);
+            $logDir = BASE_PATH . '/storage/logs';
+            if (!is_dir($logDir)) @mkdir($logDir, 0775, true);
+            @file_put_contents(
+                $logDir . '/onboarding_invitations.log',
+                sprintf("[%s] tenant=%d (%s) admin=%s <%s>  link=%s\n",
+                    date('Y-m-d H:i:s'),
+                    $tenantId, $name, $adminContactName, $adminContactEmail, $activationLink),
+                FILE_APPEND | LOCK_EX
+            );
+            AuditLog::log(
+                'tenant_admin_invited', 'tenant', $tenantId,
+                "Invitation issued for {$adminContactName} <{$adminContactEmail}>. Activation link recorded in storage/logs/onboarding_invitations.log."
+            );
         }
 
         AuditService::logTenantCreated($tenantId, $name);
