@@ -15,13 +15,16 @@ class ApiAuthMiddleware {
             jsonResponse(['error' => 'Invalid token'], 401);
         }
 
-        // Look up token
+        // Look up token by sha256(bearer). Plaintext is no longer stored at
+        // rest (migration 043 + AuthApiController), so a DB compromise cannot
+        // replay tokens. Backfilled hashes cover all pre-existing iPad sessions.
+        $tokenHash = hash('sha256', $token);
         $tokenRecord = Database::fetch(
             "SELECT t.*, u.name, u.email, u.status, u.tenant_id
              FROM api_tokens t
              JOIN users u ON t.user_id = u.id
-             WHERE t.token = ? AND t.expires_at > CURRENT_TIMESTAMP AND t.revoked = 0",
-            [$token]
+             WHERE t.token_hash = ? AND t.expires_at > CURRENT_TIMESTAMP AND t.revoked = 0",
+            [$tokenHash]
         );
 
         if (!$tokenRecord) {

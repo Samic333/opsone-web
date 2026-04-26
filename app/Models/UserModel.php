@@ -10,7 +10,15 @@ class UserModel {
                 [$email, $tenantId]
             );
         }
-        return Database::fetch("SELECT * FROM users WHERE email = ?", [$email]);
+        // Multi-tenant fallback: users.email is UNIQUE only per (email, tenant_id),
+        // so the same email can exist in multiple airlines. Returning the first row
+        // would silently log the user into the wrong tenant. Succeed only when the
+        // email is unambiguous across the whole instance.
+        $rows = Database::fetchAll(
+            "SELECT * FROM users WHERE email = ? LIMIT 2",
+            [$email]
+        );
+        return (count($rows) === 1) ? $rows[0] : null;
     }
 
     public static function find(int $id): ?array {

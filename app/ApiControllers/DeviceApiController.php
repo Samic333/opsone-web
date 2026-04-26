@@ -21,7 +21,10 @@ class DeviceApiController {
             // Link token to device
             $token = $GLOBALS['api_token'] ?? '';
             if ($token) {
-                \Database::execute("UPDATE api_tokens SET device_id = ? WHERE token = ?", [$existing['id'], $token]);
+                \Database::execute("UPDATE api_tokens SET device_id = ? WHERE token_hash = ?", [$existing['id'], hash('sha256', $token)]);
+            // ^ token here is the plaintext bearer from $GLOBALS['api_token'];
+            // api_tokens.token is no longer persisted (mig 043), so we match
+            // by sha256 of the plaintext.
             }
 
             jsonResponse([
@@ -50,10 +53,14 @@ class DeviceApiController {
             'approval_status' => $autoApprove ? 'approved' : 'pending',
         ]);
 
-        // Link token to device
+        // Link token to device. api_tokens.token is no longer plaintext at
+        // rest (mig 043), so we match by sha256(bearer) against token_hash.
         $token = $GLOBALS['api_token'] ?? '';
         if ($token) {
-            \Database::execute("UPDATE api_tokens SET device_id = ? WHERE token = ?", [$deviceId, $token]);
+            \Database::execute(
+                "UPDATE api_tokens SET device_id = ? WHERE token_hash = ?",
+                [$deviceId, hash('sha256', $token)]
+            );
         }
 
         $platform = $input['platform'] ?? 'unknown';

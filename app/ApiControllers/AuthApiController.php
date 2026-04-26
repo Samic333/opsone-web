@@ -50,13 +50,25 @@ class AuthApiController {
             [$user['id']]
         );
 
-        // Generate API token
+        // Generate API token. Persist sha256(token) only — the plaintext token
+        // is returned to the client this once and never stored at rest, so a
+        // DB read does not yield usable bearer tokens. ApiAuthMiddleware looks
+        // up incoming bearers by token_hash. (Migration 043.)
         $token = generateApiToken();
+        $tokenHash = hash('sha256', $token);
         $expiryHours = config('api.token_expiry_hours', 168);
         $expiresAt = date('Y-m-d H:i:s', time() + ($expiryHours * 3600));
+        // Persist token_hash. The legacy `token` column has a NOT NULL UNIQUE
+        // constraint we can't drop without rebuilding the table on SQLite, so
+        // we fill it with the hash itself — it's already unique per row, and
+        // it leaks nothing the `token_hash` column doesn't already expose.
+        // Phase 12 cleanup migration will drop the legacy column outright.
+        // Lookups go through token_hash only (ApiAuthMiddleware), so the value
+        // stored in `token` is never used for auth.
         \Database::insert(
-            "INSERT INTO api_tokens (user_id, tenant_id, token, expires_at) VALUES (?, ?, ?, ?)",
-            [$user['id'], $user['tenant_id'], $token, $expiresAt]
+            "INSERT INTO api_tokens (user_id, tenant_id, token, token_hash, expires_at)
+             VALUES (?, ?, ?, ?, ?)",
+            [$user['id'], $user['tenant_id'], $tokenHash, $tokenHash, $expiresAt]
         );
 
         // Get roles
