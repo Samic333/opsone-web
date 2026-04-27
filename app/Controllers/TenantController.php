@@ -87,9 +87,20 @@ class TenantController {
 
         $tenantId = Tenant::create($tenantData);
 
-        // Create default roles for the new tenant
+        // Create default roles for the new tenant.
+        // Filter out platform-tier roles (super_admin, platform_support,
+        // platform_security, system_monitoring) — those only make sense at
+        // platform scope and should never be assignable inside an airline.
+        // Surfaced by Skylink onboarding audit (F2): without this filter,
+        // each new tenant ends up with 4 platform slugs polluting its role
+        // list, and a tenant admin could in principle assign platform_support
+        // to a crew member.
         $systemRoles = Database::fetchAll(
-            "SELECT name, slug, description, role_type FROM roles WHERE tenant_id IS NULL AND is_system = 1"
+            "SELECT name, slug, description, role_type
+               FROM roles
+              WHERE tenant_id IS NULL
+                AND is_system = 1
+                AND role_type != 'platform'"
         );
         foreach ($systemRoles as $role) {
             Database::insert(

@@ -129,7 +129,8 @@
         </h3>
         <p style="margin:0 0 1rem; font-size:12px; color:var(--text-muted);">
             An invitation token will be created for this contact (no plain-text password sent).
-            Email delivery is wired up in Phase 1.
+            The activation link is recorded in <code>storage/logs/onboarding_invitations.log</code>
+            and the audit log; SMTP delivery can be added when production mail credentials are configured.
         </p>
         <div class="form-row">
             <div class="form-group">
