@@ -29,10 +29,11 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             <span></span><span></span><span></span>
         </button>
         <div class="pub-nav-links" id="pubNavLinks">
-            <a href="/features" class="<?= $currentPath === '/features' ? 'active' : '' ?>">Features</a>
-            <a href="/how-it-works" class="<?= $currentPath === '/how-it-works' ? 'active' : '' ?>">How It Works</a>
-            <a href="/pricing" class="<?= $currentPath === '/pricing' ? 'active' : '' ?>">Pricing</a>
-            <a href="/support" class="<?= $currentPath === '/support' ? 'active' : '' ?>">Support</a>
+            <!-- Public nav is intentionally minimal so a casual visitor can't
+                 map the platform's surface from the marketing site. Features,
+                 How It Works, Pricing, FAQ, and Support routes still exist
+                 (linked from the footer) but aren't promoted in the top nav. -->
+            <a href="/features" class="<?= $currentPath === '/features' ? 'active' : '' ?>">Platform</a>
             <a href="/contact" class="<?= $currentPath === '/contact' ? 'active' : '' ?>">Contact</a>
         </div>
         <div class="pub-nav-actions">
@@ -60,17 +61,16 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <p class="pub-footer-copy">© <?= e($brand['copyright_year']) ?> <?= e($brand['company_name']) ?>. All rights reserved.</p>
             </div>
             <div class="pub-footer-col">
-                <h4>Product</h4>
-                <a href="/features">Features</a>
-                <a href="/how-it-works">How It Works</a>
-                <a href="/pricing">Pricing</a>
+                <h4>Platform</h4>
+                <a href="/features">Overview</a>
+                <a href="/about">About</a>
                 <a href="/faq">FAQ</a>
             </div>
             <div class="pub-footer-col">
-                <h4>Company</h4>
-                <a href="/about">About</a>
+                <h4>Get In Touch</h4>
+                <a href="/contact">Request Demo</a>
+                <a href="/contact?type=sales">Contact Sales</a>
                 <a href="/support">Support</a>
-                <a href="/contact">Contact</a>
             </div>
             <div class="pub-footer-col">
                 <h4>Legal</h4>
@@ -78,10 +78,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <a href="/terms">Terms of Use</a>
             </div>
             <div class="pub-footer-col">
-                <h4>Access</h4>
-                <a href="/contact">Request Demo</a>
-                <a href="/request-assessment">Request Assessment</a>
-                <a href="/login">Client Login</a>
+                <h4>Existing Clients</h4>
+                <a href="/login">Sign In</a>
             </div>
         </div>
         <div class="pub-footer-bottom">

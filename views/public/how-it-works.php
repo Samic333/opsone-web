@@ -1,34 +1,37 @@
-<?php /** OpsOne — How It Works */ ?>
+<?php /** OpsOne — How It Works (high-level only; details under NDA) */ ?>
 <div class="info-page">
-    <div class="info-page-inner">
-        <div class="section-label">✦ How It Works</div>
-        <h1>How <?= e($brand['product_name']) ?> Works</h1>
-        <p class="lead">From airline onboarding to daily crew operations — here's the complete workflow.</p>
+    <div class="info-page-inner" style="max-width: 800px;">
+        <div class="section-label">How It Works</div>
+        <h1>From Onboarding To Daily Operations</h1>
+        <p class="lead">
+            Three phases — getting your airline set up, daily use by crew and operations, and keeping
+            content current. We walk you through each in detail during a demo.
+        </p>
     </div>
 </div>
 
 <section class="section">
     <div class="section-inner">
         <div class="section-header">
-            <h2 class="section-title">Airline Onboarding</h2>
-            <p class="section-desc">Setting up your airline takes minutes, not months.</p>
+            <h2 class="section-title">1. Get Your Airline Onboarded</h2>
+            <p class="section-desc">A guided rollout — usually weeks, not months.</p>
         </div>
         <div class="steps-grid">
             <div class="step-card">
-                <h3>Airline Created</h3>
-                <p>Platform administrator creates your airline tenant with company name, code, and contact details. Your data is fully isolated from other airlines.</p>
+                <h3>Discovery</h3>
+                <p>We review your fleet, bases, crew base, and current tools. Output is a phased rollout plan.</p>
             </div>
             <div class="step-card">
-                <h3>Roles & Departments</h3>
-                <p>Configure departments (Flight Ops, Cabin, Engineering, etc.) and assign roles to match your organization structure.</p>
+                <h3>Workspace Set Up</h3>
+                <p>Your isolated airline workspace is provisioned. Your admin team gets the keys.</p>
             </div>
             <div class="step-card">
-                <h3>Users Added</h3>
-                <p>Create user accounts for your crew, assign roles, and enable mobile access. Users receive credentials for app login.</p>
+                <h3>Migration &amp; Training</h3>
+                <p>We help bring your existing crew records, manuals, and rosters in. Admin and crew training sessions follow.</p>
             </div>
             <div class="step-card">
-                <h3>Content Uploaded</h3>
-                <p>Upload manuals, SOPs, training materials, and operational documents. Organize by category and control visibility by role.</p>
+                <h3>Go Live</h3>
+                <p>Crew receive iPads (or use existing ones). Operations switches over. We stand by during the first week.</p>
             </div>
         </div>
     </div>
@@ -37,53 +40,41 @@
 <section class="section section-alt">
     <div class="section-inner">
         <div class="section-header">
-            <h2 class="section-title">Daily Operations</h2>
-            <p class="section-desc">What happens every day for pilots and crew.</p>
+            <h2 class="section-title">2. Daily Use</h2>
+            <p class="section-desc">Two surfaces — one for crew, one for operations.</p>
         </div>
         <div class="steps-grid">
             <div class="step-card">
-                <h3>Open App</h3>
-                <p>Crew member opens <?= e($brand['product_name']) ?> on their iPad. The app syncs with the server to fetch the latest content and schedule updates.</p>
+                <h3>Crew on iPad</h3>
+                <p>Crew open the app to see today's duty, upcoming flights, and any notices waiting for acknowledgement.</p>
             </div>
             <div class="step-card">
-                <h3>Check Dashboard</h3>
-                <p>The home dashboard shows today's duties, upcoming flights, unread notices, and pending acknowledgements. Everything at a glance.</p>
+                <h3>Operations on Web</h3>
+                <p>Schedulers, HR, safety, and engineering teams work from the web dashboard with role-tailored views.</p>
             </div>
             <div class="step-card">
-                <h3>Report for Duty</h3>
-                <p>Tap "Report" to log duty start. Clock in at the airport with location stamping. Clock out when the duty ends.</p>
+                <h3>Two-Way Updates</h3>
+                <p>Reports submitted on iPad surface in operations queues. Notices published from operations reach crew immediately.</p>
             </div>
             <div class="step-card">
-                <h3>Access Flight Package</h3>
-                <p>Open the flight folder for your assigned flight. View the navigation log, fuel data, waypoints, and complete after-mission reports.</p>
+                <h3>Always Auditable</h3>
+                <p>Every action — login, upload, approval, configuration change — is logged for regulatory and internal review.</p>
             </div>
         </div>
     </div>
 </section>
 
-<section class="section">
-    <div class="section-inner">
-        <div class="section-header">
-            <h2 class="section-title">Admin Content Flow</h2>
-            <p class="section-desc">How content moves from administrators to crew iPads.</p>
-        </div>
-        <div class="steps-grid">
-            <div class="step-card">
-                <h3>Admin Uploads</h3>
-                <p>Airline admin logs into the web portal and uploads a new manual revision, notice, or briefing document.</p>
-            </div>
-            <div class="step-card">
-                <h3>Categorize & Publish</h3>
-                <p>The document is tagged with a category, version number, and role visibility. Admin clicks "Publish" to make it available.</p>
-            </div>
-            <div class="step-card">
-                <h3>Sync Triggered</h3>
-                <p>When crew members open the app or perform a manual sync, the app checks the sync manifest and downloads new/updated content.</p>
-            </div>
-            <div class="step-card">
-                <h3>Offline Ready</h3>
-                <p>Downloaded files are stored locally. Crew can access them during flights, even without internet. Last sync time is always visible.</p>
-            </div>
+<section class="cta-section">
+    <div class="cta-inner">
+        <div class="section-label">Want The Full Picture?</div>
+        <h2 class="section-title">Request A Demo</h2>
+        <p class="section-desc" style="margin: 0 auto;">
+            We share the full workflow, the integrations, and the screens privately with airlines
+            we're in conversation with.
+        </p>
+        <div class="cta-actions">
+            <a href="/contact" class="pub-btn pub-btn-primary pub-btn-large">Request Demo</a>
+            <a href="/contact?type=sales" class="pub-btn pub-btn-ghost pub-btn-large">Contact Sales</a>
         </div>
     </div>
 </section>

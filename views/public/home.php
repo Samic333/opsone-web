@@ -24,9 +24,7 @@
                 <a href="#platform-overview" class="pub-btn pub-btn-ghost pub-btn-large">View Platform Overview</a>
             </div>
             <p class="hero-tertiary">
-                See the full deck on <a href="/pricing">pricing</a>
-                &nbsp;&middot;&nbsp;
-                Existing client? <a href="/login">Client Login</a>
+                Existing client? <a href="/login">Sign in</a>
             </p>
             <div class="hero-stats">
                 <div class="hero-stat">
@@ -53,7 +51,7 @@
                     <span class="browser-dot"></span>
                     <div class="browser-url">
                         <?= sidebarIcon('lock-closed', 12) ?>
-                        <span>opsone.aero/dashboard</span>
+                        <span>airline operations dashboard</span>
                     </div>
                 </div>
                 <div class="dash-mock">
@@ -133,13 +131,13 @@
             </div>
             <div class="feature-card">
                 <div class="feature-icon"><?= sidebarIcon('building-office', 22) ?></div>
-                <h3>Airline Tenant Portal</h3>
-                <p>Each airline gets its own tenant-secured portal at <code>/airline/&#123;slug&#125;/login</code>. Data, users, devices, and audit trails are fully isolated.</p>
+                <h3>Secure Airline Workspace</h3>
+                <p>Each airline operates inside a fully isolated workspace. Data, users, devices, and audit trails never cross airline boundaries.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon"><?= sidebarIcon('key', 22) ?></div>
-                <h3>Role-Based Dashboards</h3>
-                <p>16 configurable roles from Pilot to Platform Super Admin. Each role sees only the modules and data their position requires.</p>
+                <h3>Role-Based Access</h3>
+                <p>Configurable roles from crew to airline admin. Each role sees only the modules and data their position requires.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon"><?= sidebarIcon('cloud-arrow-up', 22) ?></div>
@@ -205,7 +203,7 @@
                         <span class="browser-dot"></span>
                         <div class="browser-url">
                             <?= sidebarIcon('lock-closed', 12) ?>
-                            <span>opsone.aero/dashboard</span>
+                            <span>airline operations dashboard</span>
                         </div>
                     </div>
                     <div class="dash-mock dash-mock--lg">
@@ -322,108 +320,11 @@
 </section>
 
 <!-- ============================================================
-     5. MULTI-TENANT AIRLINE MODEL
-============================================================ -->
-<section class="section section-alt">
-    <div class="section-inner">
-        <div class="section-header">
-            <div class="section-label">Multi-Tenant Architecture</div>
-            <h2 class="section-title">Every Airline Gets Its Own Secure Portal</h2>
-            <p class="section-desc">
-                OpsOne is multi-tenant by design. Platform admin onboards an airline, provisions an
-                isolated tenant, and hands off full administration to the airline's own admin team.
-                One platform, many airlines, zero cross-tenant data exposure.
-            </p>
-        </div>
-
-        <div class="tenant-diagram">
-            <div class="tenant-platform">
-                <div class="tenant-platform-icon"><?= sidebarIcon('squares', 22) ?></div>
-                <div>
-                    <div class="tenant-platform-title">OpsOne Platform</div>
-                    <div class="tenant-platform-sub">Onboarding &middot; Module Catalog &middot; Audit</div>
-                </div>
-            </div>
-            <div class="tenant-connectors" aria-hidden="true">
-                <span class="tenant-line"></span>
-                <span class="tenant-line"></span>
-                <span class="tenant-line"></span>
-            </div>
-            <div class="tenant-airlines">
-                <div class="tenant-airline">
-                    <div class="tenant-airline-header">
-                        <?= sidebarIcon('paper-airplane', 16) ?>
-                        <span>Airline A</span>
-                    </div>
-                    <code>/airline/airline-a/login</code>
-                    <ul>
-                        <li>Own users, roles, devices</li>
-                        <li>Own roster &amp; manuals</li>
-                        <li>Own admin team</li>
-                    </ul>
-                </div>
-                <div class="tenant-airline tenant-airline--featured">
-                    <div class="tenant-airline-header">
-                        <?= sidebarIcon('paper-airplane', 16) ?>
-                        <span>Airline B</span>
-                    </div>
-                    <code>/airline/airline-b/login</code>
-                    <ul>
-                        <li>Own users, roles, devices</li>
-                        <li>Own roster &amp; manuals</li>
-                        <li>Own admin team</li>
-                    </ul>
-                </div>
-                <div class="tenant-airline">
-                    <div class="tenant-airline-header">
-                        <?= sidebarIcon('paper-airplane', 16) ?>
-                        <span>Airline C</span>
-                    </div>
-                    <code>/airline/airline-c/login</code>
-                    <ul>
-                        <li>Own users, roles, devices</li>
-                        <li>Own roster &amp; manuals</li>
-                        <li>Own admin team</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="tenant-points">
-            <div class="tenant-point">
-                <div class="tenant-point-icon"><?= sidebarIcon('shield-check', 18) ?></div>
-                <div>
-                    <h4>Strict tenant isolation</h4>
-                    <p>Every table is scoped by tenant. No cross-airline data is ever queryable, even by accident.</p>
-                </div>
-            </div>
-            <div class="tenant-point">
-                <div class="tenant-point-icon"><?= sidebarIcon('rocket-launch', 18) ?></div>
-                <div>
-                    <h4>Platform-driven onboarding</h4>
-                    <p>Platform super admin provisions the tenant, enables modules, and creates the airline's first admin account.</p>
-                </div>
-            </div>
-            <div class="tenant-point">
-                <div class="tenant-point-icon"><?= sidebarIcon('key', 18) ?></div>
-                <div>
-                    <h4>Tenant-scoped login URL</h4>
-                    <p>Each airline can use its own branded login at <code>/airline/&#123;slug&#125;/login</code> alongside the global <code>/login</code>.</p>
-                </div>
-            </div>
-            <div class="tenant-point">
-                <div class="tenant-point-icon"><?= sidebarIcon('lock-closed', 18) ?></div>
-                <div>
-                    <h4>Full audit trail</h4>
-                    <p>Logins, uploads, approvals, and config changes are all logged per-tenant with user, timestamp, and IP.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ============================================================
-     6. REQUEST DEMO  —  Final CTA
+     5. REQUEST DEMO  —  Final CTA
+     (The previous "Multi-Tenant Architecture" section was removed in
+     Phase J — it published the URL pattern publicly which made it easy
+     for a competitor to map the platform's surface. Buyers see the same
+     story under NDA after they request a demo.)
 ============================================================ -->
 <section class="cta-section">
     <div class="cta-inner">
@@ -435,11 +336,7 @@
         </p>
         <div class="cta-actions">
             <a href="/contact" class="pub-btn pub-btn-primary pub-btn-large">Request Demo</a>
-            <a href="/request-assessment" class="pub-btn pub-btn-ghost pub-btn-large">Request Assessment</a>
+            <a href="/contact?type=sales" class="pub-btn pub-btn-ghost pub-btn-large">Contact Sales</a>
         </div>
-        <p class="cta-fineprint">
-            Already a client? <a href="/login">Sign in</a> &middot;
-            New airline? <a href="/contact?type=onboarding">Get onboarded</a>
-        </p>
     </div>
 </section>

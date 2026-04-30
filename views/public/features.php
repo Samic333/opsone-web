@@ -1,9 +1,13 @@
-<?php /** OpsOne — Features Page */ ?>
+<?php /** OpsOne — Features (high-level only; details shared under NDA in demo) */ ?>
 <div class="info-page">
-    <div class="info-page-inner">
-        <div class="section-label">✦ Features</div>
-        <h1><?= e($brand['product_name']) ?> Features</h1>
-        <p class="lead">A comprehensive suite of airline operations tools designed for pilots, cabin crew, engineers, and administrators.</p>
+    <div class="info-page-inner" style="max-width: 900px;">
+        <div class="section-label">Features</div>
+        <h1>Built for Airline Operations and Crew</h1>
+        <p class="lead">
+            <?= e($brand['product_name']) ?> brings together the everyday tools an airline runs on —
+            crew, flights, manuals, safety, devices — in one secure platform. Specifics are shared
+            with you in a demo against your own workflows.
+        </p>
     </div>
 </div>
 
@@ -11,65 +15,60 @@
     <div class="section-inner">
         <div class="features-grid">
             <div class="feature-card">
-                <div class="feature-icon">⏰</div>
-                <h3>Crew Duty Reporting</h3>
-                <p>Report for duty, clock in and clock out with GPS-based location verification. Time-stamped duty logs for payroll, compliance, and scheduling accuracy. Complete history of all duty events accessible to crew and supervisors.</p>
+                <div class="feature-icon"><?= sidebarIcon('clipboard-list', 22) ?></div>
+                <h3>Crew Reporting &amp; Duty</h3>
+                <p>Crew check in, clock out, and submit duty events from iPad. Records flow straight to your operations team.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📅</div>
-                <h3>Roster & Schedule</h3>
-                <p>View monthly and weekly flight schedules with color-coded duty types. See standby assignments, training sessions, leave, and simulator slots. Tap any duty for full flight details and reporting times.</p>
+                <div class="feature-icon"><?= sidebarIcon('calendar', 22) ?></div>
+                <h3>Roster &amp; Schedule</h3>
+                <p>Crew see their full month at a glance with duty types color-coded. Operations builds and revises rosters in the web dashboard.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">✈️</div>
-                <h3>Flight Package & NavLog</h3>
-                <p>Complete electronic flight folder with navigation log, fuel planning, waypoint tracking, and flight times. Record OOOI times (Out, Off, On, In) and submit after-mission captain reports directly from the app.</p>
+                <div class="feature-icon"><?= sidebarIcon('paper-airplane', 22) ?></div>
+                <h3>Flight Operations</h3>
+                <p>Crew receive flight-day documents, complete required forms in-app, and submit them back to ops.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📚</div>
-                <h3>Document Library & Manuals</h3>
-                <p>Access all company manuals, SOPs, NOTAMs, and reference documents. Automatic versioning ensures crew always have the latest revision. Download PDFs for offline reading during flights.</p>
+                <div class="feature-icon"><?= sidebarIcon('book-open', 22) ?></div>
+                <h3>Manuals &amp; Documents</h3>
+                <p>Centralised manuals, notices, and reference documents. Pushed to crew devices with version-tracked acknowledgement.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚠️</div>
-                <h3>Safety & Incident Reporting</h3>
-                <p>Submit confidential safety reports categorized by type — bird strike, air proximity, ground incident, fatigue, and others. Track investigation status and severity classification.</p>
+                <div class="feature-icon"><?= sidebarIcon('shield-exclamation', 22) ?></div>
+                <h3>Safety Reporting</h3>
+                <p>Crew submit reports from iPad. Safety team triages, investigates, and publishes lessons back to the line.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📈</div>
-                <h3>Flight Data Monitoring (FDM)</h3>
-                <p>Review FDM events assigned by analysts. Acknowledge events, add pilot comments, and track resolution. Integrated with the safety management workflow.</p>
+                <div class="feature-icon"><?= sidebarIcon('cloud-arrow-up', 22) ?></div>
+                <h3>Device &amp; Sync Control</h3>
+                <p>Approve every iPad before it touches your data. Content distribution and device status are managed from the dashboard.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📝</div>
-                <h3>Logbook</h3>
-                <p>Complete digital logbook with flight time tracking, landing counts, and remarks. Historical records accessible by date with total time calculations.</p>
+                <div class="feature-icon"><?= sidebarIcon('users', 22) ?></div>
+                <h3>People Management</h3>
+                <p>Profiles, qualifications, expiries, training, per diem, and appraisals — role-aware and audit-logged.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">📜</div>
-                <h3>License & Medical Tracking</h3>
-                <p>Track ATPL, type ratings, medical certificates, and passport expiry. Visual indicators for valid, expiring soon, and expired documents. Alerts before critical deadlines.</p>
+                <div class="feature-icon"><?= sidebarIcon('lock-closed', 22) ?></div>
+                <h3>Audit &amp; Compliance</h3>
+                <p>Every login, upload, approval, and configuration change is logged with timestamp, user, and IP for regulatory review.</p>
             </div>
-            <div class="feature-card">
-                <div class="feature-icon">✅</div>
-                <h3>Acknowledgements</h3>
-                <p>Sign off on required documents digitally. Administrators can track which crew members have acknowledged mandatory bulletins, SOPs, and policy changes.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔔</div>
-                <h3>Notices & Bulletins</h3>
-                <p>Receive operational notices, company bulletins, and urgent alerts. Priority-tagged and role-filtered so each crew member sees only relevant communications.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">🔄</div>
-                <h3>Sync Center</h3>
-                <p>Monitor sync status, last update time, downloaded files, and storage usage. Manual re-sync button for immediate content refresh. Clear cache and re-download as needed.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">👤</div>
-                <h3>Role-Based Dashboards</h3>
-                <p>Three dashboard families — Operations Hub for crew, Control Center for department managers, and Oversight Dashboard for executives. Each role sees a tailored experience.</p>
-            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="cta-inner">
+        <div class="section-label">See It With Your Data</div>
+        <h2 class="section-title">Request a Demo</h2>
+        <p class="section-desc" style="margin: 0 auto;">
+            We share the full feature set, integrations, and screens privately with airlines we're
+            in conversation with. Tell us about your operation and we'll book a 30-minute walkthrough.
+        </p>
+        <div class="cta-actions">
+            <a href="/contact" class="pub-btn pub-btn-primary pub-btn-large">Request Demo</a>
+            <a href="/contact?type=sales" class="pub-btn pub-btn-ghost pub-btn-large">Contact Sales</a>
         </div>
     </div>
 </section>
