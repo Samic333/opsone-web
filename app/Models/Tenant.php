@@ -23,6 +23,38 @@ class Tenant {
         return Database::fetch("SELECT * FROM tenants WHERE slug = ?", [$slug]);
     }
 
+    /**
+     * Generate a URL-friendly slug for a new airline tenant. Used by the
+     * `/airline/{slug}/login` route so each onboarded airline is reachable
+     * at its own branded login path immediately.
+     *
+     * Rules:
+     *  - lowercased, & → and, anything not a-z0-9 → "-", trimmed
+     *  - falls back to "airline" if the name produces an empty slug
+     *  - if the resulting slug is already taken, appends "-2", "-3", … until unique
+     *
+     * Pass $excludeId when re-generating for an existing tenant so it
+     * isn't considered a self-conflict.
+     */
+    public static function generateUniqueSlug(string $name, ?int $excludeId = null): string {
+        $base = strtolower($name);
+        $base = preg_replace('/&/', 'and', $base);
+        $base = preg_replace('/[^a-z0-9]+/', '-', $base);
+        $base = trim($base, '-');
+        if ($base === '') $base = 'airline';
+
+        $slug = $base;
+        for ($i = 2; $i <= 100; $i++) {
+            $sql    = "SELECT id FROM tenants WHERE slug = ?" . ($excludeId ? " AND id != ?" : "");
+            $params = $excludeId ? [$slug, $excludeId] : [$slug];
+            $existing = Database::fetch($sql, $params);
+            if (!$existing) return $slug;
+            $slug = $base . '-' . $i;
+        }
+        // Extreme fallback — append an entropy suffix rather than collide
+        return $base . '-' . substr(bin2hex(random_bytes(3)), 0, 6);
+    }
+
     public static function create(array $data): int {
         return Database::insert(
             "INSERT INTO tenants

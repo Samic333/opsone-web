@@ -163,12 +163,13 @@ return [
             ],
         ],
 
-        // ── 3. OPERATIONS (scheduling + duty + fleet merged) ─────
+        // ── 3. OPERATIONS (scheduling + duty + fleet + content merged) ─
         [
             'title'   => 'Operations',
             'airline' => true,
             'roles'   => ['airline_admin','scheduler','chief_pilot','head_cabin_crew',
-                          'base_manager','engineering_manager','pilot','cabin_crew','engineer'],
+                          'base_manager','engineering_manager','pilot','cabin_crew','engineer',
+                          'hr','document_control','safety_officer','training_admin'],
             'items'   => [
                 ['label' => 'Flights', 'href' => '/flights', 'icon' => 'paper-airplane',
                  'match' => '/flights',
@@ -217,21 +218,13 @@ return [
                 ['label' => 'Aircraft Registry', 'href' => '/aircraft', 'icon' => 'paper-airplane',
                  'match' => '/aircraft', 'badge' => 'aog_count',
                  'roles' => ['airline_admin','engineering_manager','chief_pilot','base_manager']],
-            ],
-        ],
-
-        // ── 4. CONTENT (documents & notices) ─────────────────────
-        [
-            'title'   => 'Content',
-            'airline' => true,
-            'roles'   => ['airline_admin','hr','document_control','safety_officer','chief_pilot',
-                          'head_cabin_crew','engineering_manager','training_admin'],
-            'items'   => [
-                ['label' => 'Documents Library', 'href' => '/files', 'icon' => 'folder-open',
+                // Briefings & Manuals (formerly the "Content" group — folded
+                // into Operations in Phase I to match the 5-group brief)
+                ['label' => 'Manuals & Documents', 'href' => '/files', 'icon' => 'folder-open',
                  'match' => '/files',
                  'module' => 'manuals',
                  'roles' => ['airline_admin','hr','document_control','safety_officer']],
-                ['label' => 'Notices', 'href' => '/notices', 'icon' => 'megaphone',
+                ['label' => 'Notices & Briefings', 'href' => '/notices', 'icon' => 'megaphone',
                  'match' => '/notices',
                  'module' => 'notices',
                  'roles' => ['airline_admin','safety_officer','document_control','chief_pilot',
@@ -239,7 +232,7 @@ return [
             ],
         ],
 
-        // ── 5. SAFETY (safety + FDM + audit log) ─────────────────
+        // ── 4. SAFETY (safety + FDM + audit log) ─────────────────
         [
             'title'   => 'Safety',
             'airline' => true,

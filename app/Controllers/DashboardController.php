@@ -203,8 +203,32 @@ class DashboardController {
     private function airlineAdminDashboard(?int $tenantId): void {
         if (!$tenantId) { redirect('/login'); }
         $compliance = CrewProfileModel::complianceSummary($tenantId);
+
+        // Active flights and open safety reports — counted inline (no new
+        // model method) so this dashboard refresh doesn't require migrations
+        // or model edits. Wrapped in try/catch so a missing/empty table
+        // (newly-onboarded airline) renders 0 rather than crashing.
+        try {
+            $activeFlights = (int) (Database::fetch(
+                "SELECT COUNT(*) AS c FROM flights
+                 WHERE tenant_id = ? AND status NOT IN ('completed','cancelled','archived')",
+                [$tenantId]
+            )['c'] ?? 0);
+        } catch (\Throwable $e) { $activeFlights = 0; }
+
+        try {
+            $openSafetyReports = (int) (Database::fetch(
+                "SELECT COUNT(*) AS c FROM safety_reports
+                 WHERE tenant_id = ? AND status NOT IN ('closed','archived','withdrawn')
+                   AND (is_draft IS NULL OR is_draft = 0)",
+                [$tenantId]
+            )['c'] ?? 0);
+        } catch (\Throwable $e) { $openSafetyReports = 0; }
+
         $data = [
             'active_staff'       => UserModel::countByTenant($tenantId, 'active'),
+            'active_flights'     => $activeFlights,
+            'open_safety_reports'=> $openSafetyReports,
             'pending_users'      => UserModel::countByTenant($tenantId, 'pending'),
             'pending_devices'    => Device::countPending($tenantId),
             'total_files'        => FileModel::countByTenant($tenantId),

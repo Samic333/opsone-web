@@ -4,22 +4,32 @@ $pageSubtitle = 'Administration Overview';
 ob_start();
 ?>
 
+<?php
+// Operational stat cards — four metrics that matter on a daily ops glance.
+// Colours follow the cockpit-light system from the brand-direction doc:
+//   green   = nominal     · blue = info     · amber = advisory    · red = critical
+$__pendingDevices = (int) ($data['pending_devices'] ?? 0);
+$__deviceCardColor = $__pendingDevices > 0 ? 'red' : 'blue';
+$__deviceCardTitle = $__pendingDevices > 0
+    ? "$__pendingDevices iPad device" . ($__pendingDevices === 1 ? '' : 's') . " awaiting approval"
+    : 'All registered iPad devices';
+?>
 <div class="stats-grid">
     <a href="/users" class="stat-card stat-card-link green" title="Manage all active users">
         <div class="stat-label">Active Staff</div>
-        <div class="stat-value"><?= $data['active_staff'] ?></div>
+        <div class="stat-value"><?= (int) ($data['active_staff'] ?? 0) ?></div>
     </a>
-    <a href="/users" class="stat-card stat-card-link yellow" title="Review users awaiting activation">
-        <div class="stat-label">Pending Users</div>
-        <div class="stat-value"><?= $data['pending_users'] ?></div>
+    <a href="/flights" class="stat-card stat-card-link blue" title="Today's flights and the current week">
+        <div class="stat-label">Active Flights</div>
+        <div class="stat-value"><?= (int) ($data['active_flights'] ?? 0) ?></div>
     </a>
-    <a href="/devices" class="stat-card stat-card-link red" title="Approve or revoke pending iPad devices">
-        <div class="stat-label">Pending Devices</div>
-        <div class="stat-value"><?= $data['pending_devices'] ?></div>
+    <a href="/safety/queue" class="stat-card stat-card-link yellow" title="Safety reports not yet closed">
+        <div class="stat-label">Open Safety Reports</div>
+        <div class="stat-value"><?= (int) ($data['open_safety_reports'] ?? 0) ?></div>
     </a>
-    <a href="/files" class="stat-card stat-card-link blue" title="Open the documents library">
-        <div class="stat-label">Documents</div>
-        <div class="stat-value"><?= $data['total_files'] ?></div>
+    <a href="/devices" class="stat-card stat-card-link <?= $__deviceCardColor ?>" title="<?= e($__deviceCardTitle) ?>">
+        <div class="stat-label">iPad Devices<?= $__pendingDevices > 0 ? ' · '.$__pendingDevices.' pending' : '' ?></div>
+        <div class="stat-value"><?= (int) ($data['device_stats']['approved'] ?? 0) ?></div>
     </a>
 </div>
 
@@ -96,28 +106,69 @@ ob_start();
 <?php endif; ?>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-    <!-- Staff by Role -->
+    <!-- Staff by Role — compact: top 4 + remaining count + view all link -->
+    <?php
+    $__roles      = $data['users_by_role'] ?? [];
+    $__rolesTotal = array_sum(array_column($__roles, 'count'));
+    $__topRoles   = array_slice($__roles, 0, 4);
+    $__moreRoles  = max(0, count($__roles) - count($__topRoles));
+    $__moreCount  = $__rolesTotal - array_sum(array_column($__topRoles, 'count'));
+    ?>
     <div class="card">
         <div class="card-header">
             <div class="card-title">Staff by Role</div>
-            <a href="/users" class="btn btn-sm btn-outline">View All →</a>
+            <a href="/roles" class="btn btn-sm btn-outline">View all roles →</a>
         </div>
-        <?php if (empty($data['users_by_role'])): ?>
+        <?php if (empty($__roles)): ?>
             <div class="empty-state"><p>No staff assigned yet</p></div>
         <?php else: ?>
-        <div class="table-wrap">
-            <table>
-                <thead><tr><th>Role</th><th>Count</th></tr></thead>
-                <tbody>
-                <?php foreach ($data['users_by_role'] as $r): ?>
-                <tr>
-                    <td><?= e($r['name']) ?></td>
-                    <td><strong><?= $r['count'] ?></strong></td>
-                </tr>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:14px;">
+                <div style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:var(--text-primary);
+                            font-variant-numeric:tabular-nums;">
+                    <?= (int) $__rolesTotal ?>
+                </div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;
+                            color:var(--text-tertiary);">
+                    total assignments across <?= count($__roles) ?> role<?= count($__roles) === 1 ? '' : 's' ?>
+                </div>
+            </div>
+            <ul style="list-style:none;padding:0;margin:0;">
+                <?php foreach ($__topRoles as $r): ?>
+                    <?php
+                    $__pct = $__rolesTotal > 0 ? round(((int) $r['count'] / $__rolesTotal) * 100) : 0;
+                    ?>
+                    <li style="display:flex;align-items:center;gap:12px;padding:8px 0;
+                               border-bottom:1px solid var(--border-color);">
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:13px;font-weight:600;color:var(--text-primary);
+                                        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                <?= e($r['name']) ?>
+                            </div>
+                            <div style="height:4px;background:var(--bg-input);border-radius:2px;margin-top:4px;overflow:hidden;">
+                                <div style="height:100%;width:<?= max(2,$__pct) ?>%;
+                                            background:linear-gradient(90deg,var(--accent-blue),var(--accent-cyan));
+                                            border-radius:2px;"></div>
+                            </div>
+                        </div>
+                        <div style="font-size:13px;font-weight:700;color:var(--text-primary);
+                                    font-variant-numeric:tabular-nums;min-width:28px;text-align:right;">
+                            <?= (int) $r['count'] ?>
+                        </div>
+                    </li>
                 <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+            </ul>
+            <?php if ($__moreRoles > 0): ?>
+                <div style="margin-top:10px;">
+                    <a href="/roles" style="font-size:12px;color:var(--text-secondary);
+                                            border-bottom:1px solid transparent;
+                                            transition:border-color 0.2s;"
+                       onmouseover="this.style.borderBottomColor='var(--accent-blue)';"
+                       onmouseout="this.style.borderBottomColor='transparent';">
+                        + <?= (int) $__moreRoles ?> more role<?= $__moreRoles === 1 ? '' : 's' ?>
+                        (<?= (int) $__moreCount ?> staff)
+                    </a>
+                </div>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
 

@@ -13,7 +13,48 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
     <style>
+        .login-eyebrow {
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: var(--accent-cyan, #06b6d4);
+            margin-bottom: 8px;
+        }
+        .login-card-footnote {
+            margin-top: 22px; padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+            text-align: center; font-size: 12px;
+            color: var(--text-tertiary, #7484a8);
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
         .demo-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .demo-warning-banner {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            border-radius: var(--radius-sm, 6px);
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+        .demo-warning-eyebrow {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 10px; font-weight: 800;
+            letter-spacing: 0.10em; text-transform: uppercase;
+            color: var(--accent-yellow, #f59e0b);
+            margin-bottom: 6px;
+        }
+        .demo-warning-eyebrow svg { color: var(--accent-yellow, #f59e0b); }
+        .demo-warning-banner p {
+            font-size: 12px; line-height: 1.5;
+            color: var(--text-secondary, #8b95b0);
+            margin: 4px 0 0;
+        }
+        .demo-warning-banner code {
+            color: var(--accent-cyan, #06b6d4);
+            font-family: ui-monospace, 'JetBrains Mono', monospace;
+            font-size: 11px;
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            padding: 1px 5px; border-radius: 3px;
+        }
         .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
         .demo-group-label { grid-column: 1 / -1; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin: 8px 0 2px; }
         .demo-btn { padding: 6px 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: var(--text-secondary); font-size: 11px; cursor: pointer; text-align: left; font-family: inherit; transition: background 0.15s, border-color 0.15s; }
@@ -35,6 +76,9 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                 <?php else: ?>
                     <div class="login-logo-icon"><?= opsoneLogoMark(36, '#06b6d4', '#e8eaf0') ?></div>
                 <?php endif; ?>
+                <?php if (!empty($tenant)): ?>
+                    <div class="login-eyebrow">Airline Operations Portal</div>
+                <?php endif; ?>
                 <h1>
                     <?php if (!empty($tenant)): ?>
                         <?= e($tenant['display_name'] ?? $tenant['name']) ?>
@@ -45,7 +89,7 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
             </a>
             <p>
                 <?php if (!empty($tenant)): ?>
-                    Sign in to <?= e($brand['product_name']) ?>
+                    Sign in to your operations portal
                 <?php else: ?>
                     Airline Operations Portal
                 <?php endif; ?>
@@ -84,9 +128,11 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
         ?>
         <?php if ($showDemoBlock): ?>
         <div class="demo-section">
-            <p style="text-align:center; font-size:12px; color:var(--text-muted);">
-                Dev-only — Password: <code style="color:var(--accent-cyan);">DemoOps2026!</code>
-            </p>
+            <div class="demo-warning-banner" role="note" aria-label="Internal demo notice">
+                <div class="demo-warning-eyebrow"><?= sidebarIcon('exclamation', 12) ?> Internal demo · Development testing only</div>
+                <p>Hidden in production. Shared seed password used for local QA only — never used by real airline accounts.</p>
+                <p>Password: <code>DemoOps2026!</code></p>
+            </div>
 
             <div class="demo-grid">
                 <div class="demo-group-label">Platform Level</div>
@@ -139,6 +185,12 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
             </div>
         </div>
         <?php endif; /* $showDemoBlock */ ?>
+
+        <?php if (!empty($tenant)): ?>
+            <p class="login-card-footnote">
+                Powered by <?= opsoneWordmark('sm') ?>
+            </p>
+        <?php endif; ?>
     </div>
 </div>
 </body>

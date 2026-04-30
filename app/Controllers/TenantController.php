@@ -87,6 +87,17 @@ class TenantController {
 
         $tenantId = Tenant::create($tenantData);
 
+        // Auto-generate the URL-friendly slug used by /airline/{slug}/login.
+        // Wrapped in try/catch so onboarding never breaks if migration 048
+        // hasn't been applied to this environment yet (the column simply
+        // doesn't exist; we silently skip and the global /login still works).
+        try {
+            $slug = Tenant::generateUniqueSlug($name, $tenantId);
+            Database::execute("UPDATE tenants SET slug = ? WHERE id = ?", [$slug, $tenantId]);
+        } catch (\Throwable $e) {
+            error_log('[Tenant slug auto-generation skipped] ' . $e->getMessage());
+        }
+
         // Create default roles for the new tenant.
         // Filter out platform-tier roles (super_admin, platform_support,
         // platform_security, system_monitoring) — those only make sense at
