@@ -56,38 +56,78 @@ class Tenant {
     }
 
     public static function create(array $data): int {
-        return Database::insert(
-            "INSERT INTO tenants
-                (name, legal_name, display_name, code, icao_code, iata_code,
-                 contact_email, primary_country, primary_base,
-                 support_tier, onboarding_status, is_active,
-                 expected_headcount, headcount_pilots, headcount_cabin,
-                 headcount_engineers, headcount_schedulers, headcount_training,
-                 headcount_safety, headcount_hr, notes, onboarded_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, " . dbNow() . ")",
-            [
-                $data['name'],
-                $data['legal_name']           ?? $data['name'],
-                $data['display_name']         ?? null,
-                $data['code'],
-                $data['icao_code']            ?? null,
-                $data['iata_code']            ?? null,
-                $data['contact_email']        ?? null,
-                $data['primary_country']      ?? null,
-                $data['primary_base']         ?? null,
-                $data['support_tier']         ?? 'standard',
-                $data['onboarding_status']    ?? 'active',
-                $data['expected_headcount']   ?? null,
-                $data['headcount_pilots']     ?? null,
-                $data['headcount_cabin']      ?? null,
-                $data['headcount_engineers']  ?? null,
-                $data['headcount_schedulers'] ?? null,
-                $data['headcount_training']   ?? null,
-                $data['headcount_safety']     ?? null,
-                $data['headcount_hr']         ?? null,
-                $data['notes']                ?? null,
-            ]
-        );
+        // Auto-generate the URL-friendly slug for /airline/{slug}/login if the
+        // caller didn't pass one. Falls back to NULL if the slug column doesn't
+        // exist on this environment (i.e. migration 048 hasn't been applied) —
+        // the INSERT will then ignore it via the catch block below.
+        $slug = $data['slug'] ?? null;
+        if ($slug === null && !empty($data['name'])) {
+            try {
+                $slug = self::generateUniqueSlug($data['name']);
+            } catch (\Throwable $e) {
+                $slug = null;
+            }
+        }
+
+        $values = [
+            $data['name'],
+            $data['legal_name']           ?? $data['name'],
+            $data['display_name']         ?? null,
+            $data['code'],
+            $slug,
+            $data['icao_code']            ?? null,
+            $data['iata_code']            ?? null,
+            $data['contact_email']        ?? null,
+            $data['primary_country']      ?? null,
+            $data['primary_base']         ?? null,
+            $data['support_tier']         ?? 'standard',
+            $data['onboarding_status']    ?? 'active',
+            $data['expected_headcount']   ?? null,
+            $data['headcount_pilots']     ?? null,
+            $data['headcount_cabin']      ?? null,
+            $data['headcount_engineers']  ?? null,
+            $data['headcount_schedulers'] ?? null,
+            $data['headcount_training']   ?? null,
+            $data['headcount_safety']     ?? null,
+            $data['headcount_hr']         ?? null,
+            $data['notes']                ?? null,
+        ];
+
+        try {
+            return Database::insert(
+                "INSERT INTO tenants
+                    (name, legal_name, display_name, code, slug,
+                     icao_code, iata_code,
+                     contact_email, primary_country, primary_base,
+                     support_tier, onboarding_status, is_active,
+                     expected_headcount, headcount_pilots, headcount_cabin,
+                     headcount_engineers, headcount_schedulers, headcount_training,
+                     headcount_safety, headcount_hr, notes, onboarded_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, " . dbNow() . ")",
+                $values
+            );
+        } catch (\PDOException $e) {
+            // Backwards-compat fallback: if migration 048 hasn't been applied
+            // and the slug column doesn't exist, retry without it. This keeps
+            // tenant onboarding working on stale environments.
+            if (str_contains($e->getMessage(), 'slug')) {
+                error_log('[Tenant::create] slug column missing; falling back to slug-less INSERT. Run migration 048.');
+                array_splice($values, 4, 1); // remove slug from values
+                return Database::insert(
+                    "INSERT INTO tenants
+                        (name, legal_name, display_name, code,
+                         icao_code, iata_code,
+                         contact_email, primary_country, primary_base,
+                         support_tier, onboarding_status, is_active,
+                         expected_headcount, headcount_pilots, headcount_cabin,
+                         headcount_engineers, headcount_schedulers, headcount_training,
+                         headcount_safety, headcount_hr, notes, onboarded_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, " . dbNow() . ")",
+                    $values
+                );
+            }
+            throw $e;
+        }
     }
 
     public static function update(int $id, array $data): void {
