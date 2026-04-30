@@ -7,7 +7,7 @@
 
 return [
     'product_name'     => 'OpsOne',
-    'product_tagline'  => 'Internal Airline Operations & Crew System for iPad',
+    'product_tagline'  => 'One Platform for Airline Operations, Crew, Safety & iPad Workflows',
     'company_name'     => 'OpsOne Aviation Systems',
     'support_email'    => 'support@opsone.aero',
     'admin_email'      => 'admin@opsone.aero',

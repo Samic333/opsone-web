@@ -20,12 +20,13 @@
             </p>
             <div class="hero-actions">
                 <a href="/contact" class="pub-btn pub-btn-primary pub-btn-large">Request Demo</a>
+                <a href="/contact?type=sales" class="pub-btn pub-btn-outline pub-btn-large">Contact Sales</a>
                 <a href="#platform-overview" class="pub-btn pub-btn-ghost pub-btn-large">View Platform Overview</a>
             </div>
             <p class="hero-tertiary">
-                Already evaluating? <a href="/contact?type=sales">Contact sales</a>
+                See the full deck on <a href="/pricing">pricing</a>
                 &nbsp;&middot;&nbsp;
-                <a href="/pricing">See pricing</a>
+                Existing client? <a href="/login">Client Login</a>
             </p>
             <div class="hero-stats">
                 <div class="hero-stat">
