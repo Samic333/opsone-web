@@ -9,7 +9,7 @@
 </div>
 
 <?php if (empty($flights)): ?>
-    <div class="card"><div class="empty-state" style="padding:40px 0;"><div class="icon">✈️</div><h3>No flights</h3><p>Create a flight to start assigning crew and uploading briefing packages.</p></div></div>
+    <div class="card"><div class="empty-state" style="padding:40px 0;"><div class="icon"><?= sidebarIcon('paper-airplane', 32) ?></div><h3>No flights</h3><p>Create a flight to start assigning crew and uploading briefing packages.</p></div></div>
 <?php else: ?>
 <div class="table-wrap"><table>
     <thead><tr><th>Date</th><th>Flight</th><th>Route</th><th>STD/STA</th><th>A/C</th><th>Captain</th><th>FO</th><th>Status</th><th>Bag</th><th></th></tr></thead>

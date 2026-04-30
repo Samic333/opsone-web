@@ -17,6 +17,12 @@ class Tenant {
         return Database::fetch("SELECT * FROM tenants WHERE id = ?", [$id]);
     }
 
+    public static function findBySlug(string $slug): ?array {
+        $slug = strtolower(trim($slug));
+        if ($slug === '') return null;
+        return Database::fetch("SELECT * FROM tenants WHERE slug = ?", [$slug]);
+    }
+
     public static function create(array $data): int {
         return Database::insert(
             "INSERT INTO tenants

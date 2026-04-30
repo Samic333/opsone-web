@@ -17,16 +17,16 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
     </div>
     <div class="login-card">
         <div class="login-logo">
-            <div class="login-logo-icon">✈</div>
-            <h1><?= e($brand['product_name']) ?></h1>
+            <div class="login-logo-icon"><?= opsoneLogoMark(36, '#06b6d4', '#e8eaf0') ?></div>
+            <h1><?= opsoneWordmark('lg') ?></h1>
             <p>Password Reset</p>
         </div>
 
         <?php if (!empty($error)): ?>
-            <div class="alert alert-error">⚠ <?= e($error) ?></div>
+            <div class="alert alert-error"><span class="alert-icon"><?= sidebarIcon('exclamation', 16) ?></span><?= e($error) ?></div>
         <?php endif; ?>
         <?php if (!empty($success)): ?>
-            <div class="alert alert-success" style="background:#0f3d2b;color:#7ee8b4;border:1px solid #2a7f5a;padding:12px;border-radius:6px;margin-bottom:16px;">✓ <?= e($success) ?></div>
+            <div class="alert alert-success"><span class="alert-icon"><?= sidebarIcon('check-badge', 16) ?></span><?= e($success) ?></div>
         <?php endif; ?>
 
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">

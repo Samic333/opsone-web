@@ -7,8 +7,8 @@ Companion to `SKYLINK_LIVE_AUDIT_2026-04-26.md`. Sorted by severity. Status lege
 | ID | Category | Where | Finding | Status | Proposed fix |
 |---|---|---|---|---|---|
 | F2 | Architecture | `TenantController::store` role-clone | Cloned ALL system roles into Skylink (tenant 12) including 4 platform-tier slugs (`super_admin`, `platform_security`, `platform_support`, `system_monitoring` at IDs 799, 800, 803, 804). These never make sense at tenant scope and a tenant admin could in principle assign `platform_support` to a crew member. | **shipped** | Add `AND role_type != 'platform'` to the `SELECT` in `TenantController::store`. |
-| ~~F4~~ | ~~UX broken~~ | Scheduler dashboard sidebar | **FALSE POSITIVE — re-verified 2026-04-27.** A Scheduling section IS rendered for `scheduler` (Flights, Roster Workbench, Roster Periods, Revisions, Reserve/Standby, Coverage & Conflicts, Change Requests, My Roster — see `config/sidebar.php` lines 237-279). My Pass 3 screenshot was 700px tall and cut off the section below the fold. Curl-fetched HTML from prod confirms the section is present. | **resolved (not a defect)** | None needed. |
-| ~~F5~~ | ~~UX broken~~ | Document Control dashboard sidebar | **FALSE POSITIVE — re-verified 2026-04-27.** A Content section IS rendered for `document_control` (Documents Library, Notices — see `config/sidebar.php` lines 313+). Same screenshot-truncation explanation as F4. | **resolved (not a defect)** | None needed. |
+| F4 | UX broken | Scheduler dashboard sidebar | Only the personal "ME" section shown — no persistent Roster/Flights/Crew nav. Scheduler has to use empty-state CTAs to reach scheduling tools, which feels like a missing menu rather than a deliberate empty state. | **flagged** | Add Scheduler-tier nav group (Roster, Flights, Crew Assignments, Compliance Issues) in `config/sidebar.php` + `AuthorizationService::canSeeSidebarSection`. Touches > 1 file and changes a visible UI for live users → ask before shipping. |
+| F5 | UX broken | Document Control dashboard sidebar | Same pattern — only ME section. No "Documents Library" or "Notices" entry even though those are the role's primary tools. | **flagged** | Same approach as F4: add Content nav group for `document_control`. |
 
 ## P3 (low) — copy / cosmetic
 
@@ -34,9 +34,7 @@ Both are < 50-line changes, no schema migration, no API contract change, no auth
 
 ## Flagged for your approval (not yet shipped)
 
-**F4 + F5 — RESOLVED as false positives (2026-04-27).** See P2 table above.
-
-Original (now-superseded) text:
+**F4 + F5 — Sidebar navigation gaps for `scheduler` and `document_control`.**
 
 These would touch sidebar visibility for live users on prod (Acentoza demo + Skylink). I want your sign-off before changing what those roles see in their navigation, since adding entries that point to screens those roles can already reach via deep links has real UX implications. Two options:
 

@@ -9,13 +9,54 @@ class AuthController {
             redirect('/dashboard');
         }
         $error = flash('error');
+        $tenant = null;
+        $tenantSlug = null;
         require VIEWS_PATH . '/auth/login.php';
     }
 
+    public function showTenantLogin(string $slug): void {
+        if (!empty($_SESSION['user'])) {
+            redirect('/dashboard');
+        }
+        $tenant = Tenant::findBySlug($slug);
+        if (!$tenant || empty($tenant['is_active'])) {
+            http_response_code(404);
+            $error = 'Airline not found.';
+            require VIEWS_PATH . '/errors/404.php';
+            return;
+        }
+        $error = flash('error');
+        $tenantSlug = $slug;
+        require VIEWS_PATH . '/auth/login.php';
+    }
+
+    public function tenantLogin(string $slug): void {
+        $tenant = Tenant::findBySlug($slug);
+        if (!$tenant || empty($tenant['is_active'])) {
+            flash('error', 'Airline not found.');
+            redirect('/login');
+        }
+        // Stash the slug-resolved tenant id so login() can enforce it before
+        // creating a session. Cleared on success or failure.
+        $_SESSION['_tenant_login_lock'] = (int) $tenant['id'];
+        $this->login();
+    }
+
     public function login(): void {
+        $tenantLock      = isset($_SESSION['_tenant_login_lock']) ? (int) $_SESSION['_tenant_login_lock'] : 0;
+        $tenantLockSlug  = null;
+        if ($tenantLock > 0) {
+            $__lockTenant   = Tenant::find($tenantLock);
+            $tenantLockSlug = $__lockTenant['slug'] ?? null;
+        }
+        $loginRedirect = $tenantLockSlug ? "/airline/{$tenantLockSlug}/login" : '/login';
+        // The lock is consumed on this request — clear it so subsequent
+        // redirects through the global form don't carry it forward.
+        unset($_SESSION['_tenant_login_lock']);
+
         if (!verifyCsrf()) {
             flash('error', 'Invalid form submission. Please try again.');
-            redirect('/login');
+            redirect($loginRedirect);
         }
 
         $email = trim($_POST['email'] ?? '');
@@ -23,7 +64,7 @@ class AuthController {
 
         if (empty($email) || empty($password)) {
             flash('error', 'Email and password are required.');
-            redirect('/login');
+            redirect($loginRedirect);
         }
 
         // Rate-limit repeated failed attempts per IP+email (5-min window).
@@ -42,7 +83,7 @@ class AuthController {
         if (($__entry['blocked_until'] ?? 0) > $__now) {
             $__wait = $__entry['blocked_until'] - $__now;
             flash('error', "Too many failed login attempts. Please try again in " . max(1, (int) ceil($__wait / 60)) . " minute(s).");
-            redirect('/login');
+            redirect($loginRedirect);
         }
         // Attach to current request scope so the failure/success block below can update it.
         $_REQUEST['__rlFile']  = $__rlFile;
@@ -82,22 +123,31 @@ class AuthController {
             }
 
             flash('error', 'Invalid email or password.');
-            redirect('/login');
+            redirect($loginRedirect);
         }
 
         // On success, clear the throttle file for this IP+email.
         $__rlFile = $_REQUEST['__rlFile'] ?? null;
         if ($__rlFile && is_file($__rlFile)) @unlink($__rlFile);
 
+        // Tenant-scoped login: reject users who don't belong to the airline
+        // whose login URL they used. Platform-only users (tenant_id NULL)
+        // also can't sign in via /airline/{slug}/login — they should use /login.
+        if ($tenantLock > 0 && (int) ($user['tenant_id'] ?? 0) !== $tenantLock) {
+            AuditLog::logLogin($user['id'], $user['tenant_id'] ?? null, $email, false, 'web');
+            flash('error', 'This account does not belong to this airline.');
+            redirect($loginRedirect);
+        }
+
         if ($user['status'] !== 'active') {
             flash('error', 'Your account is not active. Contact your administrator.');
-            redirect('/login');
+            redirect($loginRedirect);
         }
 
         // Check user has web portal access
         if (empty($user['web_access'])) {
             flash('error', 'Your account does not have web portal access. Contact your administrator.');
-            redirect('/login');
+            redirect($loginRedirect);
         }
 
         // ── 2FA gate ─────────────────────────────────────────────
@@ -150,12 +200,12 @@ class AuthController {
             if (empty($user['tenant_id'])) {
                 // Airline-scoped user record with no tenant linkage — block login
                 flash('error', 'Your account has no airline association. Contact your administrator.');
-                redirect('/login');
+                redirect($loginRedirect);
             }
             $tenant = Tenant::find((int) $user['tenant_id']);
             if (!$tenant || !$tenant['is_active']) {
                 flash('error', 'Your airline account is not active.');
-                redirect('/login');
+                redirect($loginRedirect);
             }
             $_SESSION['is_platform_session'] = false;
             $_SESSION['tenant_id']           = (int) $user['tenant_id'];

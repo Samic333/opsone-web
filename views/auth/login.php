@@ -30,22 +30,38 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
     <div class="login-card">
         <div class="login-logo">
             <a href="/home" style="text-decoration: none; color: inherit; display: inline-block;">
-                <div class="login-logo-icon">✈</div>
-                <h1><?= e($brand['product_name']) ?></h1>
+                <?php if (!empty($tenant['logo_path'])): ?>
+                    <img src="<?= e($tenant['logo_path']) ?>" alt="<?= e($tenant['display_name'] ?? $tenant['name']) ?>" style="width: 64px; height: 64px; object-fit: contain; border-radius: 12px; margin-bottom: 12px;">
+                <?php else: ?>
+                    <div class="login-logo-icon"><?= opsoneLogoMark(36, '#06b6d4', '#e8eaf0') ?></div>
+                <?php endif; ?>
+                <h1>
+                    <?php if (!empty($tenant)): ?>
+                        <?= e($tenant['display_name'] ?? $tenant['name']) ?>
+                    <?php else: ?>
+                        <?= opsoneWordmark('lg') ?>
+                    <?php endif; ?>
+                </h1>
             </a>
-            <p>Airline Operations Portal</p>
+            <p>
+                <?php if (!empty($tenant)): ?>
+                    Sign in to <?= e($brand['product_name']) ?>
+                <?php else: ?>
+                    Airline Operations Portal
+                <?php endif; ?>
+            </p>
         </div>
 
         <?php if (!empty($error)): ?>
-            <div class="alert alert-error">⚠ <?= e($error) ?></div>
+            <div class="alert alert-error"><span class="alert-icon"><?= sidebarIcon('exclamation', 16) ?></span><?= e($error) ?></div>
         <?php endif; ?>
 
-        <form method="POST" action="/login">
+        <form method="POST" action="<?= !empty($tenantSlug) ? '/airline/' . urlencode($tenantSlug) . '/login' : '/login' ?>">
             <?= csrfField() ?>
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input type="email" id="email" name="email" class="form-control"
-                       placeholder="demo.[role]@acentoza.com" required autofocus
+                       placeholder="you@yourairline.com" required autofocus
                        value="<?= e($_POST['email'] ?? '') ?>">
             </div>
             <div class="form-group">

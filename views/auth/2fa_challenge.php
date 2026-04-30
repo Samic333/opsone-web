@@ -14,13 +14,13 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
 <div class="login-page">
     <div class="login-card">
         <div class="login-logo">
-            <div class="login-logo-icon">🔐</div>
-            <h1><?= e($brand['product_name']) ?></h1>
+            <div class="login-logo-icon"><?= sidebarIcon('key', 32) ?></div>
+            <h1><?= opsoneWordmark('lg') ?></h1>
             <p>Two-Factor Verification</p>
         </div>
 
         <?php if (!empty($error)): ?>
-            <div class="alert alert-error">⚠ <?= e($error) ?></div>
+            <div class="alert alert-error"><span class="alert-icon"><?= sidebarIcon('exclamation', 16) ?></span><?= e($error) ?></div>
         <?php endif; ?>
 
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;">

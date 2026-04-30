@@ -1,7 +1,7 @@
 <?php if (empty($fleets)): ?>
 <div class="card">
     <div class="empty-state">
-        <div class="icon">✈</div>
+        <div class="icon"><?= sidebarIcon('truck', 32) ?></div>
         <h3>No Fleets Yet</h3>
         <p>Create fleets to group crew by aircraft type.</p>
         <a href="/fleets/create" class="btn btn-primary mt-2">+ Create Fleet</a>

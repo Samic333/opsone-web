@@ -11,7 +11,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="<?= e($brand['product_name']) ?> — <?= e($brand['product_tagline']) ?>. Secure internal airline operations platform for iPad.">
+    <meta name="description" content="<?= e($brand['product_name']) ?> — <?= e($brand['product_tagline']) ?>. Role-based crew management, safety, rostering, and document distribution in one platform.">
     <title><?= e($pageTitle ?? $brand['product_name']) ?></title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/public.css">
@@ -21,9 +21,9 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <!-- Navigation -->
 <nav class="pub-nav" id="pubNav">
     <div class="pub-nav-inner">
-        <a href="/home" class="pub-nav-brand">
-            <div class="pub-nav-logo">✈</div>
-            <span><?= e($brand['product_name']) ?></span>
+        <a href="/home" class="pub-nav-brand" aria-label="<?= e($brand['product_name']) ?> home">
+            <?= opsoneLogoMark(28) ?>
+            <?= opsoneWordmark('lg') ?>
         </a>
         <button class="pub-nav-toggle" id="pubNavToggle" aria-label="Toggle menu">
             <span></span><span></span><span></span>
@@ -31,13 +31,13 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <div class="pub-nav-links" id="pubNavLinks">
             <a href="/features" class="<?= $currentPath === '/features' ? 'active' : '' ?>">Features</a>
             <a href="/how-it-works" class="<?= $currentPath === '/how-it-works' ? 'active' : '' ?>">How It Works</a>
-            <a href="/install-info" class="<?= $currentPath === '/install-info' ? 'active' : '' ?>">Deployment</a>
+            <a href="/pricing" class="<?= $currentPath === '/pricing' ? 'active' : '' ?>">Pricing</a>
             <a href="/support" class="<?= $currentPath === '/support' ? 'active' : '' ?>">Support</a>
-            <a href="/faq" class="<?= $currentPath === '/faq' ? 'active' : '' ?>">FAQ</a>
+            <a href="/contact" class="<?= $currentPath === '/contact' ? 'active' : '' ?>">Contact</a>
         </div>
         <div class="pub-nav-actions">
-            <a href="/login" class="pub-btn pub-btn-outline">Airline Login</a>
-            <a href="/install" class="pub-btn pub-btn-primary">Install <?= e($brand['product_name']) ?></a>
+            <a href="/login" class="pub-nav-quiet-link">Client Login</a>
+            <a href="/contact" class="pub-btn pub-btn-primary">Request Demo</a>
         </div>
     </div>
 </nav>
@@ -53,8 +53,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <div class="pub-footer-grid">
             <div class="pub-footer-brand">
                 <div class="pub-footer-logo">
-                    <div class="pub-nav-logo">✈</div>
-                    <span><?= e($brand['product_name']) ?></span>
+                    <?= opsoneLogoMark(24) ?>
+                    <?= opsoneWordmark('md') ?>
                 </div>
                 <p><?= e($brand['product_tagline']) ?></p>
                 <p class="pub-footer-copy">© <?= e($brand['copyright_year']) ?> <?= e($brand['company_name']) ?>. All rights reserved.</p>
@@ -63,7 +63,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 <h4>Product</h4>
                 <a href="/features">Features</a>
                 <a href="/how-it-works">How It Works</a>
-                <a href="/install-info">Internal Deployment</a>
+                <a href="/pricing">Pricing</a>
                 <a href="/faq">FAQ</a>
             </div>
             <div class="pub-footer-col">
@@ -79,12 +79,12 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
             </div>
             <div class="pub-footer-col">
                 <h4>Access</h4>
-                <a href="/login">Airline Login</a>
-                <a href="/install">Install App</a>
+                <a href="/contact">Request Demo</a>
+                <a href="/request-assessment">Request Assessment</a>
+                <a href="/login">Client Login</a>
             </div>
         </div>
         <div class="pub-footer-bottom">
-            <p>Internal use only. Not for public distribution.</p>
             <p>Version <?= e($brand['version']) ?></p>
         </div>
     </div>

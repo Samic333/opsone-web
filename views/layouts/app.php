@@ -68,15 +68,17 @@ $brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline
 
         <div class="content-body">
             <?php if ($msg = flash('success')): ?>
-                <div class="alert alert-success">✓ <?= e($msg) ?></div>
+                <div class="alert alert-success"><span class="alert-icon"><?= sidebarIcon('check-badge', 16) ?></span><?= e($msg) ?></div>
             <?php endif; ?>
             <?php if ($msg = flash('error')): ?>
-                <div class="alert alert-error">⚠ <?= e($msg) ?></div>
+                <div class="alert alert-error"><span class="alert-icon"><?= sidebarIcon('exclamation', 16) ?></span><?= e($msg) ?></div>
             <?php endif; ?>
 
             <?= $content ?? '' ?>
         </div>
     </main>
+
+    <?php require VIEWS_PATH . '/partials/cmdk_palette.php'; ?>
 </div>
 <script>
 (function() {

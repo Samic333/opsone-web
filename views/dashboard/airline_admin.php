@@ -5,29 +5,29 @@ ob_start();
 ?>
 
 <div class="stats-grid">
-    <div class="stat-card green">
+    <a href="/users" class="stat-card stat-card-link green" title="Manage all active users">
         <div class="stat-label">Active Staff</div>
         <div class="stat-value"><?= $data['active_staff'] ?></div>
-    </div>
-    <div class="stat-card yellow">
+    </a>
+    <a href="/users" class="stat-card stat-card-link yellow" title="Review users awaiting activation">
         <div class="stat-label">Pending Users</div>
         <div class="stat-value"><?= $data['pending_users'] ?></div>
-    </div>
-    <div class="stat-card red">
+    </a>
+    <a href="/devices" class="stat-card stat-card-link red" title="Approve or revoke pending iPad devices">
         <div class="stat-label">Pending Devices</div>
         <div class="stat-value"><?= $data['pending_devices'] ?></div>
-    </div>
-    <div class="stat-card blue">
+    </a>
+    <a href="/files" class="stat-card stat-card-link blue" title="Open the documents library">
         <div class="stat-label">Documents</div>
         <div class="stat-value"><?= $data['total_files'] ?></div>
-    </div>
+    </a>
 </div>
 
 <!-- Compliance widget -->
 <?php if (!empty($data['expiring_licenses']) || !empty($data['expiring_medicals']) || !empty($data['expiring_qualifications'])): ?>
 <div class="card" style="border-left: 3px solid var(--accent-amber, #f59e0b); margin-bottom: 24px;">
     <div class="card-header">
-        <div class="card-title">⚠ Crew Compliance Alerts (next 90 days)</div>
+        <div class="card-title">Crew Compliance Alerts (next 90 days)</div>
         <a href="/users" class="btn btn-sm btn-outline">View Staff →</a>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
@@ -125,17 +125,18 @@ ob_start();
     <div class="card">
         <div class="card-header">
             <div class="card-title">Recent Logins</div>
+            <a href="/audit-log" class="btn btn-sm btn-outline">View All →</a>
         </div>
         <?php if (empty($data['recent_logins'])): ?>
             <div class="empty-state"><p>No recent login activity</p></div>
         <?php else: ?>
         <ul class="activity-list">
-            <?php foreach ($data['recent_logins'] as $login): ?>
+            <?php foreach (array_slice($data['recent_logins'], 0, 5) as $login): ?>
             <li class="activity-item">
                 <div class="activity-dot" style="background: <?= $login['success'] ? 'var(--accent-green)' : 'var(--accent-red)' ?>"></div>
                 <div>
                     <div><strong><?= e($login['name'] ?? $login['email']) ?></strong> — <?= $login['success'] ? 'Login' : 'Failed attempt' ?></div>
-                    <div class="activity-time"><?= formatDateTime($login['created_at']) ?> · <?= e($login['source']) ?> · <?= e($login['ip_address'] ?? '') ?></div>
+                    <div class="activity-time"><?= formatDateTime($login['created_at']) ?> · <?= e($login['source']) ?></div>
                 </div>
             </li>
             <?php endforeach; ?>
@@ -153,7 +154,7 @@ ob_start();
             <div class="empty-state"><p>No uploads yet</p></div>
         <?php else: ?>
         <ul class="activity-list">
-            <?php foreach ($data['recent_uploads'] as $f): ?>
+            <?php foreach (array_slice($data['recent_uploads'], 0, 5) as $f): ?>
             <li class="activity-item">
                 <div class="activity-dot" style="background: var(--accent-purple)"></div>
                 <div>
@@ -171,12 +172,13 @@ ob_start();
     <div class="card">
         <div class="card-header">
             <div class="card-title">Recent Activity</div>
+            <a href="/audit-log" class="btn btn-sm btn-outline">Full Log →</a>
         </div>
         <?php if (empty($data['recent_activity'])): ?>
             <div class="empty-state"><p>No recent activity</p></div>
         <?php else: ?>
         <ul class="activity-list">
-            <?php foreach ($data['recent_activity'] as $log): ?>
+            <?php foreach (array_slice($data['recent_activity'], 0, 5) as $log): ?>
             <li class="activity-item">
                 <div class="activity-dot"></div>
                 <div>

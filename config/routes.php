@@ -21,10 +21,15 @@ return [
     'GET /about'            => ['PublicController', 'about'],
     'GET /privacy'          => ['PublicController', 'privacy'],
     'GET /terms'            => ['PublicController', 'terms'],
+    'GET /pricing'              => ['PublicController', 'pricing'],
+    'GET /request-assessment'   => ['PublicController', 'requestAssessment'],
+    'POST /request-assessment'  => ['PublicController', 'submitAssessment'],
 
     // ─── Auth ──────────────────────────
     'GET /login'              => ['AuthController', 'showLogin'],
     'POST /login'             => ['AuthController', 'login'],
+    'GET /airline/{slug}/login'  => ['AuthController', 'showTenantLogin'],
+    'POST /airline/{slug}/login' => ['AuthController', 'tenantLogin'],
     'GET /logout'             => ['AuthController', 'logout'],
     'GET /activate'           => ['ActivationController', 'show'],
     'POST /activate'          => ['ActivationController', 'process'],
