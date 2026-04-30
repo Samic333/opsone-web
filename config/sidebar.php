@@ -1,6 +1,6 @@
 <?php
 /**
- * Sidebar Navigation Registry — consolidated to 6 groups (Phase C).
+ * Sidebar Navigation Registry.
  *
  * Single source of truth for the left-hand navigation. The layout
  * (views/partials/sidebar.php) renders sections/items from this file
@@ -18,8 +18,13 @@
  * Sections can ALSO set `roles` / `platform` / `airline` for early bail-out.
  * A section with zero visible items is hidden automatically.
  *
- * The "Me" personal-workspace items live in the avatar dropdown
- * (views/partials/header_bar.php), not in the sidebar.
+ * The avatar dropdown (views/partials/header_bar.php) is intentionally minimal
+ * — Profile / Security / Help / Sign Out only. Everything operational lives
+ * here so the sidebar stays the primary navigation surface for every role.
+ *
+ * Crew (pilot / cabin_crew / engineer) see the "My Work" + "Inbox" groups
+ * with their personal roster / duty / flights / documents links. Admins see
+ * the operational + administrative groups.
  *
  * icon values map to sidebarIcon() keys in app/Helpers/functions.php.
  */
@@ -106,7 +111,12 @@ return [
 
     // ─────────────────────────────────────────────────────────────
     //  AIRLINE SIDE  (tenant users — any airline role)
-    //  6 groups: Main / People / Operations / Content / Safety / Administration
+    //  Groups: Main / My Work / Inbox / People / Operations /
+    //          Safety / Administration
+    //
+    //  My Work + Inbox surface only for crew roles (pilot/cabin_crew/
+    //  engineer + crew leaders). Admin roles fall through to People +
+    //  Operations + Safety + Administration. Empty groups auto-hide.
     // ─────────────────────────────────────────────────────────────
 
     'airline' => [
@@ -121,7 +131,86 @@ return [
             ],
         ],
 
-        // ── 2. PEOPLE (people + personnel records merged) ────────
+        // ── 2. MY WORK (crew operational surface) ────────────────
+        // Pilot/cabin_crew/engineer get a dedicated workspace group so
+        // their sidebar is populated like an admin's. Crew leaders are
+        // included so they see the same crew-side affordances when they
+        // fly. Admins do NOT see this group — section roles bail them out.
+        [
+            'title'   => 'My Work',
+            'airline' => true,
+            'roles'   => ['pilot','cabin_crew','engineer',
+                          'chief_pilot','head_cabin_crew','base_manager'],
+            'items'   => [
+                ['label' => 'My Roster', 'href' => '/my-roster', 'icon' => 'calendar',
+                 'match' => '/my-roster',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'My Duty', 'href' => '/my-duty', 'icon' => 'paper-airplane',
+                 'match' => '/my-duty',
+                 'module' => 'duty_reporting',
+                 'roles' => ['pilot','cabin_crew','engineer'],
+                 'when'  => static fn(): bool =>
+                     function_exists('sidebar_duty_crew_allowed') ? sidebar_duty_crew_allowed() : true],
+                ['label' => 'My Flights', 'href' => '/my-flights', 'icon' => 'paper-airplane',
+                 'match' => '/my-flights',
+                 'roles' => ['pilot','cabin_crew','engineer']],
+                ['label' => 'My Logbook', 'href' => '/my-logbook', 'icon' => 'book-open',
+                 'match' => '/my-logbook',
+                 'roles' => ['pilot']],
+                ['label' => 'My FDM Events', 'href' => '/my-fdm', 'icon' => 'trending-up',
+                 'match' => '/my-fdm', 'badge' => 'my_fdm_pending',
+                 'module' => 'fdm',
+                 'roles' => ['pilot']],
+                ['label' => 'My Training', 'href' => '/my-training', 'icon' => 'academic-cap',
+                 'match' => '/my-training',
+                 'module' => 'training',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+            ],
+        ],
+
+        // ── 3. INBOX (crew personal queue) ───────────────────────
+        // Notices, documents, safety drafts, per-diem, change requests —
+        // every "thing waiting for me" surface, in one group. Crew-only
+        // gating so admin sidebars stay focused on operations.
+        [
+            'title'   => 'Inbox',
+            'airline' => true,
+            'roles'   => ['pilot','cabin_crew','engineer',
+                          'chief_pilot','head_cabin_crew','base_manager'],
+            'items'   => [
+                ['label' => 'Operational Notices', 'href' => '/my-notices', 'icon' => 'megaphone',
+                 'match' => '/my-notices',
+                 'module' => 'notices',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'My Documents', 'href' => '/my-files', 'icon' => 'folder-open',
+                 'match' => '/my-files',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'My Safety Reports', 'href' => '/safety/my-reports', 'icon' => 'shield-exclamation',
+                 'match' => '/safety/my-reports', 'badge' => 'safety_pending_replies',
+                 'module' => 'safety_reports',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'Draft Reports', 'href' => '/safety/drafts', 'icon' => 'pencil',
+                 'match' => '/safety/drafts', 'badge' => 'safety_draft_count',
+                 'module' => 'safety_reports',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'My Per Diem', 'href' => '/my-per-diem', 'icon' => 'currency-dollar',
+                 'match' => '/my-per-diem',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'My Change Requests', 'href' => '/my-profile/change-requests', 'icon' => 'document-text',
+                 'match' => '/my-profile/change-requests',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+            ],
+        ],
+
+        // ── 4. PEOPLE (people + personnel records merged) ────────
         [
             'title'   => 'People',
             'airline' => true,
