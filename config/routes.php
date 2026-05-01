@@ -347,6 +347,9 @@ return [
 
     // ─── Personal Roster (crew self-service) ──
     'GET /my-roster'                        => ['RosterController', 'myRoster'],
+    'GET /my-roster/duty/{id}'              => ['RosterController', 'myDutyDetailJson'],
+    'GET /leave-requests'                   => ['RosterController', 'myLeaveRequests'],
+    'GET /roster/corrections'               => ['RosterController', 'myRosterCorrections'],
 
     // ─── FDM ───────────────────────────
     'GET /fdm'                                       => ['FdmController', 'index'],

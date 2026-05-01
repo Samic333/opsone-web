@@ -50,9 +50,79 @@ class DutyReportController {
         $userId   = (int) ($user['id'] ?? 0);
         $settings = DutyReportingSettings::forTenant($tenantId);
         $current  = DutyReport::findOpenForUser($tenantId, $userId);
-        $history  = DutyReport::historyForUser($tenantId, $userId, 10);
+        $history  = DutyReport::historyForUser($tenantId, $userId, 30);
 
-        $pageTitle    = 'My Duty';
+        // ─── Aggregates: month / previous month / YTD / monthly breakdown ──
+        $monthStart = date('Y-m-01');
+        $monthEnd   = date('Y-m-01', strtotime('+1 month'));
+        $prevStart  = date('Y-m-01', strtotime('-1 month'));
+        $prevEnd    = $monthStart;
+        $yearStart  = date('Y-01-01');
+        $yearEnd    = date('Y-01-01', strtotime('+1 year'));
+
+        $sumMin = static function (int $tid, int $uid, string $from, string $to): int {
+            return (int)(Database::fetch(
+                "SELECT COALESCE(SUM(duration_minutes),0) AS m
+                   FROM duty_reports
+                  WHERE tenant_id = ? AND user_id = ?
+                    AND duration_minutes IS NOT NULL
+                    AND check_in_at_utc >= ? AND check_in_at_utc < ?",
+                [$tid, $uid, $from . ' 00:00:00', $to . ' 00:00:00']
+            )['m'] ?? 0);
+        };
+
+        $countDays = static function (int $tid, int $uid, string $type, string $from, string $to): int {
+            return (int)(Database::fetch(
+                "SELECT COUNT(DISTINCT roster_date) AS c
+                   FROM rosters
+                  WHERE tenant_id = ? AND user_id = ?
+                    AND duty_type = ?
+                    AND roster_date >= ? AND roster_date < ?",
+                [$tid, $uid, $type, $from, $to]
+            )['c'] ?? 0);
+        };
+
+        $dutyMonthMin = $sumMin($tenantId, $userId, $monthStart, $monthEnd);
+        $dutyPrevMin  = $sumMin($tenantId, $userId, $prevStart,  $prevEnd);
+        $dutyYearMin  = $sumMin($tenantId, $userId, $yearStart,  $yearEnd);
+
+        $flightDaysMonth = $countDays($tenantId, $userId, 'flight', $monthStart, $monthEnd);
+        $flightDaysYTD   = $countDays($tenantId, $userId, 'flight', $yearStart,  $yearEnd);
+        $offDaysMonth    = $countDays($tenantId, $userId, 'off',    $monthStart, $monthEnd)
+                         + $countDays($tenantId, $userId, 'rest',   $monthStart, $monthEnd);
+
+        // Monthly breakdown — last 6 months
+        $breakdown = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $mFrom = date('Y-m-01', strtotime("-$i month"));
+            $mTo   = date('Y-m-01', strtotime("-" . ($i - 1) . " month"));
+            $breakdown[] = [
+                'label'        => date('M Y', strtotime($mFrom)),
+                'duty_min'     => $sumMin($tenantId, $userId, $mFrom, $mTo),
+                'flight_days'  => $countDays($tenantId, $userId, 'flight', $mFrom, $mTo),
+                'off_days'     => $countDays($tenantId, $userId, 'off', $mFrom, $mTo)
+                                + $countDays($tenantId, $userId, 'rest', $mFrom, $mTo),
+            ];
+        }
+
+        // Threshold reference (illustrative defaults; tenant-configurable later).
+        // Common FTL caps: ~100h flight time per 28-day window, ~1000h per year.
+        // We compare against duty hours since flight time isn't separately recorded.
+        $monthlyDutyCap = 190; // h — generous monthly duty cap
+        $yearlyDutyCap  = 2000; // h
+        $aggregates = [
+            'duty_hours_month'    => round($dutyMonthMin / 60, 1),
+            'duty_hours_prev'     => round($dutyPrevMin / 60, 1),
+            'duty_hours_ytd'      => round($dutyYearMin / 60, 1),
+            'flight_days_month'   => $flightDaysMonth,
+            'flight_days_ytd'     => $flightDaysYTD,
+            'off_days_month'      => $offDaysMonth,
+            'monthly_cap_hours'   => $monthlyDutyCap,
+            'yearly_cap_hours'    => $yearlyDutyCap,
+            'breakdown'           => $breakdown,
+        ];
+
+        $pageTitle    = 'Duty Time';
         $pageSubtitle = $current
             ? 'You are on duty — remember to clock out at the end of your shift.'
             : 'Report for duty to start a new duty event.';

@@ -150,6 +150,14 @@ return [
                  'roles' => ['pilot','cabin_crew','engineer'],
                  'when'  => static fn(): bool =>
                      function_exists('sidebar_duty_crew_allowed') ? sidebar_duty_crew_allowed() : true],
+                ['label' => 'Leave Requests', 'href' => '/leave-requests', 'icon' => 'calendar-days',
+                 'match' => '/leave-requests',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'Roster Corrections', 'href' => '/roster/corrections', 'icon' => 'pencil',
+                 'match' => '/roster/corrections',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'Change Requests', 'href' => '/my-profile/change-requests', 'icon' => 'document-text',
                  'match' => '/my-profile/change-requests',
                  'roles' => ['pilot','cabin_crew','engineer',
@@ -204,15 +212,20 @@ return [
             ],
         ],
 
-        // ── 5. PERFORMANCE (logbook / training / FDM) ────────────
+        // ── 5. PERFORMANCE (logbook / training / FDM / appraisals) ─
         // Personal performance and continuing-airworthiness records.
-        // Logbook + FDM are pilot-only; cabin/engineer see only Training.
+        // Logbook + FDM are pilot-only; cabin/engineer see only Training
+        // and Appraisals.
         [
             'title'   => 'Performance',
             'airline' => true,
             'roles'   => ['pilot','cabin_crew','engineer',
                           'chief_pilot','head_cabin_crew','base_manager'],
             'items'   => [
+                ['label' => 'Appraisals', 'href' => '/appraisals', 'icon' => 'star',
+                 'match' => '/appraisals',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'Logbook', 'href' => '/my-logbook', 'icon' => 'book-open',
                  'match' => '/my-logbook',
                  'roles' => ['pilot']],

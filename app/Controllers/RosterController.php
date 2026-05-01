@@ -711,4 +711,158 @@ class RosterController {
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
     }
+
+    // ─── Personal Leave Requests / Roster Corrections (dedicated pages) ───────
+    //
+    // Both reuse the existing /roster/changes/request POST endpoint with a
+    // pre-selected change_type so backend wiring stays unchanged.
+
+    public function myLeaveRequests(): void {
+        requireAuth();
+        $this->renderPersonalChangeFeed(
+            'leave_request',
+            'Leave Requests',
+            'Submit and track time-off requests.'
+        );
+    }
+
+    public function myRosterCorrections(): void {
+        requireAuth();
+        $this->renderPersonalChangeFeed(
+            'correction',
+            'Roster Corrections',
+            'Flag incorrect roster entries and track scheduling responses.'
+        );
+    }
+
+    private function renderPersonalChangeFeed(string $type, string $title, string $subtitle): void {
+        $tenantId = (int) currentTenantId();
+        $userId   = (int) (currentUser()['id'] ?? 0);
+
+        $rows = Database::fetchAll(
+            "SELECT rc.*, p.name AS period_name
+               FROM roster_changes rc
+          LEFT JOIN roster_periods p ON p.id = rc.roster_period_id
+              WHERE rc.user_id = ? AND rc.tenant_id = ?
+                AND rc.change_type = ?
+              ORDER BY rc.created_at DESC LIMIT 50",
+            [$userId, $tenantId, $type]
+        );
+
+        $open    = array_values(array_filter($rows, fn($r) => $r['status'] === 'pending'));
+        $closed  = array_values(array_filter($rows, fn($r) => $r['status'] !== 'pending'));
+
+        $pageTitle    = $title;
+        $pageSubtitle = $subtitle;
+        $changeType   = $type;
+
+        ob_start();
+        require VIEWS_PATH . '/roster/personal_changes.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    // ─── Personal Roster Duty Detail (JSON, drawer-fed) ───────────────────────
+    //
+    // GET /my-roster/duty/{id} — returns the full duty detail for one of the
+    // logged-in user's own roster cells, scoped to their tenant. Powers the
+    // click-to-detail drawer on /my-roster. Tenant + ownership isolation are
+    // enforced server-side; the {id} alone is not enough to read another
+    // crew member's duty.
+    public function myDutyDetailJson(string $rosterId): void {
+        requireAuth();
+        $tenantId = (int) currentTenantId();
+        $userId   = (int) (currentUser()['id'] ?? 0);
+        $rid      = (int) $rosterId;
+
+        if ($rid <= 0 || $tenantId <= 0 || $userId <= 0) {
+            jsonResponse(['error' => 'Not found'], 404);
+        }
+
+        $row = Database::fetch(
+            "SELECT id, tenant_id, user_id, roster_date, duty_type, duty_code,
+                    notes, acknowledged_at, base_id, fleet_id, reserve_type
+               FROM rosters
+              WHERE id = ? AND tenant_id = ? AND user_id = ?
+              LIMIT 1",
+            [$rid, $tenantId, $userId]
+        );
+        if (!$row) {
+            jsonResponse(['error' => 'Not found'], 404);
+        }
+
+        $dutyTypes  = RosterModel::dutyTypes();
+        $meta       = $dutyTypes[$row['duty_type']] ?? null;
+
+        // For flight duties, find any flights this user is on for that date.
+        // The user might be captain, FO, or in flight_crew_assignments.
+        $sectors = [];
+        if ($row['duty_type'] === 'flight') {
+            $flights = Database::fetchAll(
+                "SELECT f.id, f.flight_number, f.flight_date, f.departure, f.arrival,
+                        f.std, f.sta, f.status, f.notes,
+                        a.registration AS aircraft_reg, a.aircraft_type,
+                        cap.name AS captain_name, fo.name AS fo_name
+                   FROM flights f
+              LEFT JOIN aircraft a ON a.id = f.aircraft_id
+              LEFT JOIN users    cap ON cap.id = f.captain_id
+              LEFT JOIN users    fo  ON fo.id  = f.fo_id
+                  WHERE f.tenant_id = ? AND f.flight_date = ?
+                    AND (
+                          f.captain_id = ?
+                       OR f.fo_id      = ?
+                       OR f.id IN (
+                            SELECT flight_id FROM flight_crew_assignments
+                             WHERE user_id = ?
+                          )
+                    )
+               ORDER BY f.std ASC, f.flight_number ASC",
+                [$tenantId, $row['roster_date'], $userId, $userId, $userId]
+            );
+
+            foreach ($flights as $f) {
+                $crew = Database::fetchAll(
+                    "SELECT u.name, fca.role_on_flight, fca.is_lead
+                       FROM flight_crew_assignments fca
+                       JOIN users u ON u.id = fca.user_id
+                      WHERE fca.flight_id = ?
+                      ORDER BY fca.is_lead DESC, u.name ASC",
+                    [$f['id']]
+                );
+                $sectors[] = [
+                    'id'             => (int) $f['id'],
+                    'flight_number'  => $f['flight_number'],
+                    'departure'      => $f['departure'],
+                    'arrival'        => $f['arrival'],
+                    'std'            => $f['std'],
+                    'sta'            => $f['sta'],
+                    'aircraft_reg'   => $f['aircraft_reg'],
+                    'aircraft_type'  => $f['aircraft_type'],
+                    'captain_name'   => $f['captain_name'],
+                    'fo_name'        => $f['fo_name'],
+                    'status'         => $f['status'],
+                    'notes'          => $f['notes'],
+                    'crew'           => $crew,
+                    'briefing_url'   => '/flights/' . (int) $f['id'],
+                ];
+            }
+        }
+
+        $isAcknowledged = !empty($row['acknowledged_at']);
+
+        jsonResponse([
+            'id'              => (int) $row['id'],
+            'date'            => $row['roster_date'],
+            'duty_type'       => $row['duty_type'],
+            'duty_type_label' => $meta['label'] ?? ucfirst((string)$row['duty_type']),
+            'duty_type_color' => $meta['color'] ?? null,
+            'duty_type_bg'    => $meta['bg'] ?? null,
+            'duty_code'       => $row['duty_code'] ?? '',
+            'notes'           => $row['notes'] ?? '',
+            'reserve_type'    => $row['reserve_type'] ?? null,
+            'acknowledged_at' => $row['acknowledged_at'],
+            'is_acknowledged' => $isAcknowledged,
+            'sectors'         => $sectors,
+        ]);
+    }
 }

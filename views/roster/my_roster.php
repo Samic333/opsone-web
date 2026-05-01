@@ -33,6 +33,53 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
  border-radius:4px;padding:2px 6px;font-size:10px;font-weight:800;letter-spacing:.04em;width:100%;margin-top:1px;}
 .myr-day-code{font-size:9px;color:var(--text-muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .myr-empty-day{color:var(--border);font-size:18px;text-align:center;margin-top:8px;}
+/* Click-to-detail drawer */
+.myr-day.has-duty{cursor:pointer;}
+.myr-day.has-duty:hover{box-shadow:0 0 0 2px var(--accent-blue,#3b82f6),0 1px 6px rgba(0,0,0,.1);}
+.dd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60;
+ opacity:0;pointer-events:none;transition:opacity .15s;}
+.dd-overlay.is-open{opacity:1;pointer-events:auto;}
+.dd-drawer{position:fixed;top:0;right:0;height:100vh;width:480px;max-width:92vw;
+ background:var(--bg-card);border-left:1px solid var(--border);
+ box-shadow:-8px 0 24px rgba(0,0,0,.18);z-index:61;
+ transform:translateX(100%);transition:transform .2s ease;
+ display:flex;flex-direction:column;}
+.dd-drawer.is-open{transform:translateX(0);}
+.dd-hdr{padding:18px 20px;border-bottom:1px solid var(--border);
+ display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.dd-hdr-side{width:6px;height:42px;border-radius:3px;flex-shrink:0;background:var(--text-muted);}
+.dd-title{font-size:18px;font-weight:800;color:var(--text-primary);line-height:1.1;}
+.dd-date{font-size:12px;color:var(--text-muted);margin-top:3px;}
+.dd-close{margin-left:auto;background:transparent;border:none;width:32px;height:32px;
+ border-radius:8px;cursor:pointer;color:var(--text-muted);font-size:22px;line-height:1;}
+.dd-close:hover{background:var(--bg-secondary);}
+.dd-body{padding:18px 20px;overflow:auto;flex:1;}
+.dd-section{margin-bottom:20px;}
+.dd-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+ color:var(--text-muted);margin-bottom:8px;}
+.dd-key-row{display:flex;justify-content:space-between;align-items:center;
+ padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px;}
+.dd-key-row:last-child{border:none;}
+.dd-key{color:var(--text-muted);}
+.dd-val{font-weight:600;color:var(--text-primary);}
+.dd-sector{padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;
+ background:var(--bg-secondary);}
+.dd-sector-head{display:flex;align-items:baseline;gap:10px;margin-bottom:8px;}
+.dd-flight-no{font-size:15px;font-weight:800;color:var(--text-primary);}
+.dd-route{font-size:13px;color:var(--text-secondary);}
+.dd-times{font-size:12px;color:var(--text-muted);margin-left:auto;}
+.dd-crew-list{font-size:12px;color:var(--text-secondary);margin-top:6px;line-height:1.6;}
+.dd-crew-role{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;
+ letter-spacing:.04em;background:var(--bg-card);border:1px solid var(--border);
+ padding:1px 5px;border-radius:3px;color:var(--text-muted);margin-right:4px;}
+.dd-actions{padding:14px 20px;border-top:1px solid var(--border);
+ display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;background:var(--bg-secondary);}
+.dd-action-btn{flex:1;min-width:120px;padding:10px;font-size:13px;font-weight:700;
+ border-radius:8px;border:1px solid var(--border);background:var(--bg-card);
+ color:var(--text-primary);cursor:pointer;}
+.dd-action-btn:hover{border-color:var(--accent-blue,#3b82f6);}
+.dd-action-btn.is-primary{background:var(--accent-blue,#3b82f6);color:#fff;border-color:var(--accent-blue,#3b82f6);}
+.dd-loading,.dd-empty{padding:24px;text-align:center;color:var(--text-muted);font-size:13px;}
 /* Summary panel */
 .myr-summary-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
 .myr-summary-hdr{padding:14px 16px;background:var(--bg-secondary);border-bottom:1px solid var(--border);}
@@ -133,10 +180,11 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
                     $cls    = 'myr-day';
                     if ($isTdy)  $cls .= ' is-today';
                     if ($isWknd) $cls .= ' is-wknd';
+                    if ($entry)  $cls .= ' has-duty';
                     $dtype  = $entry['duty_type'] ?? null;
                     $dtMeta = $dtype ? ($dutyTypes[$dtype] ?? null) : null;
                 ?>
-                <div class="<?= $cls ?>">
+                <div class="<?= $cls ?>"<?= $entry ? ' data-duty-id="' . (int)$entry['id'] . '" data-duty-date="' . e($entry['roster_date']) . '" data-duty-type="' . e($entry['duty_type']) . '"' : '' ?>>
                     <div class="myr-day-num"><?= $d ?></div>
                     <?php if ($entry && $dtMeta): ?>
                         <div class="myr-duty-chip"
@@ -372,6 +420,26 @@ $dutyTypes = $dutyTypes ?? RosterModel::dutyTypes();
     </div><!-- /right sidebar -->
 </div>
 
+<!-- Click-to-detail drawer -->
+<div class="dd-overlay" id="ddOverlay"></div>
+<aside class="dd-drawer" id="ddDrawer" role="dialog" aria-modal="true" aria-labelledby="ddTitle" aria-hidden="true">
+    <div class="dd-hdr">
+        <div class="dd-hdr-side" id="ddSide"></div>
+        <div>
+            <div class="dd-title" id="ddTitle">Duty</div>
+            <div class="dd-date" id="ddDate"></div>
+        </div>
+        <button type="button" class="dd-close" id="ddClose" aria-label="Close">×</button>
+    </div>
+    <div class="dd-body" id="ddBody">
+        <div class="dd-loading">Loading…</div>
+    </div>
+    <div class="dd-actions">
+        <button type="button" class="dd-action-btn" id="ddRequestCorrection">Request Correction</button>
+        <button type="button" class="dd-action-btn" id="ddRequestLeave">Request Leave</button>
+    </div>
+</aside>
+
 <script>
 const typeConfig = {
     leave_request:  { hint: '<strong>Leave Request:</strong> Include your preferred dates and type of leave (annual, sick, study leave).', icon: '🏖️', label: 'Submit Leave Request', color: '#059669' },
@@ -394,4 +462,138 @@ function selectType(el, type) {
 document.getElementById('reqMessage').addEventListener('input', function() {
     document.getElementById('charCount').textContent = this.value.length;
 });
+
+// ─── Click-to-detail drawer ──────────────────────────────────────────────
+(function () {
+    const overlay  = document.getElementById('ddOverlay');
+    const drawer   = document.getElementById('ddDrawer');
+    const side     = document.getElementById('ddSide');
+    const titleEl  = document.getElementById('ddTitle');
+    const dateEl   = document.getElementById('ddDate');
+    const bodyEl   = document.getElementById('ddBody');
+    const btnClose = document.getElementById('ddClose');
+    const btnCorr  = document.getElementById('ddRequestCorrection');
+    const btnLeave = document.getElementById('ddRequestLeave');
+    let currentDuty = null;
+
+    function escape(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+            '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+        }[c]));
+    }
+    function fmtDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T00:00:00');
+        return d.toLocaleDateString(undefined, { weekday:'long', day:'numeric', month:'short', year:'numeric' });
+    }
+    function open() {
+        overlay.classList.add('is-open');
+        drawer.classList.add('is-open');
+        drawer.setAttribute('aria-hidden', 'false');
+    }
+    function close() {
+        overlay.classList.remove('is-open');
+        drawer.classList.remove('is-open');
+        drawer.setAttribute('aria-hidden', 'true');
+        currentDuty = null;
+    }
+    function render(d) {
+        side.style.background = d.duty_type_color || '#3b82f6';
+        titleEl.textContent = d.duty_type_label || 'Duty';
+        dateEl.textContent = fmtDate(d.date) + (d.duty_code ? ' · ' + d.duty_code : '');
+
+        let html = '<div class="dd-section">'
+                 + '<div class="dd-section-label">Summary</div>'
+                 + '<div class="dd-key-row"><span class="dd-key">Duty Type</span><span class="dd-val">' + escape(d.duty_type_label) + '</span></div>'
+                 + (d.duty_code ? '<div class="dd-key-row"><span class="dd-key">Duty Code</span><span class="dd-val">' + escape(d.duty_code) + '</span></div>' : '')
+                 + (d.reserve_type ? '<div class="dd-key-row"><span class="dd-key">Reserve Type</span><span class="dd-val">' + escape(d.reserve_type) + '</span></div>' : '')
+                 + '<div class="dd-key-row"><span class="dd-key">Acknowledged</span><span class="dd-val">' + (d.is_acknowledged ? 'Yes' : 'No') + '</span></div>'
+                 + (d.notes ? '<div class="dd-key-row"><span class="dd-key">Notes</span><span class="dd-val" style="max-width:60%;text-align:right;">' + escape(d.notes) + '</span></div>' : '')
+                 + '</div>';
+
+        if (d.sectors && d.sectors.length) {
+            html += '<div class="dd-section"><div class="dd-section-label">Sectors</div>';
+            d.sectors.forEach(function (s) {
+                const route = (s.departure || '???') + ' → ' + (s.arrival || '???');
+                const times = (s.std ? 'STD ' + escape(s.std) : '') + (s.sta ? ' · STA ' + escape(s.sta) : '');
+                let crewHtml = '';
+                if (s.captain_name) crewHtml += '<span class="dd-crew-role">CPT</span>' + escape(s.captain_name) + '<br>';
+                if (s.fo_name)      crewHtml += '<span class="dd-crew-role">F/O</span>' + escape(s.fo_name) + '<br>';
+                (s.crew || []).forEach(function (c) {
+                    crewHtml += '<span class="dd-crew-role">' + escape(c.role_on_flight || 'CREW') + '</span>' + escape(c.name) + '<br>';
+                });
+                html += '<div class="dd-sector">'
+                      + '<div class="dd-sector-head">'
+                      +   '<span class="dd-flight-no">' + escape(s.flight_number) + '</span>'
+                      +   '<span class="dd-route">' + escape(route) + '</span>'
+                      +   (s.aircraft_reg ? '<span class="dd-times">' + escape(s.aircraft_reg) + (s.aircraft_type ? ' (' + escape(s.aircraft_type) + ')' : '') + '</span>' : '')
+                      + '</div>'
+                      + (times ? '<div class="dd-times" style="margin:0 0 6px;">' + times + '</div>' : '')
+                      + (crewHtml ? '<div class="dd-crew-list">' + crewHtml + '</div>' : '')
+                      + (s.briefing_url ? '<div style="margin-top:8px;"><a href="' + escape(s.briefing_url) + '" class="btn btn-xs btn-outline">Open Flight Briefing →</a></div>' : '')
+                      + '</div>';
+            });
+            html += '</div>';
+        } else if (d.duty_type === 'flight') {
+            html += '<div class="dd-section"><div class="dd-section-label">Sectors</div>'
+                  + '<div class="dd-empty">No flight assignments published for this duty yet.</div></div>';
+        }
+
+        bodyEl.innerHTML = html;
+    }
+    async function load(id) {
+        bodyEl.innerHTML = '<div class="dd-loading">Loading…</div>';
+        open();
+        try {
+            const res = await fetch('/my-roster/duty/' + encodeURIComponent(id), {
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' },
+            });
+            if (!res.ok) {
+                bodyEl.innerHTML = '<div class="dd-empty">Could not load duty (HTTP ' + res.status + ').</div>';
+                return;
+            }
+            const data = await res.json();
+            currentDuty = data;
+            render(data);
+        } catch (e) {
+            bodyEl.innerHTML = '<div class="dd-empty">Failed to load duty.</div>';
+        }
+    }
+
+    document.querySelectorAll('.myr-day.has-duty').forEach(function (cell) {
+        cell.addEventListener('click', function () {
+            const id = this.getAttribute('data-duty-id');
+            if (id) load(id);
+        });
+    });
+    overlay.addEventListener('click', close);
+    btnClose.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') close();
+    });
+
+    // Drawer action buttons prefill the inline request form on the same page.
+    function prefillRequest(type) {
+        if (!currentDuty) return;
+        const btn = document.querySelector('.req-type-btn[data-type="' + type + '"]');
+        if (btn && typeof selectType === 'function') selectType(btn, type);
+        const ta = document.getElementById('reqMessage');
+        if (ta) {
+            const verb = type === 'leave_request' ? 'Leave request' : 'Roster correction';
+            const date = currentDuty.date;
+            const dutyLabel = currentDuty.duty_type_label + (currentDuty.duty_code ? ' (' + currentDuty.duty_code + ')' : '');
+            const prefill = verb + ' for ' + date + ' — currently rostered: ' + dutyLabel + '.\n\n';
+            if (!ta.value || ta.value.trim() === '') {
+                ta.value = prefill;
+                document.getElementById('charCount').textContent = ta.value.length;
+            }
+            close();
+            ta.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            ta.focus();
+        }
+    }
+    btnCorr.addEventListener('click', function () { prefillRequest('correction'); });
+    btnLeave.addEventListener('click', function () { prefillRequest('leave_request'); });
+})();
 </script>

@@ -57,11 +57,20 @@ class AppraisalController {
         $tenantId = (int)currentTenantId();
         $me = (int)currentUser()['id'];
 
-        // Appraisable subjects: for now any crew in same tenant, minus self
-        $subjects = Database::fetchAll(
+        // Appraisable subjects: filter the candidate pool by canAppraise()
+        // policy so the dropdown only shows people the appraiser is allowed
+        // to write about. The same gate runs server-side in store().
+        $candidates = Database::fetchAll(
             "SELECT id, name FROM users WHERE tenant_id = ? AND id != ? AND status = 'active' ORDER BY name",
             [$tenantId, $me]
         );
+        $myRoles = array_column(UserModel::getRoles($me), 'slug');
+        $subjects = [];
+        foreach ($candidates as $c) {
+            if (self::canAppraise($myRoles, (int)$c['id'])) {
+                $subjects[] = $c;
+            }
+        }
 
         $pageTitle = 'New Appraisal';
         ob_start();
@@ -78,6 +87,15 @@ class AppraisalController {
         $me       = (int)currentUser()['id'];
         $subject  = (int)($_POST['subject_id'] ?? 0);
         if ($subject === 0 || $subject === $me) { flash('error','Select a different crew member.'); redirect('/appraisals/new'); }
+
+        // Server-side capability gate: enforce the same canAppraise() policy
+        // even if the dropdown was bypassed. Without this a crafted POST
+        // could write an appraisal on any user.
+        $myRoles = array_column(UserModel::getRoles($me), 'slug');
+        if (!self::canAppraise($myRoles, $subject)) {
+            flash('error', 'You are not authorised to appraise that crew member.');
+            redirect('/appraisals/new');
+        }
 
         Database::insert(
             "INSERT INTO appraisals
@@ -112,5 +130,44 @@ class AppraisalController {
         AuditLog::log('appraisal_accepted', 'appraisal', $id, 'accepted');
         flash('success','Appraisal accepted.');
         redirect('/appraisals');
+    }
+
+    /**
+     * Capability gate: can a user with $appraiserRoles write an appraisal
+     * about $subjectId?
+     *
+     * Policy:
+     *   - Leadership / HR / admin can appraise anyone in their tenant.
+     *   - Pilots can appraise other pilots, cabin crew, and engineers.
+     *   - Cabin crew can appraise other cabin crew.
+     *   - Engineers can appraise other engineers.
+     *   - Platform-only users and self-appraisal are always blocked.
+     *
+     * The subject's tenant is implicitly the appraiser's tenant because the
+     * candidate pool is already tenant-scoped.
+     */
+    private static function canAppraise(array $appraiserRoles, int $subjectId): bool {
+        if ($subjectId <= 0) return false;
+
+        $leadership = ['super_admin','airline_admin','hr','chief_pilot',
+                       'head_cabin_crew','training_admin','base_manager',
+                       'engineering_manager'];
+        if (array_intersect($appraiserRoles, $leadership)) {
+            return true;
+        }
+
+        $subjectRoles = array_column(UserModel::getRoles($subjectId), 'slug');
+        if (!$subjectRoles) return false;
+
+        if (in_array('pilot', $appraiserRoles, true)) {
+            return (bool) array_intersect($subjectRoles, ['pilot','cabin_crew','engineer']);
+        }
+        if (in_array('cabin_crew', $appraiserRoles, true)) {
+            return in_array('cabin_crew', $subjectRoles, true);
+        }
+        if (in_array('engineer', $appraiserRoles, true)) {
+            return in_array('engineer', $subjectRoles, true);
+        }
+        return false;
     }
 }

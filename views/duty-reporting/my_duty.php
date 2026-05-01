@@ -24,7 +24,111 @@ $stateColor = match ($current['state'] ?? null) {
     'missed_report', 'exception_rejected'         => '#ef4444',
     default                                       => '#6b7280',
 };
+
+$agg = $aggregates ?? null;
+$monthPctOfCap = ($agg && $agg['monthly_cap_hours'] > 0)
+    ? min(100, round(($agg['duty_hours_month'] / $agg['monthly_cap_hours']) * 100))
+    : 0;
+$ytdPctOfCap = ($agg && $agg['yearly_cap_hours'] > 0)
+    ? min(100, round(($agg['duty_hours_ytd'] / $agg['yearly_cap_hours']) * 100))
+    : 0;
+$bandFor = static function (int $pct): array {
+    if ($pct >= 90) return ['red',    '#ef4444', 'Approaching cap'];
+    if ($pct >= 70) return ['amber',  '#f59e0b', 'Heads-up'];
+    return                ['green',   '#10b981', 'Within limits'];
+};
+[$mClass, $mColor, $mLabel] = $bandFor($monthPctOfCap);
+[$yClass, $yColor, $yLabel] = $bandFor($ytdPctOfCap);
 ?>
+
+<?php if ($agg): ?>
+<!-- ─── Duty aggregates ─────────────────────────────────────────────── -->
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <div class="stat-label">This Month</div>
+        <div class="stat-value"><?= e((string)$agg['duty_hours_month']) ?>h</div>
+    </div>
+    <div class="stat-card cyan">
+        <div class="stat-label">Previous Month</div>
+        <div class="stat-value"><?= e((string)$agg['duty_hours_prev']) ?>h</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-label">Year to Date</div>
+        <div class="stat-value"><?= e((string)$agg['duty_hours_ytd']) ?>h</div>
+    </div>
+    <div class="stat-card yellow">
+        <div class="stat-label">Flight Days (YTD)</div>
+        <div class="stat-value"><?= (int)$agg['flight_days_ytd'] ?></div>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <div class="card-title">Threshold Status</div>
+        <span class="text-xs text-muted">Reference caps (illustrative)</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;padding:8px 0;">
+        <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+                <span style="font-size:13px;color:var(--text-secondary);">Monthly duty</span>
+                <span style="font-size:13px;font-weight:700;color:<?= $mColor ?>;">
+                    <?= e((string)$agg['duty_hours_month']) ?>h / <?= (int)$agg['monthly_cap_hours'] ?>h · <?= $mLabel ?>
+                </span>
+            </div>
+            <div style="height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:<?= $monthPctOfCap ?>%;background:<?= $mColor ?>;transition:width .25s;"></div>
+            </div>
+        </div>
+        <div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+                <span style="font-size:13px;color:var(--text-secondary);">Yearly duty</span>
+                <span style="font-size:13px;font-weight:700;color:<?= $yColor ?>;">
+                    <?= e((string)$agg['duty_hours_ytd']) ?>h / <?= (int)$agg['yearly_cap_hours'] ?>h · <?= $yLabel ?>
+                </span>
+            </div>
+            <div style="height:8px;background:var(--bg-secondary);border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:<?= $ytdPctOfCap ?>%;background:<?= $yColor ?>;transition:width .25s;"></div>
+            </div>
+        </div>
+    </div>
+    <p class="text-xs text-muted" style="margin:14px 0 0;">
+        Defaults shown above are conservative reference values for monitoring only. Final FTL
+        compliance is governed by your operations manual and regulatory authority.
+    </p>
+</div>
+
+<!-- ─── Monthly breakdown ──────────────────────────────────────────── -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <div class="card-title">Monthly Breakdown</div>
+        <span class="text-xs text-muted">Last 6 months</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th class="text-right">Duty Hours</th>
+                    <th class="text-right">Flight Days</th>
+                    <th class="text-right">Off / Rest Days</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($agg['breakdown'] as $b):
+                    $hrs = round($b['duty_min'] / 60, 1);
+                ?>
+                <tr>
+                    <td><strong><?= e($b['label']) ?></strong></td>
+                    <td class="text-right" style="font-variant-numeric:tabular-nums;"><?= e((string)$hrs) ?>h</td>
+                    <td class="text-right"><?= (int)$b['flight_days'] ?></td>
+                    <td class="text-right text-muted"><?= (int)$b['off_days'] ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- ─── Current status card ────────────────────────────────────────── -->
 <div class="card" style="padding:22px 24px; margin-bottom:20px;">
