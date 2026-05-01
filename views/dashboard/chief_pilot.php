@@ -26,7 +26,7 @@ ob_start();
 <?php if (($data['pending_changes'] ?? 0) > 0): ?>
 <div class="card" style="border-left:3px solid #f59e0b; margin-bottom:24px;">
     <div class="card-header">
-        <div class="card-title" style="color:#f59e0b;">⏳ Pending Roster Change Requests</div>
+        <div class="card-title" style="color:#f59e0b;">Pending Roster Change Requests</div>
         <a href="/roster/changes" class="btn btn-sm btn-outline">Review All →</a>
     </div>
     <p style="margin:0; font-size:14px; color:var(--text);">
@@ -88,7 +88,7 @@ ob_start();
 <?php if (!empty($data['expiring_licenses']) || !empty($data['expiring_medicals']) || !empty($data['expiring_qualifications'])): ?>
 <div class="card" style="border-left: 3px solid var(--accent-amber, #f59e0b);">
     <div class="card-header">
-        <div class="card-title">⚠ Crew Compliance Alerts (next 90 days)</div>
+        <div class="card-title">Crew Compliance Alerts (next 90 days)</div>
         <a href="/users" class="btn btn-sm btn-outline">View Staff →</a>
     </div>
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
@@ -164,7 +164,6 @@ ob_start();
             <a href="/roster" class="btn btn-sm btn-outline">View →</a>
         </div>
         <div class="empty-state">
-            <div class="icon">📅</div>
             <p>Monthly crew roster — view and manage duty assignments.</p>
             <a href="/roster" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Roster →</a>
         </div>
@@ -175,7 +174,6 @@ ob_start();
             <a href="/files" class="btn btn-sm btn-outline">View All →</a>
         </div>
         <div class="empty-state">
-            <div class="icon">📄</div>
             <p><?= $data['total_files'] ?> published document<?= $data['total_files'] !== 1 ? 's' : '' ?> available to crew.</p>
             <a href="/files" class="btn btn-sm btn-primary" style="margin-top: 8px;">Open Documents →</a>
         </div>

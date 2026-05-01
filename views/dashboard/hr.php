@@ -27,7 +27,7 @@ ob_start();
 <?php if ($hasCompliance): ?>
 <div class="card" style="border-left: 3px solid var(--accent-amber, #f59e0b);">
     <div class="card-header">
-        <div class="card-title">⚠ Compliance Alerts (next 90 days)</div>
+        <div class="card-title">Compliance Alerts (next 90 days)</div>
         <a href="/users" class="btn btn-sm btn-outline">View Users →</a>
     </div>
     <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 0 0 4px;">
@@ -49,23 +49,11 @@ ob_start();
         </div>
     </div>
     <?php if (!empty($data['expiring_licenses'])): ?>
-    <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: .06em;">Licences expiring in 90 days</div>
-    <div class="table-wrap" style="margin-top: 6px;">
-        <table>
-            <thead><tr><th>Staff</th><th>Licence Type</th><th>Number</th><th>Expires</th></tr></thead>
-            <tbody>
-            <?php foreach (array_slice($data['expiring_licenses'], 0, 6) as $l):
-                $daysLeft = (int) ceil((strtotime($l['expiry_date']) - time()) / 86400);
-            ?>
-            <tr>
-                <td><?= e($l['user_name']) ?> <?php if ($l['employee_id']): ?><span class="text-muted text-xs">(<?= e($l['employee_id']) ?>)</span><?php endif; ?></td>
-                <td><?= e($l['license_type']) ?></td>
-                <td><code><?= e($l['license_number'] ?? '—') ?></code></td>
-                <td style="color: <?= $daysLeft <= 30 ? 'var(--accent-red)' : 'var(--accent-amber,#f59e0b)' ?>; font-weight: 600;"><?= e($l['expiry_date']) ?> <span style="font-size:10px;">(<?= $daysLeft ?>d)</span></td>
-            </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
+    <div style="margin-top: 10px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size: 12px; color: var(--accent-amber,#f59e0b); font-weight:600;">
+            <?= count($data['expiring_licenses']) ?> licence<?= count($data['expiring_licenses']) !== 1 ? 's' : '' ?> expiring within 90 days
+        </span>
+        <a href="/compliance/expiring" class="btn btn-xs btn-outline">View All →</a>
     </div>
     <?php endif; ?>
 </div>

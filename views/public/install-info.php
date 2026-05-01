@@ -3,11 +3,23 @@
     <div class="info-page-inner">
         <div class="section-label">✦ Internal Deployment</div>
         <h1>Enterprise iPad Installation</h1>
-        <p class="lead"><?= e($brand['product_name']) ?> is distributed internally through a secure website-based installation flow — not through the App Store or TestFlight.</p>
+        <p class="lead"><?= e($brand['product_name']) ?> is distributed through a secure enterprise installation flow — not through the App Store or TestFlight.</p>
+
+        <div class="info-card" id="desktop-warning" style="display:none; border-color: #f59e0b;">
+            <h3>⚠️ iPad Required</h3>
+            <p>The app installation link below uses <code>itms-services://</code> which only works on an iPad or iPhone running iPadOS/iOS. <strong>Open this page on your iPad</strong> to install the app — it cannot be installed from a desktop browser.</p>
+        </div>
+        <script>
+        (function(){
+            var ua = navigator.userAgent || '';
+            var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            if (!isIOS) { var w = document.getElementById('desktop-warning'); if (w) w.style.display = ''; }
+        })();
+        </script>
 
         <div class="info-card">
-            <h3>⚠️ Internal Use Only</h3>
-            <p>This application is intended exclusively for authorized airline personnel. It is not available for public download. Access is controlled through your airline's administrator.</p>
+            <h3>Authorized Airline Personnel Only</h3>
+            <p>This application is available exclusively to staff of airlines enrolled on the <?= e($brand['product_name']) ?> platform. Access is controlled through your airline's administrator.</p>
         </div>
 
         <h2>How Installation Works</h2>

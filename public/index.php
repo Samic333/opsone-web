@@ -234,6 +234,10 @@ if ($isApi) {
             'CrewDocumentController',
             'ChangeRequestController',
             'EligibilityController',
+            // Airline-scoped views that crash with NULL tenant_id when accessed
+            // by platform-only users — must use Controlled Access first.
+            'CrewProfileController',
+            'AirlineProfileController',
         ];
         if (in_array($controllerName, $airlineOnlyControllers, true) && isPlatformOnly()) {
             flash('error', 'That section is scoped to a specific airline. Use controlled access to enter an airline workspace.');

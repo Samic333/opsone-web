@@ -80,7 +80,6 @@ $f = $data['fdm_summary'];
         </div>
         <?php if ($f['total_uploads'] === 0): ?>
             <div class="empty-state">
-                <div class="icon">📊</div>
                 <p>No FDM data uploaded yet.</p>
                 <a href="/fdm/upload" class="btn btn-sm btn-primary" style="margin-top:8px;">Upload Data →</a>
             </div>

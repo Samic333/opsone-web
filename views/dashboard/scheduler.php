@@ -57,7 +57,6 @@ ob_start();
         <a href="/roster" class="btn btn-sm btn-primary">Full Roster →</a>
     </div>
     <div class="empty-state">
-        <div class="icon">📅</div>
         <p>No duties assigned for today yet.</p>
         <a href="/roster/assign" class="btn btn-sm btn-primary" style="margin-top:8px;">Assign Duty →</a>
     </div>
@@ -68,7 +67,7 @@ ob_start();
 <?php if (!empty($data['flagged_crew'])): ?>
 <div class="card">
     <div class="card-header">
-        <div class="card-title" style="color:#ef4444;">✕ Compliance Issues — Action Required</div>
+        <div class="card-title" style="color:#ef4444;">Compliance Issues — Action Required</div>
         <a href="/compliance" class="btn btn-sm btn-outline">Full Report →</a>
     </div>
     <div class="table-wrap">
@@ -148,7 +147,6 @@ ob_start();
     <div class="card">
         <div class="card-header"><div class="card-title">Monthly Roster</div></div>
         <div class="empty-state">
-            <div class="icon">🗓</div>
             <p>View and manage the full crew roster grid.</p>
             <a href="/roster" class="btn btn-sm btn-primary" style="margin-top:8px;">Open Roster →</a>
         </div>
@@ -156,7 +154,6 @@ ob_start();
     <div class="card">
         <div class="card-header"><div class="card-title">Standby Pool</div></div>
         <div class="empty-state">
-            <div class="icon">📋</div>
             <p>View all standby crew and their compliance status.</p>
             <a href="/roster/standby" class="btn btn-sm btn-primary" style="margin-top:8px;">View Standby →</a>
         </div>
@@ -164,7 +161,6 @@ ob_start();
     <div class="card">
         <div class="card-header"><div class="card-title">Assign Duty</div></div>
         <div class="empty-state">
-            <div class="icon">✏️</div>
             <p>Add or update individual crew duty assignments.</p>
             <a href="/roster/assign" class="btn btn-sm btn-primary" style="margin-top:8px;">Assign Duty →</a>
         </div>
