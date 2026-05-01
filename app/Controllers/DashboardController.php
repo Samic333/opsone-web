@@ -457,31 +457,41 @@ class DashboardController {
         )['m'] ?? 0);
         $dutyHoursMonth = round($dutyMin / 60, 1);
 
-        // Days flown this month — distinct dates with duty_type='flight'
+        // Days flown this month — distinct dates with duty_type='flight'.
+        // Match the calendar's visibility filter: only count rosters that
+        // are either unscoped (period IS NULL) or in a published/frozen
+        // period. Otherwise the dashboard would count draft-period rows
+        // that the pilot can't yet see on /my-roster.
         $daysFlownMonth = (int)(Database::fetch(
-            "SELECT COUNT(DISTINCT roster_date) AS c
-               FROM rosters
-              WHERE tenant_id = ? AND user_id = ?
-                AND duty_type = 'flight'
-                AND roster_date >= ? AND roster_date < ?",
+            "SELECT COUNT(DISTINCT r.roster_date) AS c
+               FROM rosters r
+          LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+              WHERE r.tenant_id = ? AND r.user_id = ?
+                AND r.duty_type = 'flight'
+                AND r.roster_date >= ? AND r.roster_date < ?
+                AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))",
             [$tenantId, $userId, $monthStart, $monthEnd]
         )['c'] ?? 0);
 
-        // Next duty (today or future, type != 'off')
+        // Next duty (today or future, type != 'off') — published/frozen only.
         $nextDuty = Database::fetch(
-            "SELECT roster_date, duty_type, duty_code, notes
-               FROM rosters
-              WHERE tenant_id = ? AND user_id = ?
-                AND roster_date >= ? AND duty_type != 'off'
-              ORDER BY roster_date ASC LIMIT 1",
+            "SELECT r.roster_date, r.duty_type, r.duty_code, r.notes
+               FROM rosters r
+          LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+              WHERE r.tenant_id = ? AND r.user_id = ?
+                AND r.roster_date >= ? AND r.duty_type != 'off'
+                AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))
+              ORDER BY r.roster_date ASC LIMIT 1",
             [$tenantId, $userId, $today]
         ) ?: null;
 
-        // Today's roster cell (any duty_type, including off)
+        // Today's roster cell — published/frozen only, same filter as calendar.
         $todayDuty = Database::fetch(
-            "SELECT roster_date, duty_type, duty_code, notes
-               FROM rosters
-              WHERE tenant_id = ? AND user_id = ? AND roster_date = ?",
+            "SELECT r.roster_date, r.duty_type, r.duty_code, r.notes
+               FROM rosters r
+          LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+              WHERE r.tenant_id = ? AND r.user_id = ? AND r.roster_date = ?
+                AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))",
             [$tenantId, $userId, $today]
         ) ?: null;
 

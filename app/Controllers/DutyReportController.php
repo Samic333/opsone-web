@@ -72,12 +72,17 @@ class DutyReportController {
         };
 
         $countDays = static function (int $tid, int $uid, string $type, string $from, string $to): int {
+            // Match calendar visibility: published/frozen periods only (and
+            // unscoped rows). Keeps Duty Time aggregates aligned with the
+            // /my-roster grid the pilot actually sees.
             return (int)(Database::fetch(
-                "SELECT COUNT(DISTINCT roster_date) AS c
-                   FROM rosters
-                  WHERE tenant_id = ? AND user_id = ?
-                    AND duty_type = ?
-                    AND roster_date >= ? AND roster_date < ?",
+                "SELECT COUNT(DISTINCT r.roster_date) AS c
+                   FROM rosters r
+              LEFT JOIN roster_periods p ON p.id = r.roster_period_id
+                  WHERE r.tenant_id = ? AND r.user_id = ?
+                    AND r.duty_type = ?
+                    AND r.roster_date >= ? AND r.roster_date < ?
+                    AND (r.roster_period_id IS NULL OR p.status IN ('published','frozen'))",
                 [$tid, $uid, $type, $from, $to]
             )['c'] ?? 0);
         };
