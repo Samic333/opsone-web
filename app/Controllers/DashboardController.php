@@ -438,21 +438,70 @@ class DashboardController {
 
     private function pilotDashboard(?int $tenantId): void {
         if (!$tenantId) { redirect('/login'); }
-        $user = currentUser();
-        $roleSlugs = array_column(UserModel::getRoles($user['id']), 'slug');
+        $user      = currentUser();
+        $userId    = (int)$user['id'];
+        $roleSlugs = array_column(UserModel::getRoles($userId), 'slug');
+
+        $today      = date('Y-m-d');
+        $monthStart = date('Y-m-01');
+        $monthEnd   = date('Y-m-01', strtotime('+1 month'));
+
+        // Duty hours this month — sum of completed duty_reports.duration_minutes
+        $dutyMin = (int)(Database::fetch(
+            "SELECT COALESCE(SUM(duration_minutes), 0) AS m
+               FROM duty_reports
+              WHERE tenant_id = ? AND user_id = ?
+                AND duration_minutes IS NOT NULL
+                AND check_in_at_utc >= ? AND check_in_at_utc < ?",
+            [$tenantId, $userId, $monthStart . ' 00:00:00', $monthEnd . ' 00:00:00']
+        )['m'] ?? 0);
+        $dutyHoursMonth = round($dutyMin / 60, 1);
+
+        // Days flown this month — distinct dates with duty_type='flight'
+        $daysFlownMonth = (int)(Database::fetch(
+            "SELECT COUNT(DISTINCT roster_date) AS c
+               FROM rosters
+              WHERE tenant_id = ? AND user_id = ?
+                AND duty_type = 'flight'
+                AND roster_date >= ? AND roster_date < ?",
+            [$tenantId, $userId, $monthStart, $monthEnd]
+        )['c'] ?? 0);
+
+        // Next duty (today or future, type != 'off')
+        $nextDuty = Database::fetch(
+            "SELECT roster_date, duty_type, duty_code, notes
+               FROM rosters
+              WHERE tenant_id = ? AND user_id = ?
+                AND roster_date >= ? AND duty_type != 'off'
+              ORDER BY roster_date ASC LIMIT 1",
+            [$tenantId, $userId, $today]
+        ) ?: null;
+
+        // Today's roster cell (any duty_type, including off)
+        $todayDuty = Database::fetch(
+            "SELECT roster_date, duty_type, duty_code, notes
+               FROM rosters
+              WHERE tenant_id = ? AND user_id = ? AND roster_date = ?",
+            [$tenantId, $userId, $today]
+        ) ?: null;
+
         $data = [
-            'recent_notices' => Notice::recent($tenantId, 5),
-            'recent_files'   => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
-            'sync_status'    => Device::getLatestSync($user['id']),
-            'last_login'     => $user['last_login'] ?? 'Never',
+            'recent_notices'      => Notice::recent($tenantId, 5),
+            'recent_files'        => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
+            'sync_status'         => Device::getLatestSync($userId),
+            'last_login'          => $user['last_login'] ?? 'Never',
             'pending_notice_acks' => (int)(Database::fetch(
                 "SELECT COUNT(*) as c FROM notices n
                  LEFT JOIN notice_reads nr ON nr.notice_id = n.id AND nr.user_id = ?
                  WHERE n.tenant_id = ? AND n.published = 1 AND n.requires_ack = 1
                    AND (n.expires_at IS NULL OR n.expires_at > " . dbNow() . ")
                    AND nr.acknowledged_at IS NULL",
-                [$user['id'], $tenantId]
+                [$userId, $tenantId]
             )['c'] ?? 0),
+            'duty_hours_month'    => $dutyHoursMonth,
+            'days_flown_month'    => $daysFlownMonth,
+            'next_duty'           => $nextDuty,
+            'today_duty'          => $todayDuty,
         ];
         require VIEWS_PATH . '/dashboard/pilot.php';
     }

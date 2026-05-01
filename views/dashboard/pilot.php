@@ -28,6 +28,22 @@ try {
         }
     }
 } catch (\Throwable $e) { /* widget is optional — never break the dashboard */ }
+
+// Helper: human-readable duty type label.
+$__dutyTypeLabel = static function (?string $t): string {
+    return match ($t) {
+        'flight'   => 'Flight',
+        'standby'  => 'Standby',
+        'reserve'  => 'Reserve',
+        'rest'     => 'Rest',
+        'sim'      => 'Simulator',
+        'training' => 'Training',
+        'leave'    => 'Leave',
+        'maint'    => 'Maintenance',
+        'off'      => 'Day Off',
+        default    => ucfirst((string)$t),
+    };
+};
 ?>
 
 <?php if ($dutyAllowed): ?>
@@ -42,7 +58,7 @@ try {
     ?>
     <div style="background:<?= $bg ?>; color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:22px;"><?= $pending ? '⏳' : '✈️' ?></span>
+            <span style="display:inline-flex; color:#fff;"><?= sidebarIcon($pending ? 'clock' : 'paper-airplane', 22) ?></span>
             <div>
                 <strong style="font-size:14px; display:block;">
                     <?= $pending ? 'On duty — pending manager review' : 'On duty now' ?>
@@ -59,7 +75,7 @@ try {
     <?php else: ?>
     <div style="background:linear-gradient(135deg,#2563eb 0%,#1e40af 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
         <div style="display:flex; align-items:center; gap:12px;">
-            <span style="font-size:22px;">🟢</span>
+            <span style="display:inline-flex; color:#fff;"><?= sidebarIcon('check-badge', 22) ?></span>
             <div>
                 <strong style="font-size:14px; display:block;">Not currently on duty</strong>
                 <span style="font-size:12px; opacity:0.9;">Report for duty to start your shift.</span>
@@ -75,7 +91,7 @@ try {
 <?php if (($data['pending_notice_acks'] ?? 0) > 0): ?>
 <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
     <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:22px;">✍️</span>
+        <span style="display:inline-flex; color:#fff;"><?= sidebarIcon('pencil', 22) ?></span>
         <div>
             <strong style="font-size:14px; display:block;">
                 <?= $data['pending_notice_acks'] ?> notice<?= $data['pending_notice_acks'] !== 1 ? 's' : '' ?> require<?= $data['pending_notice_acks'] === 1 ? 's' : '' ?> your acknowledgement
@@ -91,17 +107,72 @@ try {
 
 <div class="stats-grid">
     <div class="stat-card blue">
-        <div class="stat-label">Welcome</div>
-        <div class="stat-value" style="font-size:20px;"><?= e($_SESSION['user']['name'] ?? 'Pilot') ?></div>
+        <div class="stat-label">Duty Hours This Month</div>
+        <div class="stat-value"><?= e((string)($data['duty_hours_month'] ?? 0)) ?></div>
     </div>
-    <div class="stat-card <?= $data['sync_status'] ? 'green' : 'yellow' ?>">
-        <div class="stat-label">Last iPad Sync</div>
-        <div class="stat-value" style="font-size:16px;"><?= $data['sync_status'] ? date('d M H:i', strtotime($data['sync_status'])) : 'Never' ?></div>
+    <div class="stat-card green">
+        <div class="stat-label">Days Flown This Month</div>
+        <div class="stat-value"><?= (int)($data['days_flown_month'] ?? 0) ?></div>
+    </div>
+    <div class="stat-card <?= ($data['pending_notice_acks'] ?? 0) > 0 ? 'yellow' : 'cyan' ?>">
+        <div class="stat-label">Pending Acknowledgements</div>
+        <div class="stat-value"><?= (int)($data['pending_notice_acks'] ?? 0) ?></div>
     </div>
     <div class="stat-card cyan">
-        <div class="stat-label">Active Notices</div>
-        <div class="stat-value"><?= count($data['recent_notices']) ?></div>
+        <div class="stat-label">Next Duty</div>
+        <?php if (!empty($data['next_duty'])): ?>
+            <div class="stat-value" style="font-size:18px;"><?= e($__dutyTypeLabel($data['next_duty']['duty_type'])) ?></div>
+            <div class="stat-label" style="margin-top:4px;">
+                <?= e(formatDate($data['next_duty']['roster_date'])) ?>
+                <?php if (!empty($data['next_duty']['duty_code'])): ?>
+                    · <?= e($data['next_duty']['duty_code']) ?>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="stat-value" style="font-size:18px;">—</div>
+            <div class="stat-label" style="margin-top:4px;">No upcoming duties</div>
+        <?php endif; ?>
     </div>
+</div>
+
+<!-- Today's duty -->
+<div class="card">
+    <div class="card-header">
+        <div class="card-title">Today's Duty</div>
+        <a href="/my-roster" class="btn btn-sm btn-outline">Open Roster →</a>
+    </div>
+    <?php if (!empty($data['today_duty'])):
+        $td = $data['today_duty'];
+        $tdType = $__dutyTypeLabel($td['duty_type']);
+        $tdColor = match ($td['duty_type']) {
+            'flight'   => 'var(--accent-blue)',
+            'standby', 'reserve' => 'var(--accent-amber, #f59e0b)',
+            'leave', 'off', 'rest' => 'var(--text-muted, #94a3b8)',
+            'sim', 'training' => 'var(--accent-cyan, #06b6d4)',
+            default    => 'var(--accent-blue)',
+        };
+    ?>
+        <div style="display:flex; align-items:center; gap:16px; padding:8px 0;">
+            <div style="width:8px; height:48px; background:<?= $tdColor ?>; border-radius:4px;"></div>
+            <div style="flex:1;">
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary);"><?= e($tdType) ?></div>
+                <div style="font-size:13px; color:var(--text-secondary);">
+                    <?= e(formatDate($td['roster_date'])) ?>
+                    <?php if (!empty($td['duty_code'])): ?>
+                        · <strong><?= e($td['duty_code']) ?></strong>
+                    <?php endif; ?>
+                    <?php if (!empty($td['notes'])): ?>
+                        · <?= e($td['notes']) ?>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <a href="/my-roster" class="btn btn-sm btn-primary">View Details →</a>
+        </div>
+    <?php else: ?>
+        <div class="empty-state">
+            <p>No duty assigned for today.</p>
+        </div>
+    <?php endif; ?>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
@@ -149,23 +220,6 @@ try {
             <?php endforeach; ?>
         </ul>
         <?php endif; ?>
-    </div>
-</div>
-
-<!-- iPad sync status -->
-<div class="card" style="background: linear-gradient(135deg, var(--accent-blue) 0%, #6366f1 100%); color: #fff; border: none;">
-    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-        <div>
-            <div style="font-weight:700; font-size:15px; margin-bottom:4px;">📲 iPad sync</div>
-            <p style="color: rgba(255,255,255,0.85); font-size:13px; margin:0;">
-                Keep your CrewAssist app up to date for the latest rosters, manuals, and notices.
-                <?php if ($data['sync_status']): ?>
-                Last sync: <?= date('d M Y H:i', strtotime($data['sync_status'])) ?>.
-                <?php else: ?>
-                No sync recorded yet. Your admin will email the iPad setup instructions.
-                <?php endif; ?>
-            </p>
-        </div>
     </div>
 </div>
 
