@@ -21,16 +21,6 @@ $bellLink    = $isTeamBell ? '/safety/queue' : '/safety/my-reports';
 $bellTitle   = $isTeamBell ? 'Pilot replies waiting' : 'Safety team messages';
 ?>
 
-<?php
-// Airline tenant pill (left of bells). Shown for airline-session users so an
-// admin running 4 tabs across multiple test tenants always knows which one
-// they're operating in. Hidden for platform-only users (who have no tenant).
-$__tenantBadge = null;
-if (!empty($_SESSION['tenant']) && empty($_SESSION['is_platform_session'])) {
-    $__t = $_SESSION['tenant'];
-    $__tenantBadge = $__t['display_name'] ?? $__t['name'] ?? null;
-}
-?>
 <div class="content-header">
     <div>
         <h2><?= e($pageTitle ?? 'Dashboard') ?></h2>
@@ -42,21 +32,6 @@ if (!empty($_SESSION['tenant']) && empty($_SESSION['is_platform_session'])) {
     <div style="display:flex;align-items:center;gap:10px;">
         <?php if (!empty($headerAction)): ?>
             <?= $headerAction ?>
-        <?php endif; ?>
-
-        <?php if ($__tenantBadge): ?>
-            <!-- Airline tenant pill — confirms which airline you're operating in -->
-            <div class="tenant-pill" title="Active airline tenant"
-                 style="display:inline-flex;align-items:center;gap:6px;
-                        padding:5px 12px;border-radius:14px;
-                        background:rgba(6,182,212,0.08);
-                        border:1px solid rgba(6,182,212,0.25);
-                        color:var(--accent-cyan,#06b6d4);
-                        font-size:12px;font-weight:600;
-                        max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                <span style="display:inline-flex;"><?= sidebarIcon('paper-airplane', 12) ?></span>
-                <?= e($__tenantBadge) ?>
-            </div>
         <?php endif; ?>
 
         <!-- Quick search trigger — opens the Cmd+K command palette.

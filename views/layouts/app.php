@@ -43,7 +43,9 @@ $roleLabel = $roleLabelMap[$roles[0] ?? '']
            ?? ucwords(str_replace('_', ' ', $roles[0] ?? 'User'));
 
 $brandName  = $isPlat ? ($brand['product_name'] . ' Platform') : $brand['product_name'];
-$brandSmall = $isPlat ? 'Platform Administration' : ($tenant['name'] ?? 'Airline Portal');
+// Airline users don't need the tenant name shown under the brand — they're
+// always in their own airline. Platform staff still see a context indicator.
+$brandSmall = $isPlat ? 'Platform Administration' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">

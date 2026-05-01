@@ -42,7 +42,9 @@ $renderBadge = function (array $item) use ($badges): string {
         </div>
         <div>
             <h1><?= $isPlat ? e($brandName) : opsoneWordmark('md') ?></h1>
-            <small><?= e($brandSmall) ?></small>
+            <?php if (!empty($brandSmall)): ?>
+                <small><?= e($brandSmall) ?></small>
+            <?php endif; ?>
         </div>
     </div>
 
