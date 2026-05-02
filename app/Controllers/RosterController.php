@@ -780,10 +780,14 @@ class RosterController {
         }
 
         $row = Database::fetch(
-            "SELECT id, tenant_id, user_id, roster_date, duty_type, duty_code,
-                    notes, acknowledged_at, base_id, fleet_id, reserve_type
-               FROM rosters
-              WHERE id = ? AND tenant_id = ? AND user_id = ?
+            "SELECT r.id, r.tenant_id, r.user_id, r.roster_date, r.duty_type, r.duty_code,
+                    r.notes, r.acknowledged_at, r.base_id, r.fleet_id, r.reserve_type,
+                    b.name AS base_name, b.code AS base_code,
+                    fl.name AS fleet_name
+               FROM rosters r
+          LEFT JOIN bases   b  ON b.id  = r.base_id
+          LEFT JOIN fleets  fl ON fl.id = r.fleet_id
+              WHERE r.id = ? AND r.tenant_id = ? AND r.user_id = ?
               LIMIT 1",
             [$rid, $tenantId, $userId]
         );
@@ -797,12 +801,15 @@ class RosterController {
         // For flight duties, find any flights this user is on for that date.
         // The user might be captain, FO, or in flight_crew_assignments.
         $sectors = [];
-        if ($row['duty_type'] === 'flight') {
+        $crewSet = [];   // user_id => row, deduped across sectors
+        if (in_array($row['duty_type'], ['flight','pos','deadhead'], true)) {
             $flights = Database::fetchAll(
                 "SELECT f.id, f.flight_number, f.flight_date, f.departure, f.arrival,
                         f.std, f.sta, f.status, f.notes,
                         a.registration AS aircraft_reg, a.aircraft_type,
-                        cap.name AS captain_name, fo.name AS fo_name
+                        f.captain_id, f.fo_id,
+                        cap.name AS captain_name,
+                        fo.name  AS fo_name
                    FROM flights f
               LEFT JOIN aircraft a ON a.id = f.aircraft_id
               LEFT JOIN users    cap ON cap.id = f.captain_id
@@ -821,14 +828,64 @@ class RosterController {
             );
 
             foreach ($flights as $f) {
-                $crew = Database::fetchAll(
-                    "SELECT u.name, fca.role_on_flight, fca.is_lead
+                // Sector-level crew (cabin / engineer / observer / jumpseat).
+                // Profile photo column varies between sqlite (avatar_path) and
+                // MySQL (profile_photo_path), so we omit it here — the front-end
+                // already falls back to initials. We can re-add a unified photo
+                // column once the schemas converge.
+                $sectorCrew = Database::fetchAll(
+                    "SELECT u.id, u.name,
+                            fca.role_on_flight, fca.is_lead
                        FROM flight_crew_assignments fca
                        JOIN users u ON u.id = fca.user_id
                       WHERE fca.flight_id = ?
                       ORDER BY fca.is_lead DESC, u.name ASC",
                     [$f['id']]
                 );
+
+                // Roll up cockpit + cabin into a single deduped crew set for the duty
+                if (!empty($f['captain_id']) && empty($crewSet[$f['captain_id']])) {
+                    $crewSet[$f['captain_id']] = [
+                        'id'    => (int) $f['captain_id'],
+                        'name'  => $f['captain_name'],
+                        'role'  => 'captain',
+                        'role_label' => 'Captain',
+                        'photo' => null,
+                        'is_self' => ((int)$f['captain_id'] === $userId),
+                    ];
+                }
+                if (!empty($f['fo_id']) && empty($crewSet[$f['fo_id']])) {
+                    $crewSet[$f['fo_id']] = [
+                        'id'    => (int) $f['fo_id'],
+                        'name'  => $f['fo_name'],
+                        'role'  => 'first_officer',
+                        'role_label' => 'First Officer',
+                        'photo' => null,
+                        'is_self' => ((int)$f['fo_id'] === $userId),
+                    ];
+                }
+                foreach ($sectorCrew as $c) {
+                    $cid = (int) $c['id'];
+                    if ($cid <= 0 || isset($crewSet[$cid])) continue;
+                    $roleSlug  = strtolower((string) ($c['role_on_flight'] ?? ''));
+                    $roleLabel = match ($roleSlug) {
+                        'cabin_crew'       => $c['is_lead'] ? 'Senior Cabin Crew' : 'Cabin Crew',
+                        'purser', 'scc'    => 'Purser',
+                        'engineer'         => 'Flight Engineer',
+                        'observer'         => 'Observer',
+                        'jumpseat'         => 'Jumpseat',
+                        default            => ucfirst(str_replace('_', ' ', $roleSlug ?: 'Crew')),
+                    };
+                    $crewSet[$cid] = [
+                        'id'    => $cid,
+                        'name'  => $c['name'],
+                        'role'  => $roleSlug,
+                        'role_label' => $roleLabel,
+                        'photo' => null,
+                        'is_self' => ($cid === $userId),
+                    ];
+                }
+
                 $sectors[] = [
                     'id'             => (int) $f['id'],
                     'flight_number'  => $f['flight_number'],
@@ -836,19 +893,93 @@ class RosterController {
                     'arrival'        => $f['arrival'],
                     'std'            => $f['std'],
                     'sta'            => $f['sta'],
+                    'etd'            => null,   // reserved — populated when ops adds revised times
+                    'eta'            => null,
                     'aircraft_reg'   => $f['aircraft_reg'],
                     'aircraft_type'  => $f['aircraft_type'],
                     'captain_name'   => $f['captain_name'],
                     'fo_name'        => $f['fo_name'],
                     'status'         => $f['status'],
                     'notes'          => $f['notes'],
-                    'crew'           => $crew,
                     'briefing_url'   => '/flights/' . (int) $f['id'],
                 ];
             }
         }
 
+        // ── Crew, ordered: self last (or by rank), captain first, then FO,
+        //    then SCC/Purser, then cabin crew, then engineer/observer.
+        $rankOrder = [
+            'captain' => 0, 'first_officer' => 1, 'purser' => 2, 'scc' => 2,
+            'cabin_crew' => 3, 'engineer' => 4, 'observer' => 5, 'jumpseat' => 6,
+        ];
+        $crew = array_values($crewSet);
+        usort($crew, function ($a, $b) use ($rankOrder) {
+            $ra = $rankOrder[$a['role']] ?? 9;
+            $rb = $rankOrder[$b['role']] ?? 9;
+            if ($ra !== $rb) return $ra <=> $rb;
+            return strcmp($a['name'] ?? '', $b['name'] ?? '');
+        });
+
+        // ── Briefing documents (flight bag) — pulled across all sectors.
+        $briefingDocs = [];
+        if (!empty($sectors)) {
+            $flightIds = array_map(fn($s) => $s['id'], $sectors);
+            $placeholders = rtrim(str_repeat('?,', count($flightIds)), ',');
+            try {
+                $briefingDocs = Database::fetchAll(
+                    "SELECT id, flight_id, file_type, title, file_name, file_size, created_at
+                       FROM flight_bag_files
+                      WHERE tenant_id = ? AND flight_id IN ($placeholders)
+                      ORDER BY created_at DESC",
+                    array_merge([$tenantId], $flightIds)
+                );
+            } catch (\Throwable $e) {
+                $briefingDocs = [];
+            }
+        }
+
+        // ── Action permission flags driving drawer footer buttons.
         $isAcknowledged = !empty($row['acknowledged_at']);
+        $today          = date('Y-m-d');
+        // Acknowledge applies to assigned duties from today forward — pilots
+        // shouldn't need to ack a day off in the past, and shouldn't be
+        // re-acking a sealed past duty either.
+        $canAcknowledge = !$isAcknowledged
+                       && $row['roster_date'] >= $today
+                       && !in_array($row['duty_type'], ['off','rest'], true);
+        $canRequestLeave = !in_array($row['duty_type'], ['leave','sick'], true)
+                        && $row['roster_date'] >= $today;
+        $canRequestCorrection = true;
+
+        // ── Estimated duty duration: when sectors are present, span from
+        //    earliest STD to latest STA. Otherwise null (no FDP rules at this
+        //    layer — that's the FDM controller's job).
+        $estDutyMins = null;
+        if (!empty($sectors)) {
+            $first = $sectors[0]['std']  ?? null;
+            $last  = end($sectors)['sta'] ?? null;
+            reset($sectors);
+            if ($first && $last) {
+                try {
+                    $a = strtotime($row['roster_date'] . ' ' . $first);
+                    $b = strtotime($row['roster_date'] . ' ' . $last);
+                    if ($b < $a) { $b += 86400; } // crosses midnight
+                    $estDutyMins = (int) round(($b - $a) / 60);
+                } catch (\Throwable $e) { $estDutyMins = null; }
+            }
+        }
+
+        // Routing string e.g. "NBO → MGQ → NBO"
+        $routing = null;
+        if (!empty($sectors)) {
+            $stops = [];
+            foreach ($sectors as $s) {
+                if (empty($stops)) $stops[] = $s['departure'];
+                $stops[] = $s['arrival'];
+            }
+            $stops = array_filter($stops);
+            if (count($stops) >= 2) $routing = implode(' → ', $stops);
+        }
 
         jsonResponse([
             'id'              => (int) $row['id'],
@@ -857,12 +988,143 @@ class RosterController {
             'duty_type_label' => $meta['label'] ?? ucfirst((string)$row['duty_type']),
             'duty_type_color' => $meta['color'] ?? null,
             'duty_type_bg'    => $meta['bg'] ?? null,
+            'duty_type_code'  => $meta['code'] ?? strtoupper(substr((string)$row['duty_type'], 0, 3)),
             'duty_code'       => $row['duty_code'] ?? '',
             'notes'           => $row['notes'] ?? '',
             'reserve_type'    => $row['reserve_type'] ?? null,
+            'station'         => $row['base_code'] ?: $row['base_name'],
+            'base_name'       => $row['base_name'],
+            'base_code'       => $row['base_code'],
+            'fleet_name'      => $row['fleet_name'],
             'acknowledged_at' => $row['acknowledged_at'],
             'is_acknowledged' => $isAcknowledged,
+            'can_acknowledge' => $canAcknowledge,
+            'can_request_leave'      => $canRequestLeave,
+            'can_request_correction' => $canRequestCorrection,
+            'routing'         => $routing,
+            'est_duty_minutes' => $estDutyMins,
             'sectors'         => $sectors,
+            'crew'            => $crew,
+            'briefing_docs'   => $briefingDocs,
         ]);
+    }
+
+    // ─── Acknowledge a roster entry ───────────────────────────────────────────
+    //
+    // POST /my-roster/acknowledge — the logged-in pilot stamps acknowledged_at
+    // on one of THEIR own roster rows. Idempotent: a second ack is a no-op.
+    public function acknowledgeDuty(): void {
+        requireAuth();
+
+        if (!verifyCsrf()) {
+            jsonResponse(['error' => 'Invalid security token.'], 403);
+        }
+
+        $tenantId = (int) currentTenantId();
+        $userId   = (int) (currentUser()['id'] ?? 0);
+        $rid      = (int) ($_POST['roster_id'] ?? 0);
+
+        if ($rid <= 0 || $tenantId <= 0 || $userId <= 0) {
+            jsonResponse(['error' => 'Invalid request.'], 400);
+        }
+
+        $row = Database::fetch(
+            "SELECT id, roster_date, duty_type, acknowledged_at
+               FROM rosters
+              WHERE id = ? AND tenant_id = ? AND user_id = ?
+              LIMIT 1",
+            [$rid, $tenantId, $userId]
+        );
+        if (!$row) {
+            jsonResponse(['error' => 'Roster entry not found.'], 404);
+        }
+        if (!empty($row['acknowledged_at'])) {
+            jsonResponse([
+                'ok' => true,
+                'already_acknowledged' => true,
+                'acknowledged_at'      => $row['acknowledged_at'],
+            ]);
+        }
+
+        $dbNow = (getenv('DB_DRIVER') === 'sqlite') ? "datetime('now')" : 'NOW()';
+        Database::execute(
+            "UPDATE rosters
+                SET acknowledged_at = $dbNow
+              WHERE id = ? AND tenant_id = ? AND user_id = ? AND acknowledged_at IS NULL",
+            [$rid, $tenantId, $userId]
+        );
+
+        AuditLog::log('roster_acknowledged', 'roster', $rid,
+            "Acknowledged {$row['duty_type']} on {$row['roster_date']}");
+
+        $fresh = Database::fetch(
+            "SELECT acknowledged_at FROM rosters WHERE id = ? AND tenant_id = ? AND user_id = ?",
+            [$rid, $tenantId, $userId]
+        );
+        jsonResponse([
+            'ok' => true,
+            'already_acknowledged' => false,
+            'acknowledged_at'      => $fresh['acknowledged_at'] ?? null,
+        ]);
+    }
+
+    // ─── Personal "All Roster Requests" — unified history ─────────────────────
+    //
+    // GET /my-roster/requests — single page that lists every roster_changes row
+    // for the logged-in pilot, with type tabs (All / Leave / Correction / Swap
+    // / Comment) and status filters. Companion to the dedicated leave-requests
+    // and roster-corrections pages; this is the umbrella history view.
+    public function myAllRosterRequests(): void {
+        requireAuth();
+        $tenantId   = (int) currentTenantId();
+        $userId     = (int) (currentUser()['id'] ?? 0);
+        $typeFilter = $_GET['type']   ?? 'all';
+        $stsFilter  = $_GET['status'] ?? 'all';
+
+        $validTypes  = ['all','leave_request','correction','swap_request','comment'];
+        $validStatus = ['all','pending','approved','rejected','noted'];
+        if (!in_array($typeFilter, $validTypes,  true)) $typeFilter = 'all';
+        if (!in_array($stsFilter,  $validStatus, true)) $stsFilter  = 'all';
+
+        $where  = "rc.user_id = ? AND rc.tenant_id = ?";
+        $params = [$userId, $tenantId];
+        if ($typeFilter !== 'all') { $where .= " AND rc.change_type = ?"; $params[] = $typeFilter; }
+        if ($stsFilter  !== 'all') { $where .= " AND rc.status = ?";      $params[] = $stsFilter;  }
+
+        $rows = Database::fetchAll(
+            "SELECT rc.*, p.name AS period_name,
+                    rb.name AS responded_by_name
+               FROM roster_changes rc
+          LEFT JOIN roster_periods p  ON p.id  = rc.roster_period_id
+          LEFT JOIN users          rb ON rb.id = rc.responded_by
+              WHERE $where
+              ORDER BY rc.created_at DESC LIMIT 200",
+            $params
+        );
+
+        // Counts for tab badges (always all types/statuses for the user).
+        $allRows = Database::fetchAll(
+            "SELECT change_type, status FROM roster_changes
+              WHERE user_id = ? AND tenant_id = ?",
+            [$userId, $tenantId]
+        );
+        $typeCounts = ['all' => 0, 'leave_request' => 0, 'correction' => 0,
+                       'swap_request' => 0, 'comment' => 0];
+        $statusCounts = ['all' => 0, 'pending' => 0, 'approved' => 0,
+                         'rejected' => 0, 'noted' => 0];
+        foreach ($allRows as $r) {
+            $typeCounts['all']++;
+            $statusCounts['all']++;
+            if (isset($typeCounts[$r['change_type']])) $typeCounts[$r['change_type']]++;
+            if (isset($statusCounts[$r['status']]))    $statusCounts[$r['status']]++;
+        }
+
+        $pageTitle    = 'My Roster Requests';
+        $pageSubtitle = 'Leave, corrections, swaps and comments — all in one feed.';
+
+        ob_start();
+        require VIEWS_PATH . '/roster/all_requests.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
     }
 }

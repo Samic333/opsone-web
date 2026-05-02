@@ -348,6 +348,8 @@ return [
     // ─── Personal Roster (crew self-service) ──
     'GET /my-roster'                        => ['RosterController', 'myRoster'],
     'GET /my-roster/duty/{id}'              => ['RosterController', 'myDutyDetailJson'],
+    'POST /my-roster/acknowledge'           => ['RosterController', 'acknowledgeDuty'],
+    'GET /my-roster/requests'               => ['RosterController', 'myAllRosterRequests'],
     'GET /leave-requests'                   => ['RosterController', 'myLeaveRequests'],
     'GET /roster/corrections'               => ['RosterController', 'myRosterCorrections'],
 
@@ -452,9 +454,11 @@ return [
     'GET /api/app/build'       => ['InstallApiController', 'latestBuild'],
 
     // ─── Duty Reporting — Crew self-service (web) ──
-    'GET /my-duty'               => ['DutyReportController', 'myDuty'],
-    'POST /my-duty/check-in'     => ['DutyReportController', 'myDutyCheckIn'],
-    'POST /my-duty/clock-out'    => ['DutyReportController', 'myDutyClockOut'],
+    'GET /my-duty'                                  => ['DutyReportController', 'myDuty'],
+    'POST /my-duty/check-in'                        => ['DutyReportController', 'myDutyCheckIn'],
+    'POST /my-duty/clock-out'                       => ['DutyReportController', 'myDutyClockOut'],
+    'GET /my-duty/{id}'                             => ['DutyReportController', 'myDutyDetail'],
+    'POST /my-duty/{id}/request-correction'         => ['DutyReportController', 'myDutyRequestCorrection'],
 
     // ─── Duty Reporting (Airline Admin) ───────────
     'GET /duty-reporting'                                => ['DutyReportController', 'index'],
