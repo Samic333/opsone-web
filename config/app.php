@@ -33,7 +33,7 @@ function config(string $key, mixed $default = null): mixed {
     if ($config === null) {
         $config = [
             'app' => [
-                'name' => env('APP_NAME', 'OpsOne'),
+                'name' => env('APP_NAME', 'Opsvelo'),
                 'env' => env('APP_ENV', 'production'),
                 'debug' => env('APP_DEBUG', 'false') === 'true',
                 'url' => env('APP_URL', 'http://localhost:8080'),
