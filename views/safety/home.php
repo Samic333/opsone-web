@@ -74,7 +74,7 @@ $typeDescriptions = [
         onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.1)'; this.style.transform='translateY(-1px)'"
         onmouseout="this.style.boxShadow=''; this.style.transform=''">
         <span>📝</span>
-        <span>My Drafts</span>
+        <span>Drafts</span>
         <span style="
             background:var(--accent-blue,#3b82f6); color:#fff;
             border-radius:20px; padding:1px 8px; font-size:11px; font-weight:700;">
@@ -92,7 +92,7 @@ $typeDescriptions = [
         onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,0.1)'; this.style.transform='translateY(-1px)'"
         onmouseout="this.style.boxShadow=''; this.style.transform=''">
         <span>📋</span>
-        <span>My Reports</span>
+        <span>Submitted</span>
         <span style="
             background:var(--accent-blue,#3b82f6); color:#fff;
             border-radius:20px; padding:1px 8px; font-size:11px; font-weight:700;">

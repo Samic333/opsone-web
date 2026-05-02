@@ -289,7 +289,7 @@ class FdmController {
             [$tenantId, $userId]
         );
 
-        $pageTitle    = 'My FDM Events';
+        $pageTitle    = 'FDM Events';
         $pageSubtitle = 'Flight data events recorded against your flights';
 
         ob_start();

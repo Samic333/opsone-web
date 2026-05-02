@@ -123,7 +123,7 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
 
         <!-- Licences (read-only for crew) -->
         <div class="card" id="licenses">
-            <div class="card-header"><div class="card-title">My Licences</div></div>
+            <div class="card-header"><div class="card-title">Licences</div></div>
             <?php if (empty($licenses)): ?>
                 <div class="empty-state" style="padding:12px 0 4px;"><p>No licences on file.</p></div>
             <?php else: ?>
@@ -162,7 +162,7 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
 
         <!-- Qualifications (self-service add/remove) -->
         <div class="card mt-3" id="qualifications">
-            <div class="card-header"><div class="card-title">My Qualifications</div></div>
+            <div class="card-header"><div class="card-title">Qualifications</div></div>
 
             <?php if (!empty($qualifications)): ?>
             <div class="table-wrap" style="margin-bottom:16px;">
@@ -260,7 +260,7 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
 <div class="card mt-3" style="border-left:4px solid <?= $elStatusColor ?>;">
     <div class="card-header">
         <div>
-            <div class="card-title">My Assignment Readiness</div>
+            <div class="card-title">Assignment Readiness</div>
             <div class="text-xs text-muted">Roster eligibility based on your current licences, medicals and documents.</div>
         </div>
         <span class="status-badge" style="--badge-color:<?= $elStatusColor ?>;font-size:13px;padding:5px 12px;">
@@ -282,7 +282,7 @@ $pctCol = $completion >= 80 ? 'var(--accent-green)' : ($completion >= 50 ? 'var(
 <!-- ─── My Documents ──────────────────────────────────────── -->
 <div class="card mt-3" id="documents">
     <div class="card-header">
-        <div class="card-title">My Documents</div>
+        <div class="card-title">Documents</div>
         <a href="/my-profile/change-requests" class="btn btn-outline btn-sm">My Change Requests →</a>
     </div>
     <p class="text-xs text-muted">

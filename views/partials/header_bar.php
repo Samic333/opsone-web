@@ -128,7 +128,7 @@ $bellTitle   = $isTeamBell ? 'Pilot replies waiting' : 'Safety team messages';
 // so the top-right of the header doesn't get crowded.
 $__menuItemStyle = 'display:flex;align-items:center;gap:10px;padding:10px 14px;color:var(--text-primary,#f1f5f9);font-size:13px;text-decoration:none;';
 $__menuItems = [
-    ['My Profile',        '/my-profile',        'user-circle'],
+    ['Profile',           '/my-profile',        'user-circle'],
     ['Account Security',  '/2fa/setup',         'key'],
     ['Help & Guides',     '/help',              'question-circle'],
 ];

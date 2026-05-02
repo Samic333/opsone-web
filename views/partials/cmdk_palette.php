@@ -29,7 +29,7 @@ try {
 // Always include a few safe global entries so even minimal-permission users
 // can reach the basics.
 $__cmdk_extras = [
-    ['label' => 'My Profile',        'href' => '/my-profile',        'group' => 'Personal', 'icon' => 'user-circle'],
+    ['label' => 'Profile',           'href' => '/my-profile',        'group' => 'Personal', 'icon' => 'user-circle'],
     ['label' => 'Notifications',     'href' => '/notifications',     'group' => 'Personal', 'icon' => 'bell'],
     ['label' => 'Help & Guides',     'href' => '/help',              'group' => 'Personal', 'icon' => 'question-circle'],
     ['label' => 'Sign Out',          'href' => '/logout',            'group' => 'Account',  'icon' => 'key'],

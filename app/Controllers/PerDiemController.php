@@ -114,7 +114,7 @@ class PerDiemController {
             [$tenantId, $userId]
         );
 
-        $pageTitle    = 'My Per Diem';
+        $pageTitle    = 'Per Diem';
         $pageSubtitle = 'Claims and payment status';
 
         ob_start();

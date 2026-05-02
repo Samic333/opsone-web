@@ -455,7 +455,7 @@ class FileController {
             $fileStatus[$f['id']] = $status;
         }
 
-        $pageTitle    = 'My Documents';
+        $pageTitle    = 'Documents';
         $pageSubtitle = 'Active manuals and documents for your role';
 
         ob_start();

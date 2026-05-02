@@ -219,6 +219,41 @@ class AppraisalController {
             }
         }
 
+        // Required-field validation. Both forms need a rotation reference and
+        // a period; self forms additionally need at least one answer; peer
+        // forms need either a rating or a written narrative.
+        $rotationRef = trim((string)($_POST['rotation_ref'] ?? ''));
+        $periodFrom  = trim((string)($_POST['period_from'] ?? ''));
+        $periodTo    = trim((string)($_POST['period_to'] ?? ''));
+        $errors = [];
+        if ($rotationRef === '')                $errors[] = 'Rotation reference is required.';
+        if ($periodFrom === '' || $periodTo === '') $errors[] = 'Appraisal period start and end dates are required.';
+        if ($periodFrom !== '' && $periodTo !== '' && $periodFrom > $periodTo) {
+            $errors[] = 'Period start date must be on or before the end date.';
+        }
+        if ($kind === 'self') {
+            $hasAnswer = false;
+            if (isset($_POST['answers']) && is_array($_POST['answers'])) {
+                foreach ($_POST['answers'] as $ans) {
+                    if (trim((string)$ans) !== '') { $hasAnswer = true; break; }
+                }
+            }
+            if (!$hasAnswer) $errors[] = 'Answer at least one question before submitting.';
+        } else {
+            $hasRating   = isset($_POST['ratings']) && is_array($_POST['ratings'])
+                           && count(array_filter($_POST['ratings'], fn($v) => (int)$v >= 1)) > 0;
+            $hasNarrative = trim((string)($_POST['strengths'] ?? '')) !== ''
+                         || trim((string)($_POST['improvements'] ?? '')) !== ''
+                         || trim((string)($_POST['comments'] ?? '')) !== '';
+            if (!$hasRating && !$hasNarrative) {
+                $errors[] = 'Provide at least one competency rating or narrative comment.';
+            }
+        }
+        if ($errors) {
+            flash('error', implode(' ', $errors));
+            redirect('/appraisals/new?kind=' . $kind);
+        }
+
         // Per-attribute ratings (peer form). Coerced to ints in [1,5];
         // missing values are dropped so partial grids are still recorded.
         $ratings = [];

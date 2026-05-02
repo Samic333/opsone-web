@@ -122,7 +122,7 @@ class TrainingController {
             [$tenantId, $userId]
         );
 
-        $pageTitle    = 'My Training';
+        $pageTitle    = 'Training Records';
         $pageSubtitle = 'Records, expiries, and upcoming due items';
 
         ob_start();

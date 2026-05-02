@@ -336,7 +336,7 @@ class NoticeController {
             );
         }
 
-        $pageTitle    = 'My Notices';
+        $pageTitle    = 'Operational Notices';
         $pageSubtitle = 'Active notices and bulletins for your role';
 
         ob_start();

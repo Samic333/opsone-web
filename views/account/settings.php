@@ -10,7 +10,7 @@ $has = $data['has'];
     <p style="margin:0 0 16px;color:var(--text-muted);font-size:12px;">
         These details appear in the header, emails, and activity logs. For crew-specific records
         (licences, medical, passport), use
-        <a href="/my-profile" style="color:var(--accent-blue);">My Profile</a>.
+        <a href="/my-profile" style="color:var(--accent-blue);">Profile</a>.
     </p>
 
     <form method="POST" action="/account/settings/update" style="display:flex;flex-direction:column;gap:14px;">

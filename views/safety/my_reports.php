@@ -3,7 +3,7 @@
  * OpsVelo — My Submitted Safety Reports (Crew View)
  * Variables: $reports (array with has_pending_reply flag), $pendingReplies (int)
  */
-$pageTitle    = 'My Safety Reports';
+$pageTitle    = 'Safety Reports';
 $pageSubtitle = 'Your submitted and closed reports';
 
 $headerAction = '<a href="/safety/select-type" class="btn btn-primary btn-sm">＋ New Report</a>';

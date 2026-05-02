@@ -139,7 +139,7 @@ function ar_qs(string $type, string $status): string {
             <?php if ($typeFilter === 'all' && $stsFilter === 'all'): ?>
                 You haven't submitted any roster requests yet.<br>
                 <span style="font-size:12px;">
-                    Open <a href="/my-roster" style="color:var(--accent-cyan);text-decoration:none;">My Roster</a>
+                    Open the <a href="/my-roster" style="color:var(--accent-cyan);text-decoration:none;">Roster</a>
                     and click any duty to request leave or a correction.
                 </span>
             <?php else: ?>

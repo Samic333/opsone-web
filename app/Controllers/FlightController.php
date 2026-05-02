@@ -316,7 +316,7 @@ class FlightController {
             [$tenantId, $userId, $userId]
         );
 
-        $pageTitle    = 'My Flights';
+        $pageTitle    = 'Assigned Flights';
         $pageSubtitle = 'Assigned flights and their briefing packages';
 
         ob_start();

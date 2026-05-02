@@ -387,7 +387,7 @@ class SafetyController {
 
         $drafts = SafetyReportModel::draftsForUser($tenantId, (int) $user['id']);
 
-        $pageTitle    = 'My Drafts';
+        $pageTitle    = 'Draft Reports';
         $pageSubtitle = 'Saved reports that have not yet been submitted.';
 
         ob_start();
@@ -409,7 +409,7 @@ class SafetyController {
         // Count reports where safety team has replied and reporter hasn't replied yet
         $pendingReplies = count(array_filter($reports, fn($r) => !empty($r['has_pending_reply'])));
 
-        $pageTitle    = 'My Safety Submissions';
+        $pageTitle    = 'Safety Reports';
         $pageSubtitle = 'A history of reports you have securely filed.';
 
         ob_start();

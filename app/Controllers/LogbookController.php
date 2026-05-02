@@ -29,7 +29,7 @@ class LogbookController {
             'landings_night' => array_sum(array_map(fn($l) => (int)($l['landings_night'] ?? 0), $logs)),
         ];
 
-        $pageTitle    = 'My Logbook';
+        $pageTitle    = 'Logbook';
         $pageSubtitle = 'Electronic pilot logbook';
 
         ob_start();

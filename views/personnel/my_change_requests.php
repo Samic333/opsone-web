@@ -14,8 +14,8 @@ $color = [
 ?>
 <div class="card">
     <div class="card-header">
-        <div class="card-title">My Change Requests</div>
-        <a href="/my-profile" class="btn btn-outline btn-sm">← Back to My Profile</a>
+        <div class="card-title">Profile Changes</div>
+        <a href="/my-profile" class="btn btn-outline btn-sm">← Back to Profile</a>
     </div>
     <p class="text-muted" style="font-size:13px;">
         These are compliance change requests you've submitted (profile, license,
@@ -28,7 +28,7 @@ $color = [
         <div class="empty-state">
             <div class="icon">📝</div>
             <h3>No change requests yet</h3>
-            <p>Use the <em>My Profile</em> page to request changes to licence, medical, passport, visa or other compliance data.</p>
+            <p>Use the <em>Profile</em> page to request changes to licence, medical, passport, visa or other compliance data.</p>
         </div>
     <?php else: ?>
     <div class="table-wrap">

@@ -3,7 +3,7 @@
  * OpsVelo — My Draft Reports
  * Variables: $drafts (array)
  */
-$pageTitle    = 'My Drafts';
+$pageTitle    = 'Draft Reports';
 $pageSubtitle = 'Reports saved but not yet submitted';
 
 $headerAction = '<a href="/safety" class="btn btn-primary btn-sm">＋ New Report</a>';

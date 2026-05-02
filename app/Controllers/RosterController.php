@@ -395,9 +395,11 @@ class RosterController {
     public function requestChange(): void {
         requireAuth();
 
+        $returnTo = $_POST['redirect'] ?? '/my-roster';
+
         if (!verifyCsrf()) {
             flash('error', 'Invalid security token.');
-            redirect('/roster');
+            redirect($returnTo);
         }
 
         $tenantId   = currentTenantId();
@@ -408,8 +410,8 @@ class RosterController {
         $rosterId   = (int)($_POST['roster_id'] ?? 0) ?: null;
 
         if (!$message) {
-            flash('error', 'Message is required.');
-            redirect('/roster');
+            flash('error', 'Please add a message before submitting your request.');
+            redirect($returnTo);
         }
 
         $validTypes = ['comment', 'leave_request', 'swap_request', 'correction', 'training_request'];
@@ -418,7 +420,7 @@ class RosterController {
         RosterModel::createChangeRequest($tenantId, $userId, $userId, $changeType, $message, $periodId, $rosterId);
         AuditLog::log('roster_change_requested', 'roster', 0, "Change request ({$changeType}) submitted");
         flash('success', 'Your request has been submitted.');
-        redirect($_POST['redirect'] ?? '/roster');
+        redirect($returnTo);
     }
 
     public function respondToChange(int $id): void {
@@ -703,7 +705,7 @@ class RosterController {
             [$userId, $tenantId]
         );
 
-        $pageTitle    = 'My Roster';
+        $pageTitle    = 'Roster';
         $pageSubtitle = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 
         ob_start();
@@ -1119,7 +1121,7 @@ class RosterController {
             if (isset($statusCounts[$r['status']]))    $statusCounts[$r['status']]++;
         }
 
-        $pageTitle    = 'My Roster Requests';
+        $pageTitle    = 'All Requests';
         $pageSubtitle = 'Leave, corrections, swaps and comments — all in one feed.';
 
         ob_start();

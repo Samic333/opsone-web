@@ -170,7 +170,7 @@ class CrewProfileController {
             $profileType = 'engineer';
         }
 
-        $pageTitle    = 'My Profile';
+        $pageTitle    = 'Profile';
         $pageSubtitle = 'Your crew record and documents';
 
         ob_start();

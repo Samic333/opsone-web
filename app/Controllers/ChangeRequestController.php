@@ -143,7 +143,7 @@ class ChangeRequestController {
         requireAuth();
         $me = currentUser();
         $mine = ChangeRequestModel::mineForUser((int) $me['id']);
-        $pageTitle    = 'My Change Requests';
+        $pageTitle    = 'Profile Changes';
         $pageSubtitle = 'Status of your submitted compliance updates';
         ob_start();
         require VIEWS_PATH . '/personnel/my_change_requests.php';
