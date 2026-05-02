@@ -88,6 +88,81 @@ $__dutyTypeLabel = static function (?string $t): string {
     <?php endif; ?>
 <?php endif; ?>
 
+<?php
+// ─── Compact Duty Time summary card ──────────────────────────────────────
+// Always shown when the duty module is allowed for this role/tenant.
+if ($dutyAllowed):
+    $__monthHrs    = (float) ($data['duty_hours_month']     ?? 0);
+    $__monthCap    = (int)   ($data['duty_monthly_cap']     ?? 190);
+    $__zone        = (string)($data['duty_month_threshold'] ?? 'normal');
+    $__remaining   = (float) ($data['duty_remaining_month'] ?? 0);
+    $__restMin     = $data['duty_rest_minutes']             ?? null;
+    $__lastDate    = $data['duty_last_date']                ?? null;
+    $__pct         = $__monthCap > 0 ? min(100, round(($__monthHrs / $__monthCap) * 100)) : 0;
+    [$__zClr, $__zLbl] = match ($__zone) {
+        'exceeded'    => ['#ef4444', 'Exceeded'],
+        'approaching' => ['#f59e0b', 'Approaching'],
+        default       => ['#10b981', 'Normal'],
+    };
+    $__isOnDuty = $dutyOpen && in_array($dutyOpen['state'], ['checked_in','on_duty','exception_pending_review'], true);
+    $__restLabel = 'No record';
+    $__restClr   = '#7484a8';
+    if ($__isOnDuty) { $__restLabel = 'On duty';   $__restClr = '#3b82f6'; }
+    elseif ($__restMin !== null) {
+        if ($__restMin >= 600) { $__restLabel = 'Adequate';  $__restClr = '#10b981'; }
+        elseif ($__restMin >= 480) { $__restLabel = 'Minimum';   $__restClr = '#f59e0b'; }
+        else { $__restLabel = 'Below min'; $__restClr = '#ef4444'; }
+    }
+    $__restText = ($__restMin !== null && !$__isOnDuty)
+        ? sprintf('%dh %dm', intdiv((int)$__restMin, 60), (int)$__restMin % 60)
+        : '—';
+?>
+<div class="card" style="margin-bottom:20px; padding:18px 22px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; margin-bottom:14px; flex-wrap:wrap;">
+        <div>
+            <div class="card-title" style="margin:0;">Duty Time Summary</div>
+            <div class="text-xs text-muted" style="margin-top:2px;"><?= e(date('F Y')) ?></div>
+        </div>
+        <a href="/my-duty" class="btn btn-sm btn-outline">View full Duty Time →</a>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:center;">
+        <!-- Left: month total + threshold -->
+        <div>
+            <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:8px;">
+                <span style="font-size:32px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums;"><?= e((string)$__monthHrs) ?>h</span>
+                <span class="text-sm text-muted">of <?= (int)$__monthCap ?>h</span>
+                <span style="display:inline-flex; align-items:center; gap:6px; padding:3px 10px; border-radius:999px; background:<?= $__zClr ?>22; color:<?= $__zClr ?>; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;">
+                    <span style="width:6px; height:6px; border-radius:50%; background:<?= $__zClr ?>;"></span>
+                    <?= e($__zLbl) ?>
+                </span>
+            </div>
+            <div style="height:8px; background:var(--bg-secondary, rgba(255,255,255,0.05)); border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:<?= (int)$__pct ?>%; background:<?= $__zClr ?>; border-radius:4px; transition:width .25s;"></div>
+            </div>
+            <div class="text-xs text-muted" style="margin-top:6px;">Remaining <strong style="color:var(--text-primary);"><?= e((string)$__remaining) ?>h</strong> before cap</div>
+        </div>
+        <!-- Right: rest period + last duty -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div style="padding:12px 14px; background:var(--bg-input, rgba(255,255,255,0.03)); border-radius:8px;">
+                <div class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:0.06em;">Rest Period</div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:4px; font-variant-numeric:tabular-nums;"><?= e($__restText) ?></div>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px;">
+                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:<?= $__restClr ?>;"></span>
+                    <span class="text-xs text-muted"><?= e($__restLabel) ?></span>
+                </div>
+            </div>
+            <div style="padding:12px 14px; background:var(--bg-input, rgba(255,255,255,0.03)); border-radius:8px;">
+                <div class="text-xs text-muted" style="text-transform:uppercase; letter-spacing:0.06em;">Last Duty</div>
+                <div style="font-size:18px; font-weight:700; color:var(--text-primary); margin-top:4px; font-variant-numeric:tabular-nums;">
+                    <?= $__lastDate ? e($__lastDate) : '—' ?>
+                </div>
+                <div class="text-xs text-muted" style="margin-top:4px;"><?= $__lastDate ? 'Last clock-out date' : 'No history yet' ?></div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php if (($data['pending_notice_acks'] ?? 0) > 0): ?>
 <div style="background:linear-gradient(135deg,#f59e0b 0%,#d97706 100%); color:#fff; border-radius:10px; padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
     <div style="display:flex; align-items:center; gap:12px;">

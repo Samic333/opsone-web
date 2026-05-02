@@ -112,6 +112,29 @@
         </p>
     </div>
 
+    <!-- Duty-time thresholds -->
+    <div class="card" style="padding:20px; margin-bottom:18px;">
+        <h3 style="margin:0 0 14px 0; font-size:15px;">Duty-Time Thresholds</h3>
+        <p class="text-xs text-muted" style="margin:0 0 14px;">
+            Reference caps used by the pilot Duty Time page to colour the Normal / Approaching / Exceeded threshold pills.
+            Approaching = ≥85% of cap, Exceeded = ≥100%. Airline ops manual remains the source of truth for compliance.
+        </p>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+            <div>
+                <label class="text-xs text-muted">Monthly duty cap (hours)</label>
+                <input type="number" name="monthly_duty_cap_hours" class="form-control" min="1" max="500"
+                       value="<?= (int)($settings['monthly_duty_cap_hours'] ?? 190) ?>">
+                <p class="text-xs text-muted" style="margin-top:4px;">Default 190h. Common references range 100–200h.</p>
+            </div>
+            <div>
+                <label class="text-xs text-muted">Yearly duty cap (hours)</label>
+                <input type="number" name="yearly_duty_cap_hours" class="form-control" min="1" max="5000"
+                       value="<?= (int)($settings['yearly_duty_cap_hours'] ?? 2000) ?>">
+                <p class="text-xs text-muted" style="margin-top:4px;">Default 2000h. Common references range 1000–2200h.</p>
+            </div>
+        </div>
+    </div>
+
     <div style="display:flex; gap:10px;">
         <button type="submit" class="btn btn-primary">Save Settings</button>
         <a href="/duty-reporting" class="btn btn-ghost">Cancel</a>

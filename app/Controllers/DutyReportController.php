@@ -52,6 +52,10 @@ class DutyReportController {
         $current  = DutyReport::findOpenForUser($tenantId, $userId);
         $history  = DutyReport::historyForUser($tenantId, $userId, 30);
 
+        // Threshold caps — airline-configurable, with sensible defaults.
+        $monthlyDutyCap = max(1, (int) ($settings['monthly_duty_cap_hours'] ?? 190));
+        $yearlyDutyCap  = max(1, (int) ($settings['yearly_duty_cap_hours']  ?? 2000));
+
         // ─── Aggregates: month / previous month / YTD / monthly breakdown ──
         $monthStart = date('Y-m-01');
         $monthEnd   = date('Y-m-01', strtotime('+1 month'));
@@ -87,6 +91,35 @@ class DutyReportController {
             )['c'] ?? 0);
         };
 
+        $countDutyPeriods = static function (int $tid, int $uid, string $from, string $to): int {
+            return (int)(Database::fetch(
+                "SELECT COUNT(*) AS c FROM duty_reports
+                  WHERE tenant_id = ? AND user_id = ?
+                    AND check_in_at_utc >= ? AND check_in_at_utc < ?
+                    AND check_out_at_utc IS NOT NULL",
+                [$tid, $uid, $from . ' 00:00:00', $to . ' 00:00:00']
+            )['c'] ?? 0);
+        };
+
+        $countFlights = static function (int $tid, int $uid, string $from, string $to): int {
+            // Counts flight pairings where the user appears as Captain, FO,
+            // or any flight_crew_assignments role. flights table may not
+            // exist on all installs — guard by table-presence check.
+            try {
+                return (int)(Database::fetch(
+                    "SELECT COUNT(DISTINCT f.id) AS c
+                       FROM flights f
+                  LEFT JOIN flight_crew_assignments fca ON fca.flight_id = f.id
+                      WHERE f.tenant_id = ?
+                        AND f.flight_date >= ? AND f.flight_date < ?
+                        AND (f.captain_id = ? OR f.fo_id = ? OR fca.user_id = ?)",
+                    [$tid, $from, $to, $uid, $uid, $uid]
+                )['c'] ?? 0);
+            } catch (\Throwable $e) {
+                return 0;
+            }
+        };
+
         $dutyMonthMin = $sumMin($tenantId, $userId, $monthStart, $monthEnd);
         $dutyPrevMin  = $sumMin($tenantId, $userId, $prevStart,  $prevEnd);
         $dutyYearMin  = $sumMin($tenantId, $userId, $yearStart,  $yearEnd);
@@ -96,35 +129,86 @@ class DutyReportController {
         $offDaysMonth    = $countDays($tenantId, $userId, 'off',    $monthStart, $monthEnd)
                          + $countDays($tenantId, $userId, 'rest',   $monthStart, $monthEnd);
 
-        // Monthly breakdown — last 6 months
+        // Threshold zone classifier — matches the green/amber/red bands in the view.
+        $zoneFor = static function (float $hours, int $cap): string {
+            if ($cap <= 0) return 'normal';
+            $pct = ($hours / $cap) * 100;
+            if ($pct >= 100) return 'exceeded';
+            if ($pct >= 85)  return 'approaching';
+            return 'normal';
+        };
+
+        // Monthly breakdown — last 6 months, enriched with duty period count,
+        // flight count, and a per-row threshold zone.
         $breakdown = [];
         for ($i = 5; $i >= 0; $i--) {
             $mFrom = date('Y-m-01', strtotime("-$i month"));
             $mTo   = date('Y-m-01', strtotime("-" . ($i - 1) . " month"));
+            $mMin  = $sumMin($tenantId, $userId, $mFrom, $mTo);
+            $mHrs  = round($mMin / 60, 1);
             $breakdown[] = [
-                'label'        => date('M Y', strtotime($mFrom)),
-                'duty_min'     => $sumMin($tenantId, $userId, $mFrom, $mTo),
-                'flight_days'  => $countDays($tenantId, $userId, 'flight', $mFrom, $mTo),
-                'off_days'     => $countDays($tenantId, $userId, 'off', $mFrom, $mTo)
-                                + $countDays($tenantId, $userId, 'rest', $mFrom, $mTo),
+                'label'            => date('M Y', strtotime($mFrom)),
+                'duty_min'         => $mMin,
+                'duty_hours'       => $mHrs,
+                'flight_days'      => $countDays($tenantId, $userId, 'flight', $mFrom, $mTo),
+                'off_days'         => $countDays($tenantId, $userId, 'off',  $mFrom, $mTo)
+                                    + $countDays($tenantId, $userId, 'rest', $mFrom, $mTo),
+                'duty_periods'     => $countDutyPeriods($tenantId, $userId, $mFrom, $mTo),
+                'flights'          => $countFlights($tenantId, $userId, $mFrom, $mTo),
+                'threshold_status' => $zoneFor($mHrs, $monthlyDutyCap),
             ];
         }
 
-        // Threshold reference (illustrative defaults; tenant-configurable later).
-        // Common FTL caps: ~100h flight time per 28-day window, ~1000h per year.
-        // We compare against duty hours since flight time isn't separately recorded.
-        $monthlyDutyCap = 190; // h — generous monthly duty cap
-        $yearlyDutyCap  = 2000; // h
+        $monthHours = round($dutyMonthMin / 60, 1);
+        $ytdHours   = round($dutyYearMin  / 60, 1);
+
+        // Active duty + rest period.
+        // - If currently on duty: rest_minutes is null, show on-duty timer.
+        // - If off duty: minutes since most recent check_out_at_utc.
+        $activeDutyMinutes = null;
+        if ($current && !empty($current['check_in_at_utc'])) {
+            $start = strtotime($current['check_in_at_utc']);
+            if ($start) $activeDutyMinutes = max(0, (int) floor((time() - $start) / 60));
+        }
+
+        $restMinutes = null;
+        if (!$current) {
+            $lastOut = Database::fetch(
+                "SELECT check_out_at_utc FROM duty_reports
+                  WHERE tenant_id = ? AND user_id = ?
+                    AND check_out_at_utc IS NOT NULL
+               ORDER BY check_out_at_utc DESC LIMIT 1",
+                [$tenantId, $userId]
+            );
+            if ($lastOut && !empty($lastOut['check_out_at_utc'])) {
+                $t = strtotime($lastOut['check_out_at_utc']);
+                if ($t) $restMinutes = max(0, (int) floor((time() - $t) / 60));
+            }
+        }
+
+        // Enrich history rows with route + duty_code derived from flights/rosters
+        // for the matching date — keeps the table single-query in the view.
+        $history = $this->enrichHistoryRoutes($tenantId, $userId, $history);
+
+        $remainingMonthHours = max(0, round($monthlyDutyCap - $monthHours, 1));
+        $remainingYearHours  = max(0, round($yearlyDutyCap  - $ytdHours,   1));
+
         $aggregates = [
-            'duty_hours_month'    => round($dutyMonthMin / 60, 1),
-            'duty_hours_prev'     => round($dutyPrevMin / 60, 1),
-            'duty_hours_ytd'      => round($dutyYearMin / 60, 1),
-            'flight_days_month'   => $flightDaysMonth,
-            'flight_days_ytd'     => $flightDaysYTD,
-            'off_days_month'      => $offDaysMonth,
-            'monthly_cap_hours'   => $monthlyDutyCap,
-            'yearly_cap_hours'    => $yearlyDutyCap,
-            'breakdown'           => $breakdown,
+            'duty_hours_month'      => $monthHours,
+            'duty_hours_prev'       => round($dutyPrevMin / 60, 1),
+            'duty_hours_ytd'        => $ytdHours,
+            'flight_days_month'    => $flightDaysMonth,
+            'flight_days_ytd'      => $flightDaysYTD,
+            'off_days_month'       => $offDaysMonth,
+            'monthly_cap_hours'    => $monthlyDutyCap,
+            'yearly_cap_hours'     => $yearlyDutyCap,
+            'remaining_month_hours' => $remainingMonthHours,
+            'remaining_year_hours'  => $remainingYearHours,
+            'month_threshold'      => $zoneFor($monthHours, $monthlyDutyCap),
+            'ytd_threshold'        => $zoneFor($ytdHours,   $yearlyDutyCap),
+            'active_duty_minutes'  => $activeDutyMinutes,
+            'rest_minutes'         => $restMinutes,
+            'breakdown'            => $breakdown,
         ];
 
         $pageTitle    = 'Duty Time';
@@ -136,6 +220,218 @@ class DutyReportController {
         require VIEWS_PATH . '/duty-reporting/my_duty.php';
         $content = ob_get_clean();
         require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * Add `route` (e.g. "NBO → MGQ") and `duty_code` to each history row by
+     * looking up the matching flight or roster entry for the same date. Failure
+     * is non-fatal — rows just keep an empty route.
+     */
+    private function enrichHistoryRoutes(int $tenantId, int $userId, array $rows): array {
+        if (!$rows) return $rows;
+        foreach ($rows as $i => $r) {
+            $rows[$i]['route']     = null;
+            $rows[$i]['duty_code'] = null;
+            if (empty($r['check_in_at_utc'])) continue;
+            $date = substr((string) $r['check_in_at_utc'], 0, 10);
+            try {
+                $flt = Database::fetch(
+                    "SELECT departure, arrival, flight_number FROM flights
+                      WHERE tenant_id = ? AND flight_date = ?
+                        AND (captain_id = ? OR fo_id = ?
+                             OR id IN (SELECT flight_id FROM flight_crew_assignments WHERE user_id = ?))
+                   ORDER BY std ASC LIMIT 1",
+                    [$tenantId, $date, $userId, $userId, $userId]
+                );
+                if ($flt && !empty($flt['departure']) && !empty($flt['arrival'])) {
+                    $rows[$i]['route'] = $flt['departure'] . ' → ' . $flt['arrival'];
+                    if (!empty($flt['flight_number'])) {
+                        $rows[$i]['duty_code'] = $flt['flight_number'];
+                    }
+                }
+            } catch (\Throwable $e) { /* flights table may not exist on slim installs */ }
+
+            if (empty($rows[$i]['duty_code']) || empty($rows[$i]['route'])) {
+                try {
+                    $ros = Database::fetch(
+                        "SELECT duty_type, duty_code FROM rosters
+                          WHERE tenant_id = ? AND user_id = ? AND roster_date = ?
+                       ORDER BY id DESC LIMIT 1",
+                        [$tenantId, $userId, $date]
+                    );
+                    if ($ros) {
+                        if (empty($rows[$i]['duty_code']) && !empty($ros['duty_code'])) {
+                            $rows[$i]['duty_code'] = $ros['duty_code'];
+                        }
+                    }
+                } catch (\Throwable $e) { /* ignore */ }
+            }
+        }
+        return $rows;
+    }
+
+    /**
+     * GET /my-duty/{id} — pilot-side view of a single duty record.
+     * Owner-only; admin detail at /duty-reporting/report/{id} stays separate.
+     */
+    public function myDutyDetail(int $id): void {
+        $tenantId = $this->requireCrewAccess('/my-duty');
+        if ($tenantId === null) return;
+
+        $user   = currentUser();
+        $userId = (int) ($user['id'] ?? 0);
+
+        $report = DutyReport::find($tenantId, $id);
+        if (!$report || (int) $report['user_id'] !== $userId) {
+            flash('error', 'Duty record not found.');
+            redirect('/my-duty');
+        }
+
+        // Enrichment: base, exceptions, matching roster + flight + flight crew
+        $base = !empty($report['check_in_base_id'])
+            ? Database::fetch("SELECT id, name, code FROM bases WHERE id = ?", [$report['check_in_base_id']])
+            : null;
+        $exceptions = DutyException::forReport($tenantId, $id);
+
+        $date = !empty($report['check_in_at_utc'])
+            ? substr((string) $report['check_in_at_utc'], 0, 10)
+            : null;
+
+        $roster = null;
+        $flight = null;
+        $flightCrew = [];
+        if ($date) {
+            try {
+                $roster = Database::fetch(
+                    "SELECT r.duty_type, r.duty_code, r.notes,
+                            f.name AS fleet_name,
+                            b.code AS base_code, b.name AS base_name
+                       FROM rosters r
+                  LEFT JOIN fleets f ON f.id = r.fleet_id
+                  LEFT JOIN bases  b ON b.id = r.base_id
+                      WHERE r.tenant_id = ? AND r.user_id = ? AND r.roster_date = ?
+                   ORDER BY r.id DESC LIMIT 1",
+                    [$tenantId, $userId, $date]
+                );
+            } catch (\Throwable $e) { /* schema may differ */ }
+
+            try {
+                $flight = Database::fetch(
+                    "SELECT id, flight_number, departure, arrival, std, sta,
+                            captain_id, fo_id, aircraft_id, status
+                       FROM flights
+                      WHERE tenant_id = ? AND flight_date = ?
+                        AND (captain_id = ? OR fo_id = ?
+                             OR id IN (SELECT flight_id FROM flight_crew_assignments WHERE user_id = ?))
+                   ORDER BY std ASC LIMIT 1",
+                    [$tenantId, $date, $userId, $userId, $userId]
+                );
+            } catch (\Throwable $e) { /* flights table may not exist */ }
+
+            if ($flight) {
+                try {
+                    $flightCrew = Database::fetchAll(
+                        "SELECT u.id, u.name, 'captain' AS role_on_flight
+                           FROM users u WHERE u.id = ?
+                          UNION ALL
+                         SELECT u.id, u.name, 'first_officer' AS role_on_flight
+                           FROM users u WHERE u.id = ?
+                          UNION ALL
+                         SELECT u.id, u.name, fca.role_on_flight
+                           FROM flight_crew_assignments fca
+                           JOIN users u ON u.id = fca.user_id
+                          WHERE fca.flight_id = ?",
+                        [(int) $flight['captain_id'], (int) $flight['fo_id'], (int) $flight['id']]
+                    );
+                    // De-duplicate on user_id, keep first occurrence.
+                    $seen = [];
+                    $flightCrew = array_values(array_filter($flightCrew, static function ($r) use (&$seen) {
+                        if (empty($r['id']) || isset($seen[$r['id']])) return false;
+                        $seen[$r['id']] = true;
+                        return true;
+                    }));
+                } catch (\Throwable $e) { /* ignore */ }
+            }
+        }
+
+        // Has the pilot already submitted a correction request for this record?
+        $hasOpenCorrection = false;
+        foreach ($exceptions as $ex) {
+            if ($ex['reason_code'] === 'manual_correction'
+                && in_array($ex['status'], ['pending'], true)) {
+                $hasOpenCorrection = true;
+                break;
+            }
+        }
+
+        $pageTitle    = 'Duty Record #' . $id;
+        $pageSubtitle = $date ? ('Duty on ' . $date) : 'Duty record details';
+
+        ob_start();
+        require VIEWS_PATH . '/duty-reporting/my_duty_detail.php';
+        $content = ob_get_clean();
+        require VIEWS_PATH . '/layouts/app.php';
+    }
+
+    /**
+     * POST /my-duty/{id}/request-correction — pilot submits a correction
+     * request against their own duty record. Reuses the duty_exceptions
+     * table with reason_code='manual_correction' so admins triage it from
+     * the existing /duty-reporting/exceptions queue.
+     */
+    public function myDutyRequestCorrection(int $id): void {
+        $tenantId = $this->requireCrewAccess('/my-duty');
+        if ($tenantId === null) return;
+        if (!verifyCsrf()) {
+            flash('error', 'Invalid security token. Please try again.');
+            redirect('/my-duty/' . $id);
+        }
+
+        $user   = currentUser();
+        $userId = (int) ($user['id'] ?? 0);
+
+        $report = DutyReport::find($tenantId, $id);
+        if (!$report || (int) $report['user_id'] !== $userId) {
+            flash('error', 'Duty record not found.');
+            redirect('/my-duty');
+        }
+
+        $note = trim((string) ($_POST['correction_note'] ?? ''));
+        if ($note === '') {
+            flash('error', 'Please describe what needs to be corrected.');
+            redirect('/my-duty/' . $id);
+        }
+        if (mb_strlen($note) > 1000) {
+            $note = mb_substr($note, 0, 1000);
+        }
+
+        $exceptionId = DutyException::create(
+            $tenantId,
+            $id,
+            $userId,
+            'manual_correction',
+            $note
+        );
+
+        AuditService::log(
+            'duty_reporting.correction.requested',
+            'duty_exceptions',
+            (int) $exceptionId,
+            ['duty_report_id' => $id, 'via' => 'web']
+        );
+
+        // Notify reviewers via the same channels used for exceptions.
+        foreach (['airline_admin', 'chief_pilot', 'head_cabin_crew'] as $role) {
+            NotificationService::notifyTenant(
+                $tenantId, $role,
+                'Duty correction request',
+                ($user['name'] ?? 'A crew member') . ' requested a correction on duty record #' . $id . '.',
+                '/duty-reporting/exceptions'
+            );
+        }
+
+        flash('success', 'Correction request submitted. A manager will review it.');
+        redirect('/my-duty/' . $id);
     }
 
     public function myDutyCheckIn(): void {
@@ -567,6 +863,8 @@ class DutyReportController {
             'trusted_device_required'     => !empty($_POST['trusted_device_required']),
             'biometric_required'          => !empty($_POST['biometric_required']),
             'retention_days'              => (int) ($_POST['retention_days'] ?? 180),
+            'monthly_duty_cap_hours'      => (int) ($_POST['monthly_duty_cap_hours'] ?? 190),
+            'yearly_duty_cap_hours'       => (int) ($_POST['yearly_duty_cap_hours']  ?? 2000),
         ];
 
         DutyReportingSettings::save($tenantId, $fields, (int) ($user['id'] ?? 0));

@@ -495,6 +495,43 @@ class DashboardController {
             [$tenantId, $userId, $today]
         ) ?: null;
 
+        // Duty Time summary widget — caps + rest period + last duty date.
+        // Wrapped so a missing settings table never breaks the dashboard.
+        $monthlyDutyCap = 190;
+        $yearlyDutyCap  = 2000;
+        try {
+            if (class_exists('DutyReportingSettings')) {
+                $drs = DutyReportingSettings::forTenant($tenantId);
+                $monthlyDutyCap = (int) ($drs['monthly_duty_cap_hours'] ?? 190);
+                $yearlyDutyCap  = (int) ($drs['yearly_duty_cap_hours']  ?? 2000);
+            }
+        } catch (\Throwable $e) { /* keep defaults */ }
+
+        $monthThresholdPct = $monthlyDutyCap > 0
+            ? min(100, round(($dutyHoursMonth / $monthlyDutyCap) * 100))
+            : 0;
+        $monthThresholdZone = $monthThresholdPct >= 100 ? 'exceeded'
+                            : ($monthThresholdPct >= 85 ? 'approaching' : 'normal');
+
+        $restMinutes  = null;
+        $lastDutyDate = null;
+        try {
+            $lastOut = Database::fetch(
+                "SELECT check_out_at_utc FROM duty_reports
+                  WHERE tenant_id = ? AND user_id = ?
+                    AND check_out_at_utc IS NOT NULL
+               ORDER BY check_out_at_utc DESC LIMIT 1",
+                [$tenantId, $userId]
+            );
+            if ($lastOut && !empty($lastOut['check_out_at_utc'])) {
+                $t = strtotime($lastOut['check_out_at_utc']);
+                if ($t) {
+                    $restMinutes  = max(0, (int) floor((time() - $t) / 60));
+                    $lastDutyDate = substr((string) $lastOut['check_out_at_utc'], 0, 10);
+                }
+            }
+        } catch (\Throwable $e) { /* table may not exist on slim installs */ }
+
         $data = [
             'recent_notices'      => Notice::recent($tenantId, 5),
             'recent_files'        => array_slice(FileModel::forUserRoles($tenantId, $roleSlugs), 0, 5),
@@ -512,6 +549,11 @@ class DashboardController {
             'days_flown_month'    => $daysFlownMonth,
             'next_duty'           => $nextDuty,
             'today_duty'          => $todayDuty,
+            'duty_monthly_cap'    => $monthlyDutyCap,
+            'duty_month_threshold'=> $monthThresholdZone,
+            'duty_remaining_month'=> max(0, round($monthlyDutyCap - $dutyHoursMonth, 1)),
+            'duty_rest_minutes'   => $restMinutes,
+            'duty_last_date'      => $lastDutyDate,
         ];
         require VIEWS_PATH . '/dashboard/pilot.php';
     }

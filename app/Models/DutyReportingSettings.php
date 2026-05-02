@@ -18,6 +18,11 @@ class DutyReportingSettings {
         'trusted_device_required'     => 0,
         'biometric_required'          => 0,
         'retention_days'              => 180,
+        // Reference duty-time caps used by the pilot Duty Time page to
+        // colour the Normal / Approaching / Exceeded threshold pills.
+        // Airline ops manual remains the source of truth.
+        'monthly_duty_cap_hours'      => 190,
+        'yearly_duty_cap_hours'       => 2000,
     ];
 
     /** @var array<int, array> per-request cache keyed by tenant_id */
@@ -142,6 +147,8 @@ class DutyReportingSettings {
             'trusted_device_required'     => (bool) ($row['trusted_device_required']     ?? 0),
             'biometric_required'          => (bool) ($row['biometric_required']          ?? 0),
             'retention_days'              => (int)  ($row['retention_days']              ?? 180),
+            'monthly_duty_cap_hours'      => (int)  ($row['monthly_duty_cap_hours']      ?? self::DEFAULTS['monthly_duty_cap_hours']),
+            'yearly_duty_cap_hours'       => (int)  ($row['yearly_duty_cap_hours']       ?? self::DEFAULTS['yearly_duty_cap_hours']),
             'updated_at'                  =>         $row['updated_at']                  ?? null,
             'updated_by'                  =>         $row['updated_by']                  ?? null,
         ];
@@ -154,7 +161,8 @@ class DutyReportingSettings {
             'biometric_required'
                 => (int) (bool) $val,
 
-            'default_radius_m', 'clock_out_reminder_minutes', 'retention_days'
+            'default_radius_m', 'clock_out_reminder_minutes', 'retention_days',
+            'monthly_duty_cap_hours', 'yearly_duty_cap_hours'
                 => max(0, (int) $val),
 
             'allowed_roles'
