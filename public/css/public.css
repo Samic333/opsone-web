@@ -151,11 +151,11 @@ a:hover { color: var(--accent-cyan); }
     position: relative; overflow: hidden;
     padding: 64px 32px 80px;
 }
-.pub-nav-brand img.brand-mark {
-    height: 36px !important; width: auto !important; max-width: 180px !important; display: block !important;
+.pub-nav-brand img.brand-icon {
+    height: 32px !important; width: 32px !important; display: block !important; flex-shrink: 0;
 }
-.pub-footer-logo img.brand-mark {
-    height: 28px !important; width: auto !important; max-width: 150px !important; display: block !important;
+.pub-footer-logo img.brand-icon {
+    height: 24px !important; width: 24px !important; display: block !important; flex-shrink: 0;
 }
 .hero::before {
     content: ''; position: absolute; inset: 0;

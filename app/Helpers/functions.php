@@ -426,9 +426,9 @@ function opsoneLogoMark(int $size = 24, string $node = '#06b6d4', string $stroke
 function opsoneWordmark(string $size = 'md'): string {
     $sizes = ['sm' => 14, 'md' => 18, 'lg' => 26, 'xl' => 40];
     $px = $sizes[$size] ?? 18;
-    return '<span class="opsone-word" style="font-weight:800;letter-spacing:-0.02em;font-size:' . $px . 'px;line-height:1;">'
+    return '<span class="opsvelo-word" style="font-weight:800;letter-spacing:-0.02em;font-size:' . $px . 'px;line-height:1;">'
          . '<span style="color:var(--text-primary);">Ops</span>'
-         . '<span style="color:var(--accent-cyan,#06b6d4);">One</span>'
+         . '<span style="color:var(--accent-cyan,#06b6d4);">Velo</span>'
          . '</span>';
 }
 
