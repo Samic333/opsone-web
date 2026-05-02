@@ -15,7 +15,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <title><?= e($pageTitle ?? $brand['product_name']) ?></title>
     <link rel="icon" type="image/png" href="/images/brand/opsvelo-icon.png">
     <link rel="apple-touch-icon" href="/images/brand/opsvelo-icon.png">
-    <link rel="stylesheet" href="/css/public.css">
+    <link rel="stylesheet" href="/css/public.css?v=<?= @filemtime(BASE_PATH . '/public/css/public.css') ?: time() ?>">
 </head>
 <body>
 

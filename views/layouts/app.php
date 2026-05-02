@@ -55,7 +55,7 @@ $brandSmall = $isPlat ? 'Platform Administration' : '';
     <title><?= e($pageTitle ?? 'Dashboard') ?> — <?= e($brand['product_name']) ?></title>
     <link rel="icon" type="image/png" href="/images/brand/opsvelo-icon.png">
     <link rel="apple-touch-icon" href="/images/brand/opsvelo-icon.png">
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/app.css?v=<?= @filemtime(BASE_PATH . '/public/css/app.css') ?: time() ?>">
 </head>
 <body class="<?= $isPlat ? 'ctx-platform' : 'ctx-airline' ?>">
 <div class="app-layout">
