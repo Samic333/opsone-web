@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Reporter's View of a Single Safety Report (Tabbed)
+ * OpsVelo — Reporter's View of a Single Safety Report (Tabbed)
  * Variables: $report (array), $threads (array, public only), $attachments (array),
  *            $statusHistory (array)
  */

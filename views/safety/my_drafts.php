@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — My Draft Reports
+ * OpsVelo — My Draft Reports
  * Variables: $drafts (array)
  */
 $pageTitle    = 'My Drafts';

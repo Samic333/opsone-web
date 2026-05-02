@@ -1,4 +1,4 @@
-# OpsOne — Login Model
+# OpsVelo — Login Model
 
 > **Status:** Production reference. Implemented across Phase B (slug column, tenant-scoped routes, controller methods) and Phase H (visual polish, slug auto-generation, this doc).
 >
@@ -10,7 +10,7 @@
 
 ## North star
 
-A visitor landing on `acentoza.com` should never see a generic *"Airline Login"* button as the headline action. Login is a quiet support function for **already-onboarded airlines**, not a public sign-up surface. Every onboarded airline gets a **branded, tenant-scoped portal** at `/airline/{slug}/login`. The platform side has no visible login at all — platform staff use the global `/login` and resolve to platform context via their `tenant_id IS NULL` user record.
+A visitor landing on `opsvelo.com` should never see a generic *"Airline Login"* button as the headline action. Login is a quiet support function for **already-onboarded airlines**, not a public sign-up surface. Every onboarded airline gets a **branded, tenant-scoped portal** at `/airline/{slug}/login`. The platform side has no visible login at all — platform staff use the global `/login` and resolve to platform context via their `tenant_id IS NULL` user record.
 
 Three concentric surfaces, each with one job:
 
@@ -31,7 +31,7 @@ Three concentric surfaces, each with one job:
 │    • Shows airline logo + display_name as H1                        │
 │    • "AIRLINE OPERATIONS PORTAL" eyebrow                            │
 │    • Email + password, "Forgot your password?" link                 │
-│    • "Powered by OpsOne" footnote at bottom of card                 │
+│    • "Powered by OpsVelo" footnote at bottom of card                 │
 │    • Tenant-match enforcement on the POST handler                   │
 └─────────────────────────────────────────────────────────────────────┘
         │
@@ -130,7 +130,7 @@ The block carries an **amber-bordered banner** reading:
 
 This is a **screenshare-safe** label — anyone reviewing a dev build over a call immediately reads "this is internal" and won't paste credentials into an airline buyer's lap.
 
-**Demo accounts** (28 total) are seeded by `database/seeders/demo_seed.php` with the shared password `DemoOps2026!`. They use the `demo.*@acentoza.com` email pattern. **Never** seed real airline emails or passwords. **Never** copy demo seed data into production.
+**Demo accounts** (28 total) are seeded by `database/seeders/demo_seed.php` with the shared password `DemoOps2026!`. They use the `demo.*@opsvelo.com` email pattern. **Never** seed real airline emails or passwords. **Never** copy demo seed data into production.
 
 ---
 
@@ -142,7 +142,7 @@ The slug column is required for `/airline/{slug}/login` to do anything other tha
 
 ```bash
 # From cPanel terminal:
-cd ~/acentoza.com
+cd ~/opsvelo.com
 
 # Apply the migration
 mysql -u "$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" \
@@ -183,7 +183,7 @@ After the migration, `/airline/748-air-services/login` becomes a working branded
 
 ## What's still on the table (not in scope today)
 
-1. **Subdomain support** — `748airservices.opsone.aero` rewrite to `/airline/748-air-services/login`. Requires the `opsone.aero` domain (April 29 task) and an Apache/LiteSpeed RewriteRule. Document it here when it lands.
+1. **Subdomain support** — `748airservices.opsvelo.com` rewrite to `/airline/748-air-services/login`. Requires the `opsvelo.com` domain (April 29 task) and an Apache/LiteSpeed RewriteRule. Document it here when it lands.
 2. **Per-tenant 2FA enforcement** — currently 2FA is per-user. A tenant admin should be able to require 2FA for all users in their airline. Schema change in `tenant_settings`.
 3. **SSO / OAuth** for enterprise airlines — Microsoft/Google identity provider. Out of scope until the first airline asks.
-4. **Branded password-reset email** — currently the reset email is OpsOne-branded; should optionally show the airline logo when the user belongs to a tenant.
+4. **Branded password-reset email** — currently the reset email is OpsVelo-branded; should optionally show the airline logo when the user belongs to a tenant.

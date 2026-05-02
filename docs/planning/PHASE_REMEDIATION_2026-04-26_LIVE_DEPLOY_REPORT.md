@@ -1,9 +1,9 @@
 # Live Deploy Verification Report — 2026-04-26
 
-**Production target:** https://acentoza.com (Namecheap shared hosting, MariaDB 11.4.10, PHP 8.2.30)
+**Production target:** https://opsvelo.com (Namecheap shared hosting, MariaDB 11.4.10, PHP 8.2.30)
 **Repo:** github.com/Samic333/opsone-web — branch `main`
 **Backup:** `~/Downloads/fruinxrj_opsone (2).sql` (917 KB, taken before any migration)
-**Deploy method:** cPanel → Git Version Control → "Update from Remote" on `/home/fruinxrj/acentoza.com`
+**Deploy method:** cPanel → Git Version Control → "Update from Remote" on `/home/fruinxrj/opsvelo.com`
 
 ---
 
@@ -60,7 +60,7 @@ Each migration ran via phpMyAdmin SQL tab against `fruinxrj_opsone`. All idempot
 
 ## Step 4 — Deploy (✅)
 
-cPanel → **Git™ Version Control** → `opsone-web` repo at `/home/fruinxrj/acentoza.com` → **Pull or Deploy** tab → **"Update from Remote"**.
+cPanel → **Git™ Version Control** → `opsone-web` repo at `/home/fruinxrj/opsvelo.com` → **Pull or Deploy** tab → **"Update from Remote"**.
 
 - Pre-deploy HEAD: `513ad9a` ("fix(p5): cabin/engineer flight assignments + master plan persisted")
 - Post-deploy HEAD: `75cc6ff` ("bin+docs: tenant teardown helper + remediation journal & final report")
@@ -72,7 +72,7 @@ Repo path == webroot, so `git pull` IS the deploy. No `.cpanel.yml` needed.
 
 ## Step 5 — Live API verification on prod (✅)
 
-Smoke against https://acentoza.com as `demo.pilot@acentoza.com` (user_id 290 on prod).
+Smoke against https://opsvelo.com as `demo.pilot@opsvelo.com` (user_id 290 on prod).
 
 ### 5a. The 6 highest-impact fixes — every one verified
 
@@ -124,26 +124,26 @@ PROD SMOKE: 28 pass, 0 fail (5xx)
 ### 5c. Multi-role login regression on prod
 
 ```
-✓ demo.airadmin@acentoza.com            roles=[airline_admin]
-✓ demo.hr@acentoza.com                  roles=[hr]
-✓ demo.scheduler@acentoza.com           roles=[scheduler]
-✓ demo.chiefpilot@acentoza.com          roles=[chief_pilot]
-✓ demo.headcabin@acentoza.com           roles=[head_cabin_crew]
-✓ demo.engmanager@acentoza.com          roles=[engineering_manager]
-✓ demo.safety@acentoza.com              roles=[safety_officer]
-✓ demo.fdm@acentoza.com                 roles=[fdm_analyst]
-✓ demo.doccontrol@acentoza.com          roles=[document_control]
-✓ demo.basemanager@acentoza.com         roles=[base_manager]
-✓ demo.pilot@acentoza.com               roles=[pilot]
-✓ demo.cabin@acentoza.com               roles=[cabin_crew]
-✓ demo.engineer@acentoza.com            roles=[engineer]
+✓ demo.airadmin@opsvelo.com            roles=[airline_admin]
+✓ demo.hr@opsvelo.com                  roles=[hr]
+✓ demo.scheduler@opsvelo.com           roles=[scheduler]
+✓ demo.chiefpilot@opsvelo.com          roles=[chief_pilot]
+✓ demo.headcabin@opsvelo.com           roles=[head_cabin_crew]
+✓ demo.engmanager@opsvelo.com          roles=[engineering_manager]
+✓ demo.safety@opsvelo.com              roles=[safety_officer]
+✓ demo.fdm@opsvelo.com                 roles=[fdm_analyst]
+✓ demo.doccontrol@opsvelo.com          roles=[document_control]
+✓ demo.basemanager@opsvelo.com         roles=[base_manager]
+✓ demo.pilot@opsvelo.com               roles=[pilot]
+✓ demo.cabin@opsvelo.com               roles=[cabin_crew]
+✓ demo.engineer@opsvelo.com            roles=[engineer]
 
 13 / 13 pass
 ```
 
 ### 5d. Web admin platform-overview baseline (super_admin)
 
-Logged in `demo.superadmin@acentoza.com` via web → Platform Overview renders:
+Logged in `demo.superadmin@opsvelo.com` via web → Platform Overview renders:
 - 4 Total Airlines (4 active)
 - 0 Onboarding Queue
 - 37 Airline Users + 4 Platform Staff
@@ -155,8 +155,8 @@ Logged in `demo.superadmin@acentoza.com` via web → Platform Overview renders:
 
 ## Step 6 — iPad simulator verification (✅)
 
-**Device:** iPad Air 11" (M3) on iOS 18.6 (booted), CrewAssist.app already installed and pointing at acentoza.com prod.
-**Logged in as:** `demo.cabin@acentoza.com` — Noor Al-Rashidi, role `cabin_crew`, employee CAB-020.
+**Device:** iPad Air 11" (M3) on iOS 18.6 (booted), CrewAssist.app already installed and pointing at opsvelo.com prod.
+**Logged in as:** `demo.cabin@opsvelo.com` — Noor Al-Rashidi, role `cabin_crew`, employee CAB-020.
 
 Per memory `feedback_sim_launch_workaround` I avoided `simctl launch` and used the Simulator GUI directly. Tour of key screens:
 
@@ -214,7 +214,7 @@ A "Documents: The request timed out — Sync Now" banner near the top of the das
 
 - ✅ `api_tokens.token_hash` column populated on all 61 rows; new logins persist sha256 hashes only (legacy plaintext column kept until a future cleanup migration).
 - ✅ `roles(tenant_id, slug)` UNIQUE index defending against future duplicate inserts.
-- ✅ Code on disk at `/home/fruinxrj/acentoza.com` matches GitHub HEAD `75cc6ff`.
+- ✅ Code on disk at `/home/fruinxrj/opsvelo.com` matches GitHub HEAD `75cc6ff`.
 - ✅ `storage/logs/onboarding_invitations.log` will be created the first time a new tenant is onboarded (the new local-mode fallback for the SMTP TODO).
 - ✅ `bin/diag.php`, `bin/diag_roles.php`, `bin/seed-db.php`, `bin/audit_route_guards.php`, `bin/teardown_tenant.php` — present in repo, not in webroot.
 

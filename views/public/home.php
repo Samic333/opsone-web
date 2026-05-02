@@ -1,4 +1,4 @@
-<?php /** OpsOne — Homepage (premium redesign) */ ?>
+<?php /** OpsVelo — Homepage (premium redesign) */ ?>
 
 <!-- ============================================================
      HERO  —  Copy left, dual mockup right (iPad + dashboard)

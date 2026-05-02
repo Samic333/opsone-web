@@ -1,14 +1,14 @@
-# OpsOne — Brand Direction
+# OpsVelo — Brand Direction
 
 > **Status:** Direction document for the upcoming UI redesign. No pages are redesigned in this phase. Implementation comes after sign-off.
-> **Audience:** Anyone touching OpsOne UI — the public site, the airline dashboard, the iPad app (CrewAssist), sales decks, demo videos.
+> **Audience:** Anyone touching OpsVelo UI — the public site, the airline dashboard, the iPad app (CrewAssist), sales decks, demo videos.
 > **Foundation:** This builds on what already works in [`public/css/app.css`](../public/css/app.css), [`public/css/public.css`](../public/css/public.css), and the `sidebarIcon()` Heroicons helper in [`app/Helpers/functions.php`](../app/Helpers/functions.php). Don't reset; refine.
 
 ---
 
 ## 1. North Star
 
-**OpsOne is one operating system for airline operations.** Crew, flights, rosters, safety, manuals, devices, dispatch — all under one command surface.
+**OpsVelo is one operating system for airline operations.** Crew, flights, rosters, safety, manuals, devices, dispatch — all under one command surface.
 
 The product replaces a thicket of paper, spreadsheets, WhatsApp threads, and disconnected vendor portals. The brand has to feel like that promise: **calm, precise, premium, command-grade**. Not a CRUD admin website. Not a startup dashboard with marketing fluff. Something a captain would trust on the line.
 
@@ -20,7 +20,7 @@ If a design choice doesn't make the product feel more **unified** (one platform,
 
 ## 2. Logo Concept
 
-OpsOne is a wordmark first. The mark exists to anchor the wordmark, never to lead.
+OpsVelo is a wordmark first. The mark exists to anchor the wordmark, never to lead.
 
 ### Wordmark
 
@@ -32,7 +32,7 @@ Ops One
 - Tracking: `-0.02em` at large sizes, `0` at small sizes.
 - Weight: **800** for hero/lockup uses, **700** for in-product header.
 - Set in **Inter** (already loaded). No custom letterform.
-- Casing: always **OpsOne** (closed-up). Never *Ops One*, *OPSONE*, or *opsOne*.
+- Casing: always **OpsVelo** (closed-up). Never *Ops One*, *OPSVELO*, or *opsOne*.
 
 ### Mark — three directions to choose from
 
@@ -100,7 +100,7 @@ An abstract upward chevron derived from an aircraft tail / wing dihedral angle.
 
 ## 3. Color Palette
 
-**Dark-first.** OpsOne is read on the line — cockpits, jump seats, crew rooms, night ops. The dashboard is dark by default and that decision is final until an airline buyer specifically requests light.
+**Dark-first.** OpsVelo is read on the line — cockpits, jump seats, crew rooms, night ops. The dashboard is dark by default and that decision is final until an airline buyer specifically requests light.
 
 ### Surfaces (dark mode — primary)
 
@@ -212,7 +212,7 @@ This is **new** — JetBrains Mono is not currently loaded. Add it only if/when 
 
 ## 5. Icon Style
 
-OpsOne icons are already correct in the dashboard — Heroicons outline, 1.6px stroke. **Codify, don't change.**
+OpsVelo icons are already correct in the dashboard — Heroicons outline, 1.6px stroke. **Codify, don't change.**
 
 ### Family
 

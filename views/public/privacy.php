@@ -1,4 +1,4 @@
-<?php /** OpsOne — Privacy Policy */ ?>
+<?php /** OpsVelo — Privacy Policy */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ Legal</div>

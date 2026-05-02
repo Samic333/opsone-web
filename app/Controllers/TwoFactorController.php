@@ -130,7 +130,7 @@ class TwoFactorController {
         try {
             $row = Database::fetch("SELECT * FROM user_2fa WHERE user_id = ?", [$userId]);
         } catch (\Throwable $e) {
-            error_log('[OpsOne 2FA showSetup skipped] ' . $e->getMessage());
+            error_log('[OpsVelo 2FA showSetup skipped] ' . $e->getMessage());
             $pageTitle    = 'Two-Factor Authentication';
             $pageSubtitle = 'Module not yet enabled — database migration pending';
             $isEnabled = false;
@@ -162,8 +162,8 @@ class TwoFactorController {
 
         $brand = file_exists(CONFIG_PATH . '/branding.php')
             ? require CONFIG_PATH . '/branding.php'
-            : ['product_name' => 'OpsOne'];
-        $issuer = $brand['product_name'] ?? 'OpsOne';
+            : ['product_name' => 'OpsVelo'];
+        $issuer = $brand['product_name'] ?? 'OpsVelo';
         $provisioningUri = TotpService::uri($issuer, $email, $secret);
         $error    = flash('error');
         $success  = flash('success');

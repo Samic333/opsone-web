@@ -58,7 +58,7 @@ sqlite3 database/crewassist.sqlite "SELECT m.code, tm.is_enabled FROM tenant_mod
 ## Production deploy steps (HARD STOP — user action required)
 1. Pull the latest `main` on Namecheap:
    ```
-   cd /home/fruinxrj/acentoza.com && git pull origin main
+   cd /home/fruinxrj/opsvelo.com && git pull origin main
    ```
 2. Open phpMyAdmin → `fruinxrj_opsone` → SQL tab → paste the contents of:
    ```

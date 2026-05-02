@@ -1,4 +1,4 @@
-<?php /** OpsOne — About */ ?>
+<?php /** OpsVelo — About */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ About</div>

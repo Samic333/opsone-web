@@ -1,4 +1,4 @@
-<?php /** OpsOne — Internal Deployment Info */ ?>
+<?php /** OpsVelo — Internal Deployment Info */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ Internal Deployment</div>

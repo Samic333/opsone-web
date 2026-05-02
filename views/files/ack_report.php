@@ -1,4 +1,4 @@
-<?php /** OpsOne — Per-Document Acknowledgement Report */ ?>
+<?php /** OpsVelo — Per-Document Acknowledgement Report */ ?>
 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
     <div class="card" style="flex:1; min-width:140px; padding:12px;">
         <div class="text-xs text-muted">Recipients</div>

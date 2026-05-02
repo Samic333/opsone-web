@@ -1,11 +1,11 @@
 <?php
 /**
- * OpsOne Platform — Setup & Migration Script
+ * OpsVelo Platform — Setup & Migration Script
  * Run: php setup.php
  */
 
 echo "╔══════════════════════════════════════════╗\n";
-echo "║   OpsOne Platform — Setup Script         ║\n";
+echo "║   OpsVelo Platform — Setup Script         ║\n";
 echo "╚══════════════════════════════════════════╝\n\n";
 
 // Load config
@@ -94,8 +94,8 @@ foreach ($rawStatements as $stmt) {
 }
 echo "   ✓ Schema created\n";
 
-// 5b. Run OpsOne additions migration
-echo "   Running OpsOne additions...\n";
+// 5b. Run OpsVelo additions migration
+echo "   Running OpsVelo additions...\n";
 $opsoneFile = __DIR__ . '/database/migrations/003_opsone_additions.sql';
 if (file_exists($opsoneFile)) {
     $opsSql = file_get_contents($opsoneFile);
@@ -112,7 +112,7 @@ if (file_exists($opsoneFile)) {
             }
         }
     }
-    echo "   ✓ OpsOne additions applied\n";
+    echo "   ✓ OpsVelo additions applied\n";
 }
 
 // 6. Seed data

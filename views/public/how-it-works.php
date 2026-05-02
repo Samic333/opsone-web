@@ -1,4 +1,4 @@
-<?php /** OpsOne — How It Works (high-level only; details under NDA) */ ?>
+<?php /** OpsVelo — How It Works (high-level only; details under NDA) */ ?>
 <div class="info-page">
     <div class="info-page-inner" style="max-width: 800px;">
         <div class="section-label">How It Works</div>

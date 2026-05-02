@@ -1,4 +1,4 @@
-<?php /** OpsOne — Support */ ?>
+<?php /** OpsVelo — Support */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ Support</div>

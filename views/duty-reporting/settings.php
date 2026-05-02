@@ -1,4 +1,4 @@
-<?php /** OpsOne — Duty Reporting Settings */ ?>
+<?php /** OpsVelo — Duty Reporting Settings */ ?>
 
 <form method="POST" action="/duty-reporting/settings">
     <?= csrfField() ?>

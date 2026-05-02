@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Admin Portal Layout
+ * OpsVelo — Admin Portal Layout
  *
  * Phase Zero: Platform users see ONLY platform navigation.
  *             Airline users see ONLY airline navigation.
@@ -9,7 +9,7 @@
  */
 $brand = $brand ?? (file_exists(CONFIG_PATH . '/branding.php')
     ? require CONFIG_PATH . '/branding.php'
-    : ['product_name' => 'OpsOne']);
+    : ['product_name' => 'OpsVelo']);
 
 $user    = currentUser();
 $roles   = $_SESSION['user_roles'] ?? [];

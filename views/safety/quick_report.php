@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Quick Report
+ * OpsVelo — Safety Quick Report
  * Variables: $reportType (string), $reportTypeLabel (string),
  *            $prefill (array from buildPrefill), $user (array)
  */

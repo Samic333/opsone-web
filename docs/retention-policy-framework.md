@@ -9,7 +9,7 @@ Aviation operations data carries strict legal, regulatory, and safety obligation
 - Inability to defend liability claims
 - Loss of airworthiness evidence
 
-OpsOne implements a **tenant-configurable, module-scoped retention system** that allows each airline to meet or exceed regulatory minimums while managing storage costs and data hygiene.
+OpsVelo implements a **tenant-configurable, module-scoped retention system** that allows each airline to meet or exceed regulatory minimums while managing storage costs and data hygiene.
 
 ---
 

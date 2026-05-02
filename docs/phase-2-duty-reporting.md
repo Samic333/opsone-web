@@ -8,7 +8,7 @@
 ## Scope
 
 - iPad app (CrewAssist) is the primary crew surface: **Report for Duty**, **Clock Out**, duty state at a glance.
-- Web (OpsOne-web) is the management surface: **On Duty Now**, **Duty History**, **Duty Exceptions**, **Settings**.
+- Web (OpsVelo-web) is the management surface: **On Duty Now**, **Duty History**, **Duty Exceptions**, **Settings**.
 - All data is tenant-isolated, role-gated, and audit-logged.
 - Designed to integrate later with Roster, Per Diem, and Flight Assignment logic.
 
@@ -93,7 +93,7 @@ Admin-side review flows live on the web, not on iPad — the API stays intention
 Per MASTER_PHASE_PLAN:
 
 1. phpMyAdmin → import `database/migrations/022_duty_reporting.sql`.
-2. `cd /home/fruinxrj/acentoza.com && git pull origin main`.
+2. `cd /home/fruinxrj/opsvelo.com && git pull origin main`.
 3. (Optional) `php database/seeders/demo_seed.php` if seed data was updated.
 4. Verify `/duty-reporting` loads for an airline admin and the sidebar entry appears.
 5. Spot-check the iPad flow: open app → Report for Duty → status flips to On Duty.

@@ -1,4 +1,4 @@
-<?php /** OpsOne — Roster Periods */ ?>
+<?php /** OpsVelo — Roster Periods */ ?>
 
 <?php
 $statusColors = [

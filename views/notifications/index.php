@@ -1,4 +1,4 @@
-<?php /** OpsOne — Notification Center */ ?>
+<?php /** OpsVelo — Notification Center */ ?>
 <div style="display:flex; gap:12px; margin-bottom:16px;">
     <a href="/notifications" class="btn btn-sm <?= ($_GET['filter'] ?? 'all') === 'all' ? 'btn-primary' : 'btn-outline' ?>">
         All (<?= (int)$counts['total'] ?>)

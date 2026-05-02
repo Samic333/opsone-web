@@ -1,4 +1,4 @@
-<?php /** OpsOne — Notices & Bulletins (Admin) */ ?>
+<?php /** OpsVelo — Notices & Bulletins (Admin) */ ?>
 
 <?php
 $filterCategory = $_GET['category'] ?? '';

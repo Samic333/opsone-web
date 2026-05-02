@@ -1,6 +1,6 @@
 # Phase 18 Premium Sync Pass — Session Bundle Report (2026-04-25)
 
-**Session goal:** Continue the OpsOne / CrewAssist platform alignment per the user's 18-phase prompt of 2026-04-25.
+**Session goal:** Continue the OpsVelo / CrewAssist platform alignment per the user's 18-phase prompt of 2026-04-25.
 **Slice approved:** P0 audit + P1 design fixes (per AskUserQuestion). User authorized autonomous continuation through subsequent phases this session.
 **Outcome:** Foundation phases (P0, P1, P2) shipped. Surgical wins on P3, P4, P9, P11. Build green. Production deploy required for migration 040. LARGE redesign phases (P5/P6/P7/P14/P15) deferred to dedicated sessions — see "Why we stopped here" below.
 
@@ -32,7 +32,7 @@
 ### P3 — Flights + Roster (verification only)
 - `Features/Roster/RosterView.swift` already calls `env.rosterService.fetchRoster(for:)` (real API) and provides Calendar + List view modes with color-coded duty pills.
 - `Features/MyFlights/MyFlightsView.swift` and `RealFlightService` provide the flights surface.
-- No code change needed at this stage. Deeper roster redesign per the company-specific PDF (`OpsOne Design Files/old roster/PILOTS_ROSTER_2026 (1).pdf`) is deferred — `pdftoppm`/`pdftotext` is not installed locally so I can't ground the redesign in the actual roster format. Recommend user runs `brew install poppler` before the next attempt at P3 deep redesign, or shares a PNG of the roster.
+- No code change needed at this stage. Deeper roster redesign per the company-specific PDF (`OpsVelo Design Files/old roster/PILOTS_ROSTER_2026 (1).pdf`) is deferred — `pdftoppm`/`pdftotext` is not installed locally so I can't ground the redesign in the actual roster format. Recommend user runs `brew install poppler` before the next attempt at P3 deep redesign, or shares a PNG of the roster.
 
 ### P4 — Flight Folder dedup
 - Deleted `CrewAssist/Features/FlightPackage/FlightFolderView.swift` (legacy alias-to-MyFlightsView stub + unused `FlightFolderRow` + `MissionLogView`).
@@ -83,7 +83,7 @@ Before P3 onward can be considered "synced with the web app" end-to-end, deploy 
 
 ```bash
 # On Namecheap shell:
-cd /home/fruinxrj/acentoza.com
+cd /home/fruinxrj/opsvelo.com
 git pull origin main
 ```
 
@@ -115,7 +115,7 @@ P1 visual verification (sidebar light/dark, stale side sheet, drawer auto-close)
 
 ## Why we stopped here (LARGE phases deferred)
 
-The remaining phases include redesigns that need to be grounded in the design files (`OpsOne Design Files/`) and each is a self-contained 200–500 LOC SwiftUI rewrite + new `Real*Service` endpoint + new SQL table or capability checks + thorough sim verification:
+The remaining phases include redesigns that need to be grounded in the design files (`OpsVelo Design Files/`) and each is a self-contained 200–500 LOC SwiftUI rewrite + new `Real*Service` endpoint + new SQL table or capability checks + thorough sim verification:
 
 | Phase | Why this needs its own session |
 |---|---|
@@ -158,6 +158,6 @@ These could fit in a single dedicated "verification + small fix" session of ~1�
 - P0/P2 docs
 - Migration 040 (SQLite applied; MySQL ready to deploy)
 
-**Recommended next session boot prompt:** "Continue the 2026-04-25 Premium Sync pass. Start with P5 Journey Log — read OpsOne Design Files/Filight files and Navlog/JOURNEY_LOG.pdf first (install poppler if needed)."
+**Recommended next session boot prompt:** "Continue the 2026-04-25 Premium Sync pass. Start with P5 Journey Log — read OpsVelo Design Files/Filight files and Navlog/JOURNEY_LOG.pdf first (install poppler if needed)."
 
 **Production deploy queued:** migration 040 — see HARD STOP above.

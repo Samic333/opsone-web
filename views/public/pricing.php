@@ -1,4 +1,4 @@
-<?php /** OpsOne — Pricing (gated: details under NDA, contact-first) */ ?>
+<?php /** OpsVelo — Pricing (gated: details under NDA, contact-first) */ ?>
 <div class="info-page">
     <div class="info-page-inner" style="max-width: 720px;">
         <div class="section-label">Pricing</div>

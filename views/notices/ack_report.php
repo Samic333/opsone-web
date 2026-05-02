@@ -1,4 +1,4 @@
-<?php /** OpsOne — Notice Acknowledgement Report */ ?>
+<?php /** OpsVelo — Notice Acknowledgement Report */ ?>
 
 <?php
 $priorityColors = ['normal' => '#6b7280', 'urgent' => '#f59e0b', 'critical' => '#ef4444'];

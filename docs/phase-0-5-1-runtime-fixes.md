@@ -122,14 +122,14 @@ Password for **all** demo accounts: `DemoOps2026!`
 
 | Email | Role |
 |---|---|
-| `demo.superadmin@acentoza.com` | Platform Super Admin |
-| `demo.support@acentoza.com` | Platform Support Admin |
-| `demo.security@acentoza.com` | Platform Security Admin |
-| `demo.sysmonitor@acentoza.com` | System Monitoring Admin |
+| `demo.superadmin@opsvelo.com` | Platform Super Admin |
+| `demo.support@opsvelo.com` | Platform Support Admin |
+| `demo.security@opsvelo.com` | Platform Security Admin |
+| `demo.sysmonitor@opsvelo.com` | System Monitoring Admin |
 
-### Airline Accounts (tenant 1 — OpsOne Demo Airline)
+### Airline Accounts (tenant 1 — OpsVelo Demo Airline)
 
-`demo.airadmin@acentoza.com`, `demo.hr@acentoza.com`, `demo.scheduler@acentoza.com`, `demo.chiefpilot@acentoza.com`, `demo.headcabin@acentoza.com`, `demo.engmanager@acentoza.com`, `demo.safety@acentoza.com`, `demo.fdm@acentoza.com`, `demo.doccontrol@acentoza.com`, `demo.basemanager@acentoza.com`, `demo.pilot@acentoza.com`, `demo.cabin@acentoza.com`, `demo.engineer@acentoza.com`, `demo.training@acentoza.com`
+`demo.airadmin@opsvelo.com`, `demo.hr@opsvelo.com`, `demo.scheduler@opsvelo.com`, `demo.chiefpilot@opsvelo.com`, `demo.headcabin@opsvelo.com`, `demo.engmanager@opsvelo.com`, `demo.safety@opsvelo.com`, `demo.fdm@opsvelo.com`, `demo.doccontrol@opsvelo.com`, `demo.basemanager@opsvelo.com`, `demo.pilot@opsvelo.com`, `demo.cabin@opsvelo.com`, `demo.engineer@opsvelo.com`, `demo.training@opsvelo.com`
 
 ---
 
@@ -171,18 +171,18 @@ This will:
 ## What to Check After Deployment
 
 **A. Platform login**
-- Log in as `demo.superadmin@acentoza.com` / `DemoOps2026!`
+- Log in as `demo.superadmin@opsvelo.com` / `DemoOps2026!`
 - Must succeed — no fatal errors
 - Must land on dashboard showing platform-only sidebar (Airlines, Onboarding, Platform Staff, Module Catalog, Audit Log)
 - Must NOT show: Roster, Standby, Notices, FDM, Compliance, Files, Users
 
 **B. Airline login**  
-- Log in as `demo.airadmin@acentoza.com` / `DemoOps2026!`
+- Log in as `demo.airadmin@opsvelo.com` / `DemoOps2026!`
 - Must succeed with full airline sidebar
 - Dashboard shows airline admin view
 
 **C. Platform route guard**  
-- While logged in as `demo.superadmin@acentoza.com`, navigate to `/roster` directly
+- While logged in as `demo.superadmin@opsvelo.com`, navigate to `/roster` directly
 - Must redirect to `/dashboard` with flash message
 
 **D. Audit log clean**  

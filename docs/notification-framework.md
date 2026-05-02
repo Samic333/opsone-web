@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-OpsOne/CrewAssist delivers notifications through three channels with a single dispatch API. Channels are additive — a single event can notify across all three simultaneously.
+OpsVelo/CrewAssist delivers notifications through three channels with a single dispatch API. Channels are additive — a single event can notify across all three simultaneously.
 
 | Channel | Platform | Status |
 |---|---|---|

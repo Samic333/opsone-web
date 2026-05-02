@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Front Controller
+ * OpsVelo — Front Controller
  * All requests are routed through this file.
  */
 
@@ -50,7 +50,7 @@ if ($__appDebug) {
 // Global exception handler — details only in debug; generic page otherwise.
 // Always logs to PHP error log, never leaks absolute paths to the browser in prod.
 set_exception_handler(function($e) use ($__appDebug) {
-    error_log('[OpsOne fatal] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+    error_log('[OpsVelo fatal] ' . $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
     http_response_code(500);
     if (str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
         header('Content-Type: application/json');
@@ -115,7 +115,7 @@ if (!str_starts_with($_SERVER['REQUEST_URI'] ?? '', '/api/')) {
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
-    session_name('OPSONE_SESSID');
+    session_name('OPSVELO_SESSID');
     session_start();
 }
 

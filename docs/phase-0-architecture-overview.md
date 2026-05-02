@@ -2,7 +2,7 @@
 
 ## 1. System Overview: Dual-Stack Architecture
 
-OpsOne / CrewAssist is a multi-tenant aviation operations platform built as two tightly coupled products:
+OpsVelo / CrewAssist is a multi-tenant aviation operations platform built as two tightly coupled products:
 
 | Layer | Technology | Location |
 |---|---|---|
@@ -14,7 +14,7 @@ OpsOne / CrewAssist is a multi-tenant aviation operations platform built as two 
 
 The web platform serves two distinct contexts from one codebase:
 
-- **Platform Control Plane** — used by OpsOne (the service provider) staff to manage airlines, modules, and onboarding
+- **Platform Control Plane** — used by OpsVelo (the service provider) staff to manage airlines, modules, and onboarding
 - **Airline Workspace** — used by airline administrators, schedulers, safety officers, and operational crew
 
 The iPad app (CrewAssist) connects exclusively to the Airline Workspace API. Platform staff do not use the iPad app.

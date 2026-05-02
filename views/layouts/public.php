@@ -1,6 +1,6 @@
 <?php
 /**
- * Public Layout — Full-width marketing layout for OpsOne public pages
+ * Public Layout — Full-width marketing layout for OpsVelo public pages
  * No sidebar, marketing navigation with CTA buttons
  */
 $brand = $brand ?? require CONFIG_PATH . '/branding.php';

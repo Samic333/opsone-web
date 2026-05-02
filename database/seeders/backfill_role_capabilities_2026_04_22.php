@@ -20,7 +20,7 @@ loadEnv(dirname(__DIR__, 2) . '/.env');
 require dirname(__DIR__, 2) . '/app/Helpers/functions.php';
 require dirname(__DIR__, 2) . '/config/database.php';
 
-echo "OpsOne — Role Capability Template Backfill (2026-04-22)\n";
+echo "OpsVelo — Role Capability Template Backfill (2026-04-22)\n";
 echo "=======================================================\n\n";
 
 // ─── What we're adding ─────────────────────────────────────────────────────

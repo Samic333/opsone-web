@@ -8,7 +8,7 @@
  *
  * Usage:
  *   $secret = TotpService::generateSecret();
- *   TotpService::uri('OpsOne', $user['email'], $secret) → otpauth:// URL for QR
+ *   TotpService::uri('OpsVelo', $user['email'], $secret) → otpauth:// URL for QR
  *   TotpService::verify($secret, $code) → bool
  */
 class TotpService {

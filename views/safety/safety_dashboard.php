@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Team Dashboard
+ * OpsVelo — Safety Team Dashboard
  * Variables: $stats (array), $recentReports (array), $overdueActions (array), $pendingActions (array)
  *
  * $stats keys:

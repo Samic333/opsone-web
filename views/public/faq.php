@@ -1,4 +1,4 @@
-<?php /** OpsOne — FAQ */ ?>
+<?php /** OpsVelo — FAQ */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ FAQ</div>

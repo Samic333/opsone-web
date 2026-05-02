@@ -165,7 +165,7 @@ class AuthController {
                 [(int)$user['id']]
             );
         } catch (\Throwable $e) {
-            error_log('[OpsOne 2FA lookup skipped] ' . $e->getMessage());
+            error_log('[OpsVelo 2FA lookup skipped] ' . $e->getMessage());
         }
         if ($twoFa) {
             // Regenerate to harden the partially-authed session, but do NOT set user data yet.

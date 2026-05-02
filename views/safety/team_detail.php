@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Team Full Report View
+ * OpsVelo — Safety Team Full Report View
  * Variables: $report, $publicThreads, $internalNotes, $statusHistory, $attachments, $safetyUsers
  */
 $pageTitle    = $report['reference_no'] ?? 'Safety Report';

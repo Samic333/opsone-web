@@ -6,7 +6,7 @@
  *            $dutyTypes, $activePeriod, $myChanges,
  *            $prevMonth, $prevYear, $nextMonth, $nextYear
  *
- * Visual language: matches OpsOne dark cockpit theme defined in app.css.
+ * Visual language: matches OpsVelo dark cockpit theme defined in app.css.
  * All colors come from CSS variables (--bg-card / --accent-* / --text-*) so
  * the page automatically follows the design system.
  *

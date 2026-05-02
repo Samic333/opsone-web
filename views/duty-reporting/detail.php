@@ -1,4 +1,4 @@
-<?php /** OpsOne — Duty Record Detail */ ?>
+<?php /** OpsVelo — Duty Record Detail */ ?>
 
 <?php
 $stateColor = match ($report['state']) {

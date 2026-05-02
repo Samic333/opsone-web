@@ -443,7 +443,7 @@ function opsoneLogoMark(int $size = 24, ?string $node = null, ?string $stroke = 
  * Brand wordmark — split typography derived from $brand['product_name'].
  *
  * Splits the brand name at the second uppercase letter (e.g. "OpsVelo"
- * → "Ops" + "Velo", "OpsOne" → "Ops" + "One"). Primary chunk renders in
+ * → "Ops" + "Velo","OpsVelo" → "Ops" + "Velo"). Primary chunk renders in
  * the page text color; accent chunk in the cyan accent. Weight 800,
  * tracking -0.02em.
  *
@@ -475,7 +475,7 @@ function opsoneWordmark(string $size = 'md'): string {
 }
 
 /**
- * OpsOne lockup — mark + wordmark, properly aligned.
+ * OpsVelo lockup — mark + wordmark, properly aligned.
  *
  * Use this anywhere both elements are needed (navbar, footer, login card).
  * Layout flex; vertically centered to the cap height.

@@ -1,4 +1,4 @@
-<?php /** OpsOne — Features (high-level only; details shared under NDA in demo) */ ?>
+<?php /** OpsVelo — Features (high-level only; details shared under NDA in demo) */ ?>
 <div class="info-page">
     <div class="info-page-inner" style="max-width: 900px;">
         <div class="section-label">Features</div>

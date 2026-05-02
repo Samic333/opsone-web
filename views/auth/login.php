@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Login Page
+ * OpsVelo — Login Page
  */
 $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsVelo'];
 ?>
@@ -141,28 +141,28 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                 $demos = [
                     // [email, label, icon, group]
                     // Platform
-                    ['demo.superadmin@acentoza.com', 'Platform Super Admin', '👑', 'platform'],
-                    ['demo.support@acentoza.com',    'Platform Support',     '🛎', 'platform'],
-                    ['demo.security@acentoza.com',   'Platform Security',    '🔒', 'platform'],
+                    ['demo.superadmin@opsvelo.com', 'Platform Super Admin', '👑', 'platform'],
+                    ['demo.support@opsvelo.com',    'Platform Support',     '🛎', 'platform'],
+                    ['demo.security@opsvelo.com',   'Platform Security',    '🔒', 'platform'],
                     // Airline
-                    ['demo.airadmin@acentoza.com',   'Airline Super Admin',  '✈',  'airline'],
+                    ['demo.airadmin@opsvelo.com',   'Airline Super Admin',  '✈',  'airline'],
                     // Management
-                    ['demo.hr@acentoza.com',         'HR Admin',             '👥', 'mgmt'],
-                    ['demo.scheduler@acentoza.com',  'Scheduler Admin',      '🗓', 'mgmt'],
-                    ['demo.chiefpilot@acentoza.com', 'Chief Pilot',          '🛫', 'mgmt'],
-                    ['demo.headcabin@acentoza.com',  'Head of Cabin Crew',   '💁', 'mgmt'],
-                    ['demo.engmanager@acentoza.com', 'Engineering Manager',  '⚙',  'mgmt'],
-                    ['demo.safety@acentoza.com',     'Safety Manager',       '⚠',  'mgmt'],
-                    ['demo.fdm@acentoza.com',        'FDM Analyst',          '📊', 'mgmt'],
-                    ['demo.doccontrol@acentoza.com', 'Doc Control Mgr',      '📄', 'mgmt'],
-                    ['demo.basemanager@acentoza.com','Base Manager',          '🏠', 'mgmt'],
+                    ['demo.hr@opsvelo.com',         'HR Admin',             '👥', 'mgmt'],
+                    ['demo.scheduler@opsvelo.com',  'Scheduler Admin',      '🗓', 'mgmt'],
+                    ['demo.chiefpilot@opsvelo.com', 'Chief Pilot',          '🛫', 'mgmt'],
+                    ['demo.headcabin@opsvelo.com',  'Head of Cabin Crew',   '💁', 'mgmt'],
+                    ['demo.engmanager@opsvelo.com', 'Engineering Manager',  '⚙',  'mgmt'],
+                    ['demo.safety@opsvelo.com',     'Safety Manager',       '⚠',  'mgmt'],
+                    ['demo.fdm@opsvelo.com',        'FDM Analyst',          '📊', 'mgmt'],
+                    ['demo.doccontrol@opsvelo.com', 'Doc Control Mgr',      '📄', 'mgmt'],
+                    ['demo.basemanager@opsvelo.com','Base Manager',          '🏠', 'mgmt'],
                     // Operational
-                    ['demo.pilot@acentoza.com',      'Pilot',                '🛩', 'ops'],
-                    ['demo.cabin@acentoza.com',      'Cabin Crew',           '🧳', 'ops'],
-                    ['demo.engineer@acentoza.com',   'Engineer',             '🔧', 'ops'],
+                    ['demo.pilot@opsvelo.com',      'Pilot',                '🛩', 'ops'],
+                    ['demo.cabin@opsvelo.com',      'Cabin Crew',           '🧳', 'ops'],
+                    ['demo.engineer@opsvelo.com',   'Engineer',             '🔧', 'ops'],
                     // Optional
-                    ['demo.training@acentoza.com',   'Training Admin',       '🎓', 'opt'],
-                    ['demo.sysmonitor@acentoza.com', 'System Monitor',       '🖥', 'opt'],
+                    ['demo.training@opsvelo.com',   'Training Admin',       '🎓', 'opt'],
+                    ['demo.sysmonitor@opsvelo.com', 'System Monitor',       '🖥', 'opt'],
                 ];
                 $currentGroup = 'platform';
                 $groupLabels = [

@@ -1,4 +1,4 @@
-<?php /** OpsOne — Edit Notice */ ?>
+<?php /** OpsVelo — Edit Notice */ ?>
 <div class="card" style="max-width: 860px;">
     <form method="POST" action="/notices/update/<?= $notice['id'] ?>">
         <?= csrfField() ?>

@@ -35,7 +35,7 @@
 
 ## Verification
 
-All 8 PHP files lint clean. Live HTTP smoke test against `php -S` dev server with `demo.pilot@acentoza.com` / `demo.airadmin@acentoza.com`:
+All 8 PHP files lint clean. Live HTTP smoke test against `php -S` dev server with `demo.pilot@opsvelo.com` / `demo.airadmin@opsvelo.com`:
 - `/dashboard` HTTP 200, summary card renders
 - `/my-duty` HTTP 200, all 6 KPI cards + threshold pills + bar chart + history with Route/Notes columns
 - `/my-duty/{id}` HTTP 200, detail page with Duty Info / Roster / Flight / Crew / Exceptions / Request Correction
@@ -46,5 +46,5 @@ All 8 PHP files lint clean. Live HTTP smoke test against `php -S` dev server wit
 ## Production deploy
 
 1. Run `049_duty_reporting_caps.sql` against the production MySQL DB.
-2. `git pull` on cPanel (working dir IS the doc root for acentoza.com).
+2. `git pull` on cPanel (working dir IS the doc root for opsvelo.com).
 3. Smoke test on live with a real pilot account.

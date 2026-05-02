@@ -94,7 +94,7 @@ class InstallController {
         }
 
         header('Content-Type: application/octet-stream');
-        header('Content-Disposition: attachment; filename="OpsOne-v' . $build['version'] . '.ipa"');
+        header('Content-Disposition: attachment; filename="OpsVelo-v' . $build['version'] . '.ipa"');
         header('Content-Length: ' . filesize($filePath));
         readfile($filePath);
         exit;

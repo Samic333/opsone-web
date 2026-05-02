@@ -1,4 +1,4 @@
-<?php /** OpsOne — Protected Install Page */ $brand = require CONFIG_PATH . '/branding.php'; ?>
+<?php /** OpsVelo — Protected Install Page */ $brand = require CONFIG_PATH . '/branding.php'; ?>
 
 <section class="section section-gradient">
     <div class="section-inner" style="max-width: 800px;">

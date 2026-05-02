@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Corrective Actions Queue
+ * OpsVelo — Safety Corrective Actions Queue
  * Variables: $actions (array), $stats (array), $statusFilter (string)
  */
 $pageTitle    = 'Corrective Actions';

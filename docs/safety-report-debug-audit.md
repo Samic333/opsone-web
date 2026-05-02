@@ -87,12 +87,12 @@ Two independent causes:
 
 | Step | Action | Result |
 |------|--------|--------|
-| A | Login as `demo.pilot@acentoza.com` | ✅ Pilot Dashboard loads |
+| A | Login as `demo.pilot@opsvelo.com` | ✅ Pilot Dashboard loads |
 | B | Navigate to `/safety` | ✅ Safety Home loads with report type cards |
 | C | Submit General Hazard report (bird strike near-miss) | ✅ SR-2026-00001 created, redirected to My Reports |
 | D | Click View on SR-2026-00001 | ✅ Reporter detail view opens — no 404 |
 | E | Reporter sees status, description, tabs (Overview/Discussion/Attachments/History) | ✅ All correct, no internal note tab visible |
-| F | Logout, login as `demo.safety@acentoza.com` (safety_officer) | ✅ **Safety Manager Dashboard** loads — role fix confirmed |
+| F | Logout, login as `demo.safety@opsvelo.com` (safety_officer) | ✅ **Safety Manager Dashboard** loads — role fix confirmed |
 | G | Navigate to `/safety/queue` | ✅ All 3 reports visible including SR-2026-00001 |
 | H | Open SR-2026-00001 in team detail view | ✅ Full team view: status, assignment dropdown shows safety users |
 | I | Change status to Under Review | ✅ "Status updated to under review" flash, badge updated |

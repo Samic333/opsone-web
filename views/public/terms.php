@@ -1,4 +1,4 @@
-<?php /** OpsOne — Terms of Use */ ?>
+<?php /** OpsVelo — Terms of Use */ ?>
 <div class="info-page">
     <div class="info-page-inner">
         <div class="section-label">✦ Legal</div>

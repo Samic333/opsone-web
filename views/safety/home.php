@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Reporting Home
+ * OpsVelo — Safety Reporting Home
  * Variables: $reportTypes (array), $draftCount (int), $submittedCount (int),
  *            $isTeamUser (bool), $user (array)
  */

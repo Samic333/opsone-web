@@ -22,7 +22,7 @@ function mock_pdf(string $title, string $subtitle, array $body): string {
         [
             ['size' => 22, 'y' => 760, 'text' => $title, 'bold' => true],
             ['size' => 12, 'y' => 735, 'text' => $subtitle, 'bold' => false],
-            ['size' => 9,  'y' => 720, 'text' => 'OpsOne Demo Airline — for testing only', 'bold' => false],
+            ['size' => 9,  'y' => 720, 'text' => 'OpsVelo Demo Airline — for testing only', 'bold' => false],
         ],
         []
     );
@@ -90,7 +90,7 @@ $files = [
             '2. Flight Crew Composition. For scheduled passenger operations a minimum of two qualified pilots shall be assigned to each flight.',
             '3. Fatigue Management. Pilots shall self-report fatigue using the Safety Report module. Such reports are reviewed by the Safety Manager within 24 hours.',
             '4. Acknowledgement. By acknowledging this document you confirm that you have read and understood the revised sections 3 and 4.',
-            'END OF DEMO CONTENT — sample document generated for OpsOne local testing.',
+            'END OF DEMO CONTENT — sample document generated for OpsVelo local testing.',
         ],
     ],
     'training_notice_2026_q2.pdf' => [
@@ -100,7 +100,7 @@ $files = [
             'Recurrent training for pilots and cabin crew will take place between 05 May 2026 and 20 May 2026 at HQ Training Centre.',
             'Affected crew: Q400 pilots with recurrent due before 30 July 2026; all cabin crew with SEP expiring before 01 August 2026.',
             'Schedules will be published via the roster workbench no later than 22 April 2026. Please confirm attendance within 72 hours of receipt.',
-            'Questions: training@opsone-demo.com. This notice requires acknowledgement.',
+            'Questions: training@opsvelo-demo.com. This notice requires acknowledgement.',
         ],
     ],
     'fleet_q400_notice.pdf' => [

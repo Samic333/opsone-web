@@ -1,4 +1,4 @@
-<?php /** OpsOne — Bulk Roster Assignment */ ?>
+<?php /** OpsVelo — Bulk Roster Assignment */ ?>
 
 <div style="max-width:760px;">
     <form method="POST" action="/roster/bulk-assign">

@@ -1,4 +1,4 @@
-# OpsOne API Endpoints Reference
+# OpsVelo API Endpoints Reference
 
 ## Authentication
 
@@ -118,7 +118,7 @@ Get latest app build version info.
 **Response:**
 ```json
 {
-    "product_name": "OpsOne",
+    "product_name": "OpsVelo",
     "latest_version": "1.0.0",
     "build_number": "1",
     "min_os_version": "16.0",

@@ -1,4 +1,4 @@
-# Final Report — CrewAssist / OpsOne 13-Phase Production-Readiness Sweep
+# Final Report — CrewAssist / OpsVelo 13-Phase Production-Readiness Sweep
 
 **Date**: 2026-04-26
 **Operator**: Claude (autonomous, self-paced)
@@ -244,7 +244,7 @@ The execution journal (`PHASE_REMEDIATION_2026-04-26_JOURNAL.md`) records the li
 ## Failed scenarios
 
 **None blocking.** The 3 deferred scenarios (11, 12, 24) require:
-- 11 + 12: Flight Folder + cabin after-mission forms — design must be grounded in `OpsOne Design Files/Filight files and Navlog/` PDFs (memory `feedback_design_files_first`); separate dedicated session.
+- 11 + 12: Flight Folder + cabin after-mission forms — design must be grounded in `OpsVelo Design Files/Filight files and Navlog/` PDFs (memory `feedback_design_files_first`); separate dedicated session.
 - 24: Tenant teardown idempotency — non-blocking; manual SQL DELETE works, but a tested teardown script is the right artifact, deferred.
 
 ---
@@ -254,7 +254,7 @@ The execution journal (`PHASE_REMEDIATION_2026-04-26_JOURNAL.md`) records the li
 1. **Acentoza historical safety reports** (ids 1-5) have orphaned `reporter_id` values pointing at deleted tokens. Reporter is unrecoverable. Demo flow uses fresh reports filed post-fix; historical ones remain visible to safety officers but `my-reports` won't return them to any current user. **Recommendation**: leave as-is for demo; for prod, an SQL migration could set `reporter_id=NULL` and `is_anonymous=1` on those rows.
 2. **Onboarding email** — `TenantController::store` line ~153 has a TODO for sending the activation link. Local mode works (token retrievable from DB or platform onboarding view). For prod, wire SMTP per `.env.production`.
 3. **iPad Mock services** — `MockReportingService`, `MockAuditService`, and `MockFlightService` still in `AppEnvironment`. Reporting + Audit are vestigial (no consumers); FlightService same — confirmed. Removal is safe but touches `pbxproj` which is fragile; deferred to a dedicated iPad session.
-4. **iPad Flight Folder + after-mission forms** — must be redesigned grounded in the actual aviation forms in `OpsOne Design Files/`. Backend endpoints exist; iPad views need design-file-driven rework.
+4. **iPad Flight Folder + after-mission forms** — must be redesigned grounded in the actual aviation forms in `OpsVelo Design Files/`. Backend endpoints exist; iPad views need design-file-driven rework.
 5. **Namecheap schema drift** — `database/namecheap_opsone_schema.sql` not regenerated. Before next prod push, regenerate from migrations 043+044+045.
 6. **MySQL UNIQUE on (tenant_id, slug) for system roles** — MySQL treats NULL as distinct under UNIQUE, so the system-role uniqueness needs application-level guard. SQLite's partial index handles it. Note in 044 MySQL migration documents this caveat.
 7. **CSP allows `'unsafe-inline'` for scripts** in `public/index.php`. Acceptable for this demo; harden during a security pass.

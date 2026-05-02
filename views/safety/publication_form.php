@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Create / Edit Safety Publication
+ * OpsVelo — Create / Edit Safety Publication
  * Variables: $publication (array|null), $relatedReport (array|null)
  */
 $isEdit       = !empty($publication['id']);

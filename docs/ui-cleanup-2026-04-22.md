@@ -1,4 +1,4 @@
-# OpsOne Web — UI / Navigation / Permission Cleanup
+# OpsVelo Web — UI / Navigation / Permission Cleanup
 
 **Date:** 2026-04-22
 **Scope:** `opsone-web/` only (no changes to `CrewAssist/` or `opsone-ipad-app/`).
@@ -57,7 +57,7 @@ The module enable/disable blank-page bug is fixed.
   download flow), but they are no longer linked from any authenticated sidebar
   or dashboard.
 - `views/public/*` marketing pages left alone.
-- `CrewAssist/`, `opsone-ipad-app/`, `OpsOne Design Files/` untouched.
+- `CrewAssist/`, `opsone-ipad-app/`, `OpsVelo Design Files/` untouched.
 
 ## Behavioural changes
 
@@ -91,7 +91,7 @@ The module enable/disable blank-page bug is fixed.
 - Now: controller looks at `Accept:` / `X-Requested-With:` and:
   - AJAX → JSON (existing iPad/API clients unaffected).
   - Form POST → 302 back to the detail page with a success flash
-    (`Module "Manuals & Documents" enabled for OpsOne Demo Airline.`).
+    (`Module "Manuals & Documents" enabled for OpsVelo Demo Airline.`).
 
 ### Account settings
 
@@ -155,7 +155,7 @@ are larger than a cleanup:
 3. **Base Manager expense/receipt flow** needs upload + receipt-optional
    capture — not built yet. `/bases` CRUD still works.
 4. **FDM CSV ingestion** — `/fdm/upload` page exists and accepts files; rule
-   parsing of the `OpsOne Design Files/FDM files` CSVs into event rows is a
+   parsing of the `OpsVelo Design Files/FDM files` CSVs into event rows is a
    future phase.
 5. **Flight plan / flight-bag generation from templates** in the design files
    (navlog / flight files) is staged; `/flights` still only lets a scheduler
@@ -179,7 +179,7 @@ are larger than a cleanup:
 - Exercise each of the sample PDFs via `/files/upload` with role targeting
   (manuals → all crew, Q400 notice → engineering_manager+chief_pilot, training
   notice → training_admin, mandatory-ack → `requires_ack = 1`).
-- Then log in as `demo.pilot@acentoza.com` and confirm they appear in
+- Then log in as `demo.pilot@opsvelo.com` and confirm they appear in
   **My Documents** and acknowledge properly.
-- Toggle modules off/on from `demo.superadmin@acentoza.com` and re-load an
+- Toggle modules off/on from `demo.superadmin@opsvelo.com` and re-load an
   airline user's dashboard to confirm live visibility changes.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 1 delivers a production-grade, multi-tenant aviation safety reporting module for the OpsOne platform. The module enables airline crew to submit confidential safety occurrence reports and provides safety management teams with a structured workflow for review, investigation, and closure.
+Phase 1 delivers a production-grade, multi-tenant aviation safety reporting module for the OpsVelo platform. The module enables airline crew to submit confidential safety occurrence reports and provides safety management teams with a structured workflow for review, investigation, and closure.
 
 ### Regulatory Context
 

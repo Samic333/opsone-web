@@ -31,13 +31,13 @@
 ### Tenants (live)
 | id | name | code | active | onboarding |
 |---|---|---|---|---|
-| 1 | OpsOne Demo Airline | ODA | 1 | active |
+| 1 | OpsVelo Demo Airline | ODA | 1 | active |
 | 2 | sam | ABC123 | 1 | active |
 | 3 | AG QA Verify | AV01431 | 1 | active |
 | 4 | AGOT | AGO | 1 | active |
 | 5 | Gulf Wings Aviation | GWA | 1 | active |
 
-### Demo accounts (28 total under `demo.*@acentoza.com`, password `DemoOps2026!`)
+### Demo accounts (28 total under `demo.*@opsvelo.com`, password `DemoOps2026!`)
 ids 327–354 covering: super_admin, support, security, sysmonitor, airline_admin, hr, scheduler, chief_pilot, head_cabin, engineering_manager, safety, fdm, doc_control, base_manager, pilot×6, cabin×4, engineer×3, training. All status=active.
 
 ### Live flights (tenant 1)
@@ -163,7 +163,7 @@ ids 327–354 covering: super_admin, support, security, sysmonitor, airline_admi
 - `php -l` clean on all 6 touched PHP files.
 - `php bin/audit_route_guards.php --gaps-only` reports 21 deferred gaps, no platform-tier routes remaining ungated.
 - `curl /home` → 200, `curl /login` → 200, `curl /diag.php` → 404, `curl /seed-db.php` → 404.
-- `POST /api/auth/login` (`demo.pilot@acentoza.com`, `demo.airadmin@acentoza.com`) → 200 with valid token.
+- `POST /api/auth/login` (`demo.pilot@opsvelo.com`, `demo.airadmin@opsvelo.com`) → 200 with valid token.
 - Bearer-authenticated `GET /api/user/profile` → full user JSON.
 - D1 negative test: ambiguous-email login → 401 "Invalid credentials".
 
@@ -288,7 +288,7 @@ TenantController.php:153 has a TODO for sending the invitation email. Local mode
 - `AppEnvironment.flightService` and `AppEnvironment.reportingService` are vestigial — no view consumers for `flightService`, only a comment for `reportingService`. Safe to remove during Phase 12 cleanup but touching pbxproj has drift risk; leaving alone.
 - `appEnv.fdmService` is consumed by `Features/FDM/FDMView.swift` (legacy) but the V2 path uses `appEnv.fdmInbox` (consumed by the pilot inbox). The legacy view is likely orphaned — Phase 12 candidate.
 - `appEnv.auditService` (MockAuditService) is used in 5 view files for client-side analytics/audit logging. Server-side audit is comprehensive (`AuditLog`, `AuditService`); leaving the iPad mock until a real iPad audit pipeline is needed.
-- Form validation in `FlightFolderRootView`: defer to a dedicated session because the form schema must be grounded in `OpsOne Design Files/Filight files and Navlog/` PDFs (Crew Briefing, FRAT, Journey Log, After-Mission, Verification, Post-Arrival).
+- Form validation in `FlightFolderRootView`: defer to a dedicated session because the form schema must be grounded in `OpsVelo Design Files/Filight files and Navlog/` PDFs (Crew Briefing, FRAT, Journey Log, After-Mission, Verification, Post-Arrival).
 - Device approval REQUEST UX (a screen the pilot can show their admin to request approval): defer; current `DeviceLockoutView` + admin self-serve approval works for the demo loop.
 
 ### Files changed
@@ -470,7 +470,7 @@ Final deliverable: `docs/planning/PHASE_REMEDIATION_2026-04-26_FINAL_REPORT.md`.
 - Avatar fallback works on every screen that touches a user row.
 
 ### Plan
-1. Use platform super_admin (`demo.superadmin@acentoza.com`) to create a brand-new airline tenant "DemoAir" (code `DMA`).
+1. Use platform super_admin (`demo.superadmin@opsvelo.com`) to create a brand-new airline tenant "DemoAir" (code `DMA`).
 2. Walk through `TenantController::store` → `TenantController::createInvitation` to issue the first airline-admin invite token.
 3. Activate the airline_admin via `/activate?token=…` and confirm the new user can log in.
 4. Confirm tenant isolation: DemoAir admin's session must NOT see Acentoza data. Re-run D1 probe across both tenants.

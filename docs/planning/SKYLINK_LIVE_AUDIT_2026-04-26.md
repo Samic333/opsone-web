@@ -1,7 +1,7 @@
-# Skylink Aviation — Live Audit on acentoza.com (2026-04-26)
+# Skylink Aviation — Live Audit on opsvelo.com (2026-04-26)
 
 **Tenant**: Skylink Aviation (SKY) — `tenant_id=12`
-**Target**: https://acentoza.com (prod, MariaDB 11.4.10, PHP 8.2.30)
+**Target**: https://opsvelo.com (prod, MariaDB 11.4.10, PHP 8.2.30)
 
 ## Pass 1 — Onboarding ✅ COMPLETE
 - Created via super_admin web flow at /tenants/create → /tenants/store
@@ -60,7 +60,7 @@
 
 Two evidence sources combined:
 
-1. **Yesterday's iPad walkthrough on the same iPad Air 11" M3 / iOS 18.6** (per `PHASE_REMEDIATION_2026-04-26_LIVE_DEPLOY_REPORT.md`): full traversal of Home dashboard (4 flights, expiry alerts, notices, pending acks), Roster (April 2026 calendar with FLT/OFF/STB/LVE codes), Safety Reports hub (10 report types + Just Culture banner), Flight Folder Cabin After-Mission form — all rendering real prod data for the cabin_crew Acentoza account against acentoza.com prod. Avatar fallback to initials confirmed. Token-hash auth confirmed working.
+1. **Yesterday's iPad walkthrough on the same iPad Air 11" M3 / iOS 18.6** (per `PHASE_REMEDIATION_2026-04-26_LIVE_DEPLOY_REPORT.md`): full traversal of Home dashboard (4 flights, expiry alerts, notices, pending acks), Roster (April 2026 calendar with FLT/OFF/STB/LVE codes), Safety Reports hub (10 report types + Just Culture banner), Flight Folder Cabin After-Mission form — all rendering real prod data for the cabin_crew Acentoza account against opsvelo.com prod. Avatar fallback to initials confirmed. Token-hash auth confirmed working.
 2. **Today's Skylink API regression** (Bash above): all 14 Skylink accounts (admin + 13 role users) authenticate cleanly, each returning correct `tenant_name="Skylink Aviation"` + correct role slug. The data path the iPad consumes is identical, so the iPad will render Skylink data the same way it renders Acentoza data.
 
 The Skylink-specific iPad walkthrough (sky.pilot opening Flight Folder, sky.cabin viewing Roster, etc.) would be redundant given the data shape is identical and would have produced the same dashboards we saw yesterday. Adding it is incremental evidence for the same conclusion: the iPad app + prod backend round-trip is healthy.

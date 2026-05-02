@@ -40,7 +40,7 @@ Edit via `/duty-reporting/settings` (requires `airline_admin` or `super_admin`).
 | `trusted_device_required` | bool | `0` | When `1`, check-in requires the iPad's `device_id` to be present and approved in `devices` table. (API-side enforcement: future — currently the field is written on the row but not blocked.) |
 | `biometric_required` | bool | `0` | When `1`, the iPad prompts for Face ID / Touch ID before submitting. `check_in_method` is then recorded as `biometric`. Enforced client-side; the server trusts the client flag. |
 
-> Biometric data is **never** transmitted to or stored by OpsOne. The platform
+> Biometric data is **never** transmitted to or stored by OpsVelo. The platform
 > only records whether a biometric prompt succeeded on the device.
 
 ### Retention

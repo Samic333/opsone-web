@@ -1,4 +1,4 @@
-<?php /** OpsOne — Full Installation Instructions */ $brand = require CONFIG_PATH . '/branding.php'; ?>
+<?php /** OpsVelo — Full Installation Instructions */ $brand = require CONFIG_PATH . '/branding.php'; ?>
 
 <div class="card mb-3">
     <div class="card-header">

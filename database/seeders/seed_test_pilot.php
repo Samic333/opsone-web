@@ -2,7 +2,7 @@
 /**
  * Test-pilot dashboard seeder.
  *
- * Populates the dashboard for `demo.pilot@acentoza.com` with realistic data
+ * Populates the dashboard for `demo.pilot@opsvelo.com` with realistic data
  * so the pilot-facing widgets (hero banner, today's duty, my flights, expiry
  * alerts, training, pending acks) have something to render during dogfood.
  *
@@ -13,7 +13,7 @@
  *   php database/seeders/seed_test_pilot.php
  *
  * Schema-aware: columns match the live opsone-web production database
- * (verified 2026-04-25 against /home/fruinxrj/acentoza.com).
+ * (verified 2026-04-25 against /home/fruinxrj/opsvelo.com).
  */
 
 require dirname(__DIR__, 2) . '/config/app.php';
@@ -21,7 +21,7 @@ loadEnv(dirname(__DIR__, 2) . '/.env');
 require dirname(__DIR__, 2) . '/app/Helpers/functions.php';
 require dirname(__DIR__, 2) . '/config/database.php';
 
-const PILOT_EMAIL = 'demo.pilot@acentoza.com';
+const PILOT_EMAIL = 'demo.pilot@opsvelo.com';
 
 $insertCount = 0;
 $skipCount   = 0;

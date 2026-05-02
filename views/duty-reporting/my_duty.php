@@ -1,5 +1,5 @@
 <?php
-/** OpsOne — Crew self-service duty reporting (redesigned). */
+/** OpsVelo — Crew self-service duty reporting (redesigned). */
 $isOnDuty        = !empty($current) && in_array($current['state'], ['checked_in','on_duty','exception_pending_review'], true);
 $pendingReason   = $_SESSION['duty_exception_pending'] ?? null;
 $needsReasonForm = !empty($pendingReason);

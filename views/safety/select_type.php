@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Select Safety Report Type
+ * OpsVelo — Select Safety Report Type
  * Variables: $reportTypes (array of type_slug => label)
  */
 

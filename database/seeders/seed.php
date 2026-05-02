@@ -10,7 +10,7 @@ loadEnv(dirname(__DIR__, 2) . '/.env');
 require dirname(__DIR__, 2) . '/app/Helpers/functions.php';
 require dirname(__DIR__, 2) . '/config/database.php';
 
-echo "🌱 Seeding OpsOne database...\n\n";
+echo "🌱 Seeding OpsVelo database...\n\n";
 
 try {
     $db = Database::getInstance();

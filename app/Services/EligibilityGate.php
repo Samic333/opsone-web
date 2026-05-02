@@ -65,7 +65,7 @@ class EligibilityGate {
                 $blockers[] = "Qualification {$label} expired on {$q['expiry_date']}";
             }
         } catch (\Throwable $e) {
-            error_log('[OpsOne EligibilityGate qualifications skipped] ' . $e->getMessage());
+            error_log('[OpsVelo EligibilityGate qualifications skipped] ' . $e->getMessage());
         }
 
         return $blockers;

@@ -4,7 +4,7 @@
  *
  * The appraisals module mirrors the **Field Stations Staff Appraisal Form
  * (Form No. 150, Rev 01 — 11/11/2024)** referenced under
- * OpsOne/Design Files/Appraisal Form/. Two flavours co-exist:
+ * OpsVelo/Design Files/Appraisal Form/. Two flavours co-exist:
  *
  *   • Self Appraisal  — appraisee fills it out about themselves
  *                       (Section Two of the paper form, 18 questions).

@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Publications List
+ * OpsVelo — Safety Publications List
  * Variables: $publications (array)
  */
 $pageTitle    = 'Safety Publications';

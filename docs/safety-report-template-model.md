@@ -11,7 +11,7 @@ A naive implementation of a multi-type safety reporting system creates a separat
 - 9 iPad form views that must all be updated whenever a base field changes
 - Schema migrations for every new type
 
-The OpsOne template model avoids this by maintaining a **single `safety_reports` table** for all types. Every report — regardless of type — shares a common set of base fields mapped to real database columns. Type-specific data (fields that only apply to, say, a Flight Crew Occurrence or a Maintenance Engineering report) is stored as JSON in the `extra_fields` column.
+The OpsVelo template model avoids this by maintaining a **single `safety_reports` table** for all types. Every report — regardless of type — shares a common set of base fields mapped to real database columns. Type-specific data (fields that only apply to, say, a Flight Crew Occurrence or a Maintenance Engineering report) is stored as JSON in the `extra_fields` column.
 
 This approach means:
 

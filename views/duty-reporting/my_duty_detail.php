@@ -1,5 +1,5 @@
 <?php
-/** OpsOne — Crew duty record detail (own record only). */
+/** OpsVelo — Crew duty record detail (own record only). */
 $r = $report;
 
 $dur = isset($r['duration_minutes']) && $r['duration_minutes'] !== null

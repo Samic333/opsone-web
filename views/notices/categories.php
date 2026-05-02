@@ -1,4 +1,4 @@
-<?php /** OpsOne — Notice Categories */ ?>
+<?php /** OpsVelo — Notice Categories */ ?>
 <div class="grid grid-2" style="gap:24px; align-items:start;">
 
     <!-- Category List -->

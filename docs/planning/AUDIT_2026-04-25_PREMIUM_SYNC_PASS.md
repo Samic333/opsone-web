@@ -1,13 +1,13 @@
 # Audit — 2026-04-25 Premium Alignment + Sync Pass
 
-**Scope.** Current-truth audit of the OpsOne / CrewAssist platform that supersedes the V2 master-plan "✅ all phases complete" status with what real-runtime use surfaces. Produced as the deliverable for **Phase 0** of the 18-phase Premium Alignment + Sync pass approved on 2026-04-25.
+**Scope.** Current-truth audit of the OpsVelo / CrewAssist platform that supersedes the V2 master-plan "✅ all phases complete" status with what real-runtime use surfaces. Produced as the deliverable for **Phase 0** of the 18-phase Premium Alignment + Sync pass approved on 2026-04-25.
 
 **Authoritative sources used.**
 - `CrewAssist/` — Swift/SwiftUI iPad+iPhone source of truth (~127 files, 32 feature modules)
 - `opsone-web/` — PHP/MySQL admin + API
-- `OpsOne Design Files/` — canonical form references (note folder typo: `Filight files and Navlog/`)
+- `OpsVelo Design Files/` — canonical form references (note folder typo: `Filight files and Navlog/`)
 - Recent commits in both repos
-- Live URL: `https://acentoza.com/api`
+- Live URL: `https://opsvelo.com/api`
 
 ---
 
@@ -83,7 +83,7 @@ No mock-only modules detected. The `Real*Service` family covers every active scr
 
 ## 4. Design-file → phase mapping
 
-Folder: `/Users/samic/Desktop/Antigravity/OpsOne Design Files/`. Folder spelling preserved verbatim (note `Filight files and Navlog/` — typo in source).
+Folder: `/Users/samic/Desktop/Antigravity/OpsVelo Design Files/`. Folder spelling preserved verbatim (note `Filight files and Navlog/` — typo in source).
 
 | Phase | Mobile feature | Design file(s) |
 |---|---|---|

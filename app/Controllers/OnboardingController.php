@@ -236,7 +236,7 @@ class OnboardingController {
         $rawToken = is_array($token)
             ? ($token['token'] ?? $token['raw'] ?? null)
             : (is_string($token) ? $token : null);
-        $baseUrl   = rtrim(env('APP_URL', 'https://acentoza.com'), '/');
+        $baseUrl   = rtrim(env('APP_URL', 'https://opsvelo.com'), '/');
         $activateUrl = $rawToken
             ? "$baseUrl/activate?token=" . urlencode($rawToken)
             : "$baseUrl/activate";

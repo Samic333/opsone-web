@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne Demo Environment Seeder
+ * OpsVelo Demo Environment Seeder
  * ─────────────────────────────────────────────────────
  * Wipes and re-creates the complete demo tenant with all
  * 18 role archetypes, sample data, notices, files,
@@ -10,9 +10,9 @@
  *
  * DEMO CREDENTIALS
  *   Password for ALL demo accounts: DemoOps2026!
- *   Email pattern:                  demo.[role]@acentoza.com
+ *   Email pattern:                  demo.[role]@opsvelo.com
  *
- * Safe to re-run — deletes only demo.* @acentoza.com users
+ * Safe to re-run — deletes only demo.* @opsvelo.com users
  * and tenant-1 content. Does NOT touch tenant 2+.
  */
 
@@ -21,7 +21,7 @@ loadEnv(dirname(__DIR__, 2) . '/.env');
 require dirname(__DIR__, 2) . '/app/Helpers/functions.php';
 require dirname(__DIR__, 2) . '/config/database.php';
 
-echo "\n🌱  OpsOne Demo Environment Seeder\n";
+echo "\n🌱  OpsVelo Demo Environment Seeder\n";
 echo str_repeat('─', 55) . "\n\n";
 
 $driver = env('DB_DRIVER', 'mysql');
@@ -192,10 +192,10 @@ try {
     $hasTenant = $db->query("SELECT id FROM tenants WHERE id = 1")->fetchColumn();
     if ($hasTenant) {
         $db->prepare("UPDATE tenants SET name = ?, code = ?, contact_email = ?, is_active = 1 WHERE id = 1")
-           ->execute(['OpsOne Demo Airline', 'ODA', 'admin@opsone-demo.aero']);
+           ->execute(['OpsVelo Demo Airline', 'ODA', 'admin@opsvelo-demo.com']);
     } else {
         $db->prepare("$insertIgnore INTO tenants (id, name, code, contact_email, is_active) VALUES (1,?,?,?,1)")
-           ->execute(['OpsOne Demo Airline', 'ODA', 'admin@opsone-demo.aero']);
+           ->execute(['OpsVelo Demo Airline', 'ODA', 'admin@opsvelo-demo.com']);
     }
     echo "✓\n";
 
@@ -255,9 +255,9 @@ try {
     // ─── 6. Clear old demo users ──────────────────────────
     echo "Clearing old demo users... ";
     // Clear airline-tenant demo users
-    $db->exec("DELETE FROM users WHERE tenant_id = 1 AND (email LIKE '%@airline.com' OR email LIKE 'demo.%@acentoza.com')");
+    $db->exec("DELETE FROM users WHERE tenant_id = 1 AND (email LIKE '%@airline.com' OR email LIKE 'demo.%@opsvelo.com')");
     // Clear platform-level demo users (NULL tenant) from previous seeds
-    $db->exec("DELETE FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'");
+    $db->exec("DELETE FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@opsvelo.com'");
     echo "✓\n";
 
     // ─── 7. Reload maps ───────────────────────────────────
@@ -279,10 +279,10 @@ try {
     // These are pure platform-staff accounts with no airline affiliation.
     // [name, email, emp_id, web_access, mobile_access]
     $platformUserDefs = [
-        ['Alex Mwangi',    'demo.superadmin@acentoza.com', 'PLT-001', 1, 0],
-        ['Jordan Taylor',  'demo.support@acentoza.com',    'PLT-002', 1, 0],
-        ['Sarah Kimani',   'demo.security@acentoza.com',   'PLT-003', 1, 0],
-        ['James Okafor',   'demo.sysmonitor@acentoza.com', 'SYS-001', 1, 0],
+        ['Alex Mwangi',    'demo.superadmin@opsvelo.com', 'PLT-001', 1, 0],
+        ['Jordan Taylor',  'demo.support@opsvelo.com',    'PLT-002', 1, 0],
+        ['Sarah Kimani',   'demo.security@opsvelo.com',   'PLT-003', 1, 0],
+        ['James Okafor',   'demo.sysmonitor@opsvelo.com', 'SYS-001', 1, 0],
     ];
 
     if ($hasWebAccess) {
@@ -307,33 +307,33 @@ try {
     // [name, email, emp_id, dept_code, base_code, web_access, mobile_access]
     $airlineUserDefs = [
         // Airline management
-        ['Amara Diallo',          'demo.airadmin@acentoza.com',    'ODA-001', 'MGT', 'NBO', 1, 1],
-        ['Fatima Al-Zaabi',       'demo.hr@acentoza.com',          'HR-001',  'HR',  'NBO', 1, 1],
-        ['Layla Hassan',          'demo.scheduler@acentoza.com',   'CTC-001', 'CTC', 'NBO', 1, 1],
-        ['Capt. Ahmed Mansoori',  'demo.chiefpilot@acentoza.com',  'FLT-CP1', 'FLT', 'NBO', 1, 1],
-        ['Grace Okonkwo',         'demo.headcabin@acentoza.com',   'CAB-HM1', 'CAB', 'NBO', 1, 1],
-        ['Mark Sullivan',         'demo.engmanager@acentoza.com',  'ENG-MGR', 'ENG', 'NBO', 1, 1],
-        ['Dr. Nadia Okelo',       'demo.safety@acentoza.com',      'SAF-001', 'SAF', 'NBO', 1, 1],
-        ['Dr. Priya Sharma',      'demo.fdm@acentoza.com',         'FDM-001', 'FDM', 'NBO', 1, 1],
-        ['Sara Khalid',           'demo.doccontrol@acentoza.com',  'DOC-001', 'DOC', 'NBO', 1, 1],
-        ['Joseph Kariuki',        'demo.basemanager@acentoza.com', 'BMS-NBO', 'BMS', 'NBO', 1, 1],
+        ['Amara Diallo',          'demo.airadmin@opsvelo.com',    'ODA-001', 'MGT', 'NBO', 1, 1],
+        ['Fatima Al-Zaabi',       'demo.hr@opsvelo.com',          'HR-001',  'HR',  'NBO', 1, 1],
+        ['Layla Hassan',          'demo.scheduler@opsvelo.com',   'CTC-001', 'CTC', 'NBO', 1, 1],
+        ['Capt. Ahmed Mansoori',  'demo.chiefpilot@opsvelo.com',  'FLT-CP1', 'FLT', 'NBO', 1, 1],
+        ['Grace Okonkwo',         'demo.headcabin@opsvelo.com',   'CAB-HM1', 'CAB', 'NBO', 1, 1],
+        ['Mark Sullivan',         'demo.engmanager@opsvelo.com',  'ENG-MGR', 'ENG', 'NBO', 1, 1],
+        ['Dr. Nadia Okelo',       'demo.safety@opsvelo.com',      'SAF-001', 'SAF', 'NBO', 1, 1],
+        ['Dr. Priya Sharma',      'demo.fdm@opsvelo.com',         'FDM-001', 'FDM', 'NBO', 1, 1],
+        ['Sara Khalid',           'demo.doccontrol@opsvelo.com',  'DOC-001', 'DOC', 'NBO', 1, 1],
+        ['Joseph Kariuki',        'demo.basemanager@opsvelo.com', 'BMS-NBO', 'BMS', 'NBO', 1, 1],
         // Operational (web + mobile)
-        ['Capt. Rashid Hussein',  'demo.pilot@acentoza.com',       'FLT-001', 'FLT', 'NBO', 1, 1],
-        ['Noor Al-Rashidi',       'demo.cabin@acentoza.com',       'CAB-020', 'CAB', 'EBB', 1, 1],
-        ['Eric Mbeki',            'demo.engineer@acentoza.com',    'ENG-007', 'ENG', 'NBO', 1, 1],
+        ['Capt. Rashid Hussein',  'demo.pilot@opsvelo.com',       'FLT-001', 'FLT', 'NBO', 1, 1],
+        ['Noor Al-Rashidi',       'demo.cabin@opsvelo.com',       'CAB-020', 'CAB', 'EBB', 1, 1],
+        ['Eric Mbeki',            'demo.engineer@opsvelo.com',    'ENG-007', 'ENG', 'NBO', 1, 1],
         // Optional roles
-        ['Ruth Nambozo',          'demo.training@acentoza.com',    'TRN-001', 'HR',  'NBO', 1, 0],
+        ['Ruth Nambozo',          'demo.training@opsvelo.com',    'TRN-001', 'HR',  'NBO', 1, 0],
         // Additional operational crew (roster workbench demo users — mobile optional)
-        ['Capt. Lydia Mumo',      'demo.pilot2@acentoza.com',      'FLT-002', 'FLT', 'NBO', 1, 1],
-        ['FO Daniel Otieno',      'demo.pilot3@acentoza.com',      'FLT-003', 'FLT', 'NBO', 1, 1],
-        ['FO Samuel Bekele',      'demo.pilot4@acentoza.com',      'FLT-004', 'FLT', 'MBA', 1, 1],
-        ['Capt. Fatuma Wangari',  'demo.pilot5@acentoza.com',      'FLT-005', 'FLT', 'MBA', 1, 1],
-        ['FO Amina Osei',         'demo.pilot6@acentoza.com',      'FLT-006', 'FLT', 'EBB', 1, 1],
-        ['Halima Abdi',           'demo.cabin2@acentoza.com',      'CAB-021', 'CAB', 'NBO', 1, 1],
-        ['Kevin Mwangi',          'demo.cabin3@acentoza.com',      'CAB-022', 'CAB', 'NBO', 1, 1],
-        ['Aisha Mwamba',          'demo.cabin4@acentoza.com',      'CAB-023', 'CAB', 'EBB', 1, 1],
-        ['James Ochieng',         'demo.engineer2@acentoza.com',   'ENG-008', 'ENG', 'NBO', 1, 1],
-        ['Wanjiru Kariuki',       'demo.engineer3@acentoza.com',   'ENG-009', 'ENG', 'MBA', 1, 1],
+        ['Capt. Lydia Mumo',      'demo.pilot2@opsvelo.com',      'FLT-002', 'FLT', 'NBO', 1, 1],
+        ['FO Daniel Otieno',      'demo.pilot3@opsvelo.com',      'FLT-003', 'FLT', 'NBO', 1, 1],
+        ['FO Samuel Bekele',      'demo.pilot4@opsvelo.com',      'FLT-004', 'FLT', 'MBA', 1, 1],
+        ['Capt. Fatuma Wangari',  'demo.pilot5@opsvelo.com',      'FLT-005', 'FLT', 'MBA', 1, 1],
+        ['FO Amina Osei',         'demo.pilot6@opsvelo.com',      'FLT-006', 'FLT', 'EBB', 1, 1],
+        ['Halima Abdi',           'demo.cabin2@opsvelo.com',      'CAB-021', 'CAB', 'NBO', 1, 1],
+        ['Kevin Mwangi',          'demo.cabin3@opsvelo.com',      'CAB-022', 'CAB', 'NBO', 1, 1],
+        ['Aisha Mwamba',          'demo.cabin4@opsvelo.com',      'CAB-023', 'CAB', 'EBB', 1, 1],
+        ['James Ochieng',         'demo.engineer2@opsvelo.com',   'ENG-008', 'ENG', 'NBO', 1, 1],
+        ['Wanjiru Kariuki',       'demo.engineer3@opsvelo.com',   'ENG-009', 'ENG', 'MBA', 1, 1],
     ];
 
     if ($hasWebAccess) {
@@ -365,9 +365,9 @@ try {
     $tenantRoles   = $db->query("SELECT slug, id FROM roles WHERE tenant_id = 1")->fetchAll(PDO::FETCH_KEY_PAIR);
 
     // Platform user IDs (NULL tenant_id)
-    $platUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $platUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@opsvelo.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
     // Airline user IDs
-    $airUserIds  = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $airUserIds  = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@opsvelo.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
     $userIds     = $platUserIds + $airUserIds;
 
     // Clear old role assignments for ALL demo users
@@ -379,10 +379,10 @@ try {
 
     // Platform role map — assigned using system roles (tenant_id = NULL in user_roles)
     $platformRoleMap = [
-        'demo.superadmin@acentoza.com'  => ['super_admin'],       // pure platform — NO airline_admin
-        'demo.support@acentoza.com'     => ['platform_support'],
-        'demo.security@acentoza.com'    => ['platform_security'],
-        'demo.sysmonitor@acentoza.com'  => ['system_monitoring'],
+        'demo.superadmin@opsvelo.com'  => ['super_admin'],       // pure platform — NO airline_admin
+        'demo.support@opsvelo.com'     => ['platform_support'],
+        'demo.security@opsvelo.com'    => ['platform_security'],
+        'demo.sysmonitor@opsvelo.com'  => ['system_monitoring'],
     ];
 
     $platAssignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, NULL)");
@@ -396,31 +396,31 @@ try {
 
     // Airline role map — assigned using tenant-1 roles
     $roleMap = [
-        'demo.airadmin@acentoza.com'    => ['airline_admin'],
-        'demo.hr@acentoza.com'          => ['hr'],
-        'demo.scheduler@acentoza.com'   => ['scheduler'],
-        'demo.chiefpilot@acentoza.com'  => ['chief_pilot'],
-        'demo.headcabin@acentoza.com'   => ['head_cabin_crew'],
-        'demo.engmanager@acentoza.com'  => ['engineering_manager'],
-        'demo.safety@acentoza.com'      => ['safety_officer'],
-        'demo.fdm@acentoza.com'         => ['fdm_analyst'],
-        'demo.doccontrol@acentoza.com'  => ['document_control'],
-        'demo.basemanager@acentoza.com' => ['base_manager'],
-        'demo.pilot@acentoza.com'       => ['pilot'],
-        'demo.cabin@acentoza.com'       => ['cabin_crew'],
-        'demo.engineer@acentoza.com'    => ['engineer'],
-        'demo.training@acentoza.com'    => ['training_admin'],
+        'demo.airadmin@opsvelo.com'    => ['airline_admin'],
+        'demo.hr@opsvelo.com'          => ['hr'],
+        'demo.scheduler@opsvelo.com'   => ['scheduler'],
+        'demo.chiefpilot@opsvelo.com'  => ['chief_pilot'],
+        'demo.headcabin@opsvelo.com'   => ['head_cabin_crew'],
+        'demo.engmanager@opsvelo.com'  => ['engineering_manager'],
+        'demo.safety@opsvelo.com'      => ['safety_officer'],
+        'demo.fdm@opsvelo.com'         => ['fdm_analyst'],
+        'demo.doccontrol@opsvelo.com'  => ['document_control'],
+        'demo.basemanager@opsvelo.com' => ['base_manager'],
+        'demo.pilot@opsvelo.com'       => ['pilot'],
+        'demo.cabin@opsvelo.com'       => ['cabin_crew'],
+        'demo.engineer@opsvelo.com'    => ['engineer'],
+        'demo.training@opsvelo.com'    => ['training_admin'],
         // Additional operational crew
-        'demo.pilot2@acentoza.com'      => ['chief_pilot'],
-        'demo.pilot3@acentoza.com'      => ['pilot'],
-        'demo.pilot4@acentoza.com'      => ['pilot'],
-        'demo.pilot5@acentoza.com'      => ['chief_pilot'],
-        'demo.pilot6@acentoza.com'      => ['pilot'],
-        'demo.cabin2@acentoza.com'      => ['cabin_crew'],
-        'demo.cabin3@acentoza.com'      => ['cabin_crew'],
-        'demo.cabin4@acentoza.com'      => ['cabin_crew'],
-        'demo.engineer2@acentoza.com'   => ['engineer'],
-        'demo.engineer3@acentoza.com'   => ['engineer'],
+        'demo.pilot2@opsvelo.com'      => ['chief_pilot'],
+        'demo.pilot3@opsvelo.com'      => ['pilot'],
+        'demo.pilot4@opsvelo.com'      => ['pilot'],
+        'demo.pilot5@opsvelo.com'      => ['chief_pilot'],
+        'demo.pilot6@opsvelo.com'      => ['pilot'],
+        'demo.cabin2@opsvelo.com'      => ['cabin_crew'],
+        'demo.cabin3@opsvelo.com'      => ['cabin_crew'],
+        'demo.cabin4@opsvelo.com'      => ['cabin_crew'],
+        'demo.engineer2@opsvelo.com'   => ['engineer'],
+        'demo.engineer3@opsvelo.com'   => ['engineer'],
     ];
 
     $airAssignStmt = $db->prepare("$insertIgnore INTO user_roles (user_id, role_id, tenant_id) VALUES (?, ?, 1)");
@@ -457,13 +457,13 @@ try {
     $db->exec("DELETE FROM notices WHERE tenant_id = 1");
 
     // Get created_by user IDs (airline users from tenant 1; platform users from NULL tenant)
-    $uids     = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $platUids = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
-    $docId    = $uids['demo.doccontrol@acentoza.com']      ?? null;
-    $safetyId = $uids['demo.safety@acentoza.com']          ?? null;
-    $adminId  = $platUids['demo.superadmin@acentoza.com']  ?? null; // platform user
-    $pilotId  = $uids['demo.pilot@acentoza.com']           ?? null;
-    $cabinId  = $uids['demo.cabin@acentoza.com']           ?? null;
+    $uids     = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@opsvelo.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $platUids = $db->query("SELECT email, id FROM users WHERE tenant_id IS NULL AND email LIKE 'demo.%@opsvelo.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $docId    = $uids['demo.doccontrol@opsvelo.com']      ?? null;
+    $safetyId = $uids['demo.safety@opsvelo.com']          ?? null;
+    $adminId  = $platUids['demo.superadmin@opsvelo.com']  ?? null; // platform user
+    $pilotId  = $uids['demo.pilot@opsvelo.com']           ?? null;
+    $cabinId  = $uids['demo.cabin@opsvelo.com']           ?? null;
 
     $now       = date('Y-m-d H:i:s');
     $yesterday = date('Y-m-d H:i:s', strtotime('-1 day'));
@@ -577,7 +577,7 @@ try {
     echo "Seeding demo devices... ";
     $db->exec("DELETE FROM devices WHERE tenant_id = 1");
 
-    $airAdminId = $uids['demo.airadmin@acentoza.com'] ?? null;
+    $airAdminId = $uids['demo.airadmin@opsvelo.com'] ?? null;
 
     $devStmt = $db->prepare(
         "INSERT INTO devices (tenant_id, user_id, device_uuid, platform, model, os_version, app_version, approval_status, approved_by, approved_at)
@@ -590,7 +590,7 @@ try {
         "INSERT INTO devices (tenant_id, user_id, device_uuid, platform, model, os_version, app_version, approval_status)
          VALUES (1, ?, ?, 'ios', ?, '17.2', '2.0.9', 'pending')"
     );
-    $devPendStmt->execute([$uids['demo.engineer@acentoza.com'] ?? null, 'DEMO-ENG-001', 'iPad 10th Gen']);
+    $devPendStmt->execute([$uids['demo.engineer@opsvelo.com'] ?? null, 'DEMO-ENG-001', 'iPad 10th Gen']);
     $devPendStmt->execute([$pilotId, 'DEMO-PILOT-002', 'iPad mini 6th Gen']);
     echo "✓\n";
 
@@ -636,8 +636,8 @@ try {
                  VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
 
-            $chiefPilotId = $uids['demo.chiefpilot@acentoza.com'] ?? null;
-            $engId        = $uids['demo.engineer@acentoza.com']  ?? null;
+            $chiefPilotId = $uids['demo.chiefpilot@opsvelo.com'] ?? null;
+            $engId        = $uids['demo.engineer@opsvelo.com']  ?? null;
 
             // Chief Pilot — medical expiring soon (60 days)
             if ($chiefPilotId) {
@@ -795,24 +795,24 @@ try {
             $engPat2 = ['off','maint','maint','off','off','training','maint','maint','off','off','maint','maint','off','off','sim','maint','off','off','maint','maint','off','off','training','maint','maint','off','off','maint','off','off','maint'];
             $engPat3 = ['maint','off','off','maint','maint','off','off','maint','training','off','maint','maint','off','off','maint','off','sim','maint','maint','off','off','maint','maint','off','off','training','maint','off','off','maint','maint'];
 
-            $airUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@acentoza.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
+            $airUserIds = $db->query("SELECT email, id FROM users WHERE tenant_id = 1 AND email LIKE 'demo.%@opsvelo.com'")->fetchAll(PDO::FETCH_KEY_PAIR);
 
             $userPatterns = [];
-            $pid = $airUserIds['demo.pilot@acentoza.com']      ?? null;  // Capt. Rashid Hussein
-            $p2  = $airUserIds['demo.pilot2@acentoza.com']     ?? null;  // Capt. Lydia Mumo
-            $p3  = $airUserIds['demo.pilot3@acentoza.com']     ?? null;  // FO Daniel Otieno
-            $p4  = $airUserIds['demo.pilot4@acentoza.com']     ?? null;  // FO Samuel Bekele
-            $p5  = $airUserIds['demo.pilot5@acentoza.com']     ?? null;  // Capt. Fatuma Wangari
-            $p6  = $airUserIds['demo.pilot6@acentoza.com']     ?? null;  // FO Amina Osei
-            $cpId= $airUserIds['demo.chiefpilot@acentoza.com'] ?? null;  // Capt. Ahmed Mansoori
-            $c1  = $airUserIds['demo.cabin@acentoza.com']      ?? null;  // Noor Al-Rashidi
-            $c2  = $airUserIds['demo.cabin2@acentoza.com']     ?? null;  // Halima Abdi
-            $c3  = $airUserIds['demo.cabin3@acentoza.com']     ?? null;  // Kevin Mwangi
-            $c4  = $airUserIds['demo.cabin4@acentoza.com']     ?? null;  // Aisha Mwamba
-            $hcId= $airUserIds['demo.headcabin@acentoza.com']  ?? null;  // Grace Okonkwo
-            $e1  = $airUserIds['demo.engineer@acentoza.com']   ?? null;  // Eric Mbeki
-            $e2  = $airUserIds['demo.engineer2@acentoza.com']  ?? null;  // James Ochieng
-            $e3  = $airUserIds['demo.engineer3@acentoza.com']  ?? null;  // Wanjiru Kariuki
+            $pid = $airUserIds['demo.pilot@opsvelo.com']      ?? null;  // Capt. Rashid Hussein
+            $p2  = $airUserIds['demo.pilot2@opsvelo.com']     ?? null;  // Capt. Lydia Mumo
+            $p3  = $airUserIds['demo.pilot3@opsvelo.com']     ?? null;  // FO Daniel Otieno
+            $p4  = $airUserIds['demo.pilot4@opsvelo.com']     ?? null;  // FO Samuel Bekele
+            $p5  = $airUserIds['demo.pilot5@opsvelo.com']     ?? null;  // Capt. Fatuma Wangari
+            $p6  = $airUserIds['demo.pilot6@opsvelo.com']     ?? null;  // FO Amina Osei
+            $cpId= $airUserIds['demo.chiefpilot@opsvelo.com'] ?? null;  // Capt. Ahmed Mansoori
+            $c1  = $airUserIds['demo.cabin@opsvelo.com']      ?? null;  // Noor Al-Rashidi
+            $c2  = $airUserIds['demo.cabin2@opsvelo.com']     ?? null;  // Halima Abdi
+            $c3  = $airUserIds['demo.cabin3@opsvelo.com']     ?? null;  // Kevin Mwangi
+            $c4  = $airUserIds['demo.cabin4@opsvelo.com']     ?? null;  // Aisha Mwamba
+            $hcId= $airUserIds['demo.headcabin@opsvelo.com']  ?? null;  // Grace Okonkwo
+            $e1  = $airUserIds['demo.engineer@opsvelo.com']   ?? null;  // Eric Mbeki
+            $e2  = $airUserIds['demo.engineer2@opsvelo.com']  ?? null;  // James Ochieng
+            $e3  = $airUserIds['demo.engineer3@opsvelo.com']  ?? null;  // Wanjiru Kariuki
 
             if ($pid)  $userPatterns[$pid]  = $captPattern;
             if ($p2)   $userPatterns[$p2]   = $captPattern2;
@@ -867,7 +867,7 @@ try {
             $db->exec("DELETE FROM fdm_events  WHERE tenant_id = 1");
             $db->exec("DELETE FROM fdm_uploads WHERE tenant_id = 1");
 
-            $fdmUserId = $uids['demo.fdm@acentoza.com'] ?? ($uids['demo.airadmin@acentoza.com'] ?? 1);
+            $fdmUserId = $uids['demo.fdm@opsvelo.com'] ?? ($uids['demo.airadmin@opsvelo.com'] ?? 1);
 
             // Create 3 sample uploads
             $uploadSql = "INSERT INTO fdm_uploads (tenant_id, uploaded_by, filename, original_name, flight_date, aircraft_reg, flight_number, event_count, status, notes)
@@ -1020,8 +1020,8 @@ try {
             $nowSql = $driver === 'sqlite' ? "datetime('now')" : "NOW()";
             $db->exec("
                 UPDATE tenants SET
-                    legal_name        = 'OpsOne Demo Airline LLC',
-                    display_name      = 'OpsOne Demo',
+                    legal_name        = 'OpsVelo Demo Airline LLC',
+                    display_name      = 'OpsVelo Demo',
                     icao_code         = 'ODA',
                     iata_code         = 'OD',
                     primary_country   = 'UAE',
@@ -1115,10 +1115,10 @@ try {
 
         $db->exec("DELETE FROM qualifications WHERE tenant_id = 1");
 
-        $pilotUid   = $db->query("SELECT id FROM users WHERE email = 'demo.pilot@acentoza.com' AND tenant_id = 1")->fetchColumn();
-        $cpUid      = $db->query("SELECT id FROM users WHERE email = 'demo.chiefpilot@acentoza.com' AND tenant_id = 1")->fetchColumn();
-        $engUid     = $db->query("SELECT id FROM users WHERE email = 'demo.engineer@acentoza.com' AND tenant_id = 1")->fetchColumn();
-        $cabinUid   = $db->query("SELECT id FROM users WHERE email = 'demo.cabin@acentoza.com' AND tenant_id = 1")->fetchColumn();
+        $pilotUid   = $db->query("SELECT id FROM users WHERE email = 'demo.pilot@opsvelo.com' AND tenant_id = 1")->fetchColumn();
+        $cpUid      = $db->query("SELECT id FROM users WHERE email = 'demo.chiefpilot@opsvelo.com' AND tenant_id = 1")->fetchColumn();
+        $engUid     = $db->query("SELECT id FROM users WHERE email = 'demo.engineer@opsvelo.com' AND tenant_id = 1")->fetchColumn();
+        $cabinUid   = $db->query("SELECT id FROM users WHERE email = 'demo.cabin@opsvelo.com' AND tenant_id = 1")->fetchColumn();
 
         $qStmt = $db->prepare(
             "$insertIgnore INTO qualifications (user_id, tenant_id, qual_type, qual_name, reference_no, authority, issue_date, expiry_date, status)
@@ -1407,34 +1407,34 @@ try {
     echo str_repeat('─', 55) . "\n";
 
     $summary = [
-        ['Platform Super Admin',        'demo.superadmin@acentoza.com'],
-        ['Platform Support Admin',      'demo.support@acentoza.com'],
-        ['Platform Security Admin',     'demo.security@acentoza.com'],
-        ['Airline Super Admin',         'demo.airadmin@acentoza.com'],
-        ['HR Admin',                    'demo.hr@acentoza.com'],
-        ['Scheduler Admin',             'demo.scheduler@acentoza.com'],
-        ['Chief Pilot',                 'demo.chiefpilot@acentoza.com'],
-        ['Head of Cabin Crew',          'demo.headcabin@acentoza.com'],
-        ['Engineering Manager',         'demo.engmanager@acentoza.com'],
-        ['Safety Manager',              'demo.safety@acentoza.com'],
-        ['FDM Analyst',                 'demo.fdm@acentoza.com'],
-        ['Document Control Manager',    'demo.doccontrol@acentoza.com'],
-        ['Base Manager',                'demo.basemanager@acentoza.com'],
-        ['Pilot (Capt. Rashid Hussein)',    'demo.pilot@acentoza.com'],
-        ['Captain (Capt. Lydia Mumo)',      'demo.pilot2@acentoza.com'],
-        ['FO (Daniel Otieno)',              'demo.pilot3@acentoza.com'],
-        ['FO (Samuel Bekele)',              'demo.pilot4@acentoza.com'],
-        ['Captain (Capt. Fatuma Wangari)', 'demo.pilot5@acentoza.com'],
-        ['FO (Amina Osei)',                 'demo.pilot6@acentoza.com'],
-        ['Cabin Crew (Noor Al-Rashidi)',    'demo.cabin@acentoza.com'],
-        ['Cabin Crew (Halima Abdi)',        'demo.cabin2@acentoza.com'],
-        ['Cabin Crew (Kevin Mwangi)',       'demo.cabin3@acentoza.com'],
-        ['Cabin Crew (Aisha Mwamba)',       'demo.cabin4@acentoza.com'],
-        ['Engineer (Eric Mbeki)',           'demo.engineer@acentoza.com'],
-        ['Engineer (James Ochieng)',        'demo.engineer2@acentoza.com'],
-        ['Engineer (Wanjiru Kariuki)',      'demo.engineer3@acentoza.com'],
-        ['Training Admin',                  'demo.training@acentoza.com'],
-        ['System Monitoring Admin',         'demo.sysmonitor@acentoza.com'],
+        ['Platform Super Admin',        'demo.superadmin@opsvelo.com'],
+        ['Platform Support Admin',      'demo.support@opsvelo.com'],
+        ['Platform Security Admin',     'demo.security@opsvelo.com'],
+        ['Airline Super Admin',         'demo.airadmin@opsvelo.com'],
+        ['HR Admin',                    'demo.hr@opsvelo.com'],
+        ['Scheduler Admin',             'demo.scheduler@opsvelo.com'],
+        ['Chief Pilot',                 'demo.chiefpilot@opsvelo.com'],
+        ['Head of Cabin Crew',          'demo.headcabin@opsvelo.com'],
+        ['Engineering Manager',         'demo.engmanager@opsvelo.com'],
+        ['Safety Manager',              'demo.safety@opsvelo.com'],
+        ['FDM Analyst',                 'demo.fdm@opsvelo.com'],
+        ['Document Control Manager',    'demo.doccontrol@opsvelo.com'],
+        ['Base Manager',                'demo.basemanager@opsvelo.com'],
+        ['Pilot (Capt. Rashid Hussein)',    'demo.pilot@opsvelo.com'],
+        ['Captain (Capt. Lydia Mumo)',      'demo.pilot2@opsvelo.com'],
+        ['FO (Daniel Otieno)',              'demo.pilot3@opsvelo.com'],
+        ['FO (Samuel Bekele)',              'demo.pilot4@opsvelo.com'],
+        ['Captain (Capt. Fatuma Wangari)', 'demo.pilot5@opsvelo.com'],
+        ['FO (Amina Osei)',                 'demo.pilot6@opsvelo.com'],
+        ['Cabin Crew (Noor Al-Rashidi)',    'demo.cabin@opsvelo.com'],
+        ['Cabin Crew (Halima Abdi)',        'demo.cabin2@opsvelo.com'],
+        ['Cabin Crew (Kevin Mwangi)',       'demo.cabin3@opsvelo.com'],
+        ['Cabin Crew (Aisha Mwamba)',       'demo.cabin4@opsvelo.com'],
+        ['Engineer (Eric Mbeki)',           'demo.engineer@opsvelo.com'],
+        ['Engineer (James Ochieng)',        'demo.engineer2@opsvelo.com'],
+        ['Engineer (Wanjiru Kariuki)',      'demo.engineer3@opsvelo.com'],
+        ['Training Admin',                  'demo.training@opsvelo.com'],
+        ['System Monitoring Admin',         'demo.sysmonitor@opsvelo.com'],
     ];
     foreach ($summary as [$role, $email]) {
         printf("  %-34s  %s\n", $role, $email);

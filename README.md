@@ -1,8 +1,8 @@
-# OpsOne Web Portal
+# OpsVelo Web Portal
 
 **Internal Airline Operations Platform — Web Portal & API Server**
 
-OpsOne is a secure, multi-tenant web portal and API backend for airline operations management. It serves as the central hub for document management, user administration, device approval, and content delivery to the OpsOne iPad app.
+OpsVelo is a secure, multi-tenant web portal and API backend for airline operations management. It serves as the central hub for document management, user administration, device approval, and content delivery to the OpsVelo iPad app.
 
 ## Quick Start
 

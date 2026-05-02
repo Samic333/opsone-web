@@ -23,7 +23,7 @@ if (env('APP_ENV', 'production') === 'production') {
 require BASE_PATH . '/app/Helpers/functions.php';
 require BASE_PATH . '/config/database.php';
 
-echo "<h1>OpsOne Database Setup & Seeder</h1>";
+echo "<h1>OpsVelo Database Setup & Seeder</h1>";
 echo "<p>Connecting to database...</p>";
 
 try {
@@ -181,7 +181,7 @@ echo "<li>Creating demo app build...</li>";
 Database::insert(
     "INSERT INTO app_builds (version, build_number, platform, release_notes, file_path, is_active, uploaded_by) 
      VALUES (?, ?, ?, ?, ?, ?, ?)",
-    ['1.0.0', '100', 'ios', 'Initial production release for CrewAssist.', 'OpsOne_v1.0.0.ipa', 1, $userId]
+    ['1.0.0', '100', 'ios', 'Initial production release for CrewAssist.', 'OpsVelo_v1.0.0.ipa', 1, $userId]
 );
 
 echo "</ul>";

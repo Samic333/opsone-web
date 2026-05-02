@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Publication Detail
+ * OpsVelo — Safety Publication Detail
  * Variables: $publication (array), $isTeam (bool)
  */
 $pageTitle    = $publication['title'] ?? 'Safety Publication';

@@ -45,7 +45,7 @@ class PasswordResetService {
                 [(int)$user['id'], $hash, $email, $_SERVER['REMOTE_ADDR'] ?? '', $expiresAt]
             );
         } catch (\Throwable $e) {
-            error_log('[OpsOne password-reset persist skipped] ' . $e->getMessage());
+            error_log('[OpsVelo password-reset persist skipped] ' . $e->getMessage());
             return ['ok' => true, 'token_for_log' => null, 'user_id' => null];
         }
         $expiresAt = $expiresAt ?? date('Y-m-d H:i:s', time() + self::TOKEN_LIFETIME_HOURS * 3600);
@@ -72,7 +72,7 @@ class PasswordResetService {
                 [$hash]
             );
         } catch (\Throwable $e) {
-            error_log('[OpsOne password-reset consume skipped] ' . $e->getMessage());
+            error_log('[OpsVelo password-reset consume skipped] ' . $e->getMessage());
             return null;
         }
         if (!$row) return null;

@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpsOne uses enterprise web-based distribution for the iPad app. This is NOT App Store or TestFlight distribution.
+OpsVelo uses enterprise web-based distribution for the iPad app. This is NOT App Store or TestFlight distribution.
 
 ## Server-Side Infrastructure
 
@@ -27,7 +27,7 @@ OpsOne uses enterprise web-based distribution for the iPad app. This is NOT App 
 4. Insert a record in the `app_builds` table:
    ```sql
    INSERT INTO app_builds (version, build_number, platform, release_notes, file_path, file_size, min_os_version, is_active)
-   VALUES ('1.0.0', '1', 'ios', 'Initial release', 'OpsOne-v1.0.0.ipa', 52428800, '16.0', 1);
+   VALUES ('1.0.0', '1', 'ios', 'Initial release', 'OpsVelo-v1.0.0.ipa', 52428800, '16.0', 1);
    ```
 
 ## OTA Installation Flow
@@ -66,7 +66,7 @@ The manifest is generated dynamically by `InstallController::manifest()`:
             <array>
                 <dict>
                     <key>kind</key><string>software-package</string>
-                    <key>url</key><string>https://opsone.aero/install/download/1</string>
+                    <key>url</key><string>https://opsvelo.com/install/download/1</string>
                 </dict>
             </array>
             <key>metadata</key>
@@ -74,7 +74,7 @@ The manifest is generated dynamically by `InstallController::manifest()`:
                 <key>bundle-identifier</key><string>com.opsone.crewassist</string>
                 <key>bundle-version</key><string>1.0.0</string>
                 <key>kind</key><string>software</string>
-                <key>title</key><string>OpsOne</string>
+                <key>title</key><string>OpsVelo</string>
             </dict>
         </dict>
     </array>

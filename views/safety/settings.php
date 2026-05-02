@@ -1,6 +1,6 @@
 <?php
 /**
- * OpsOne — Safety Module Settings
+ * OpsVelo — Safety Module Settings
  * Variables: $settings (array), $retentionDays (int), $safetyUsers (array — users with safety roles)
  */
 $pageTitle    = 'Safety Module Settings';
