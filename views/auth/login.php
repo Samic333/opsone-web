@@ -2,7 +2,7 @@
 /**
  * OpsOne — Login Page
  */
-$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsOne'];
+$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsVelo'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -10,8 +10,8 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign In — <?= e($brand['product_name']) ?></title>
-    <link rel="icon" type="image/png" href="/images/brand/opsvelo-icon.png">
-    <link rel="apple-touch-icon" href="/images/brand/opsvelo-icon.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
     <style>
         .login-eyebrow {

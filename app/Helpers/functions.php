@@ -390,45 +390,87 @@ function sidebarIcon(string $name, int $size = 18): string {
 }
 
 /**
- * OpsOne brand mark — Direction A (flight path node).
+ * Brand mark — Opsvelo OV monogram.
  *
- * A short curved path from an outlined origin dot (lower-left) to a filled
- * cyan terminal node (upper-right). Reads as: many origins → one platform.
+ * Renders the "O" ring + inner "V" + three orbital nodes inline as SVG.
+ * Pure vector, no PNG, no transparency artifacts on any background. The
+ * "V" uses a vertical gradient from Ops Blue (#2563EB) to Velo Teal
+ * (#14B8A6); the ring and nodes use Ops Blue. The function takes the
+ * pixel size and an optional override colour for monochrome contexts
+ * (email signatures, dark-on-light surfaces).
  *
- * Defaults: stroke uses currentColor (inherit text), node uses --accent-cyan.
- * For inverted contexts pass $node='#fff'. For monochrome (single-color print)
- * pass $node='currentColor'.
- *
- * Spec: docs/opsone-brand-direction.md §2.
+ * Function name preserved (was opsoneLogoMark) so existing callers in
+ * the sidebar, login card, footer, and dashboard mockups pick up the
+ * new design without an additional rename pass.
  */
-function opsoneLogoMark(int $size = 24, string $node = '#06b6d4', string $stroke = 'currentColor'): string {
+function opsoneLogoMark(int $size = 24, ?string $node = null, ?string $stroke = null): string {
+    // The $node and $stroke args are kept for back-compat with old callers
+    // (login.php passes #06b6d4, #e8eaf0). They override the default ring
+    // colour when set, which is useful for the white-stroke login lockup.
+    $ringColor = $stroke ?? '#2563EB';
+    $nodeColor = $node ?? '#2563EB';
+    // Use a unique gradient id so multiple marks can coexist on a page
+    // without clashing (e.g. nav + footer + dashboard mocks).
+    $gradId = 'ovgrad-' . substr(md5((string) random_int(0, PHP_INT_MAX)), 0, 6);
     return '<svg xmlns="http://www.w3.org/2000/svg" width="' . $size . '" height="' . $size . '" '
-         . 'viewBox="0 0 24 24" fill="none" '
+         . 'viewBox="0 0 64 64" fill="none" '
          . 'style="flex-shrink:0;display:block;" aria-hidden="true">'
-         . '<path d="M 4 19 C 9 13 13 7 19 5" '
-         .   'stroke="' . $stroke . '" stroke-width="1.8" '
-         .   'stroke-linecap="round" fill="none"/>'
-         . '<circle cx="4" cy="19" r="1.6" stroke="' . $stroke . '" stroke-width="1.5" fill="none"/>'
-         . '<circle cx="19" cy="5" r="3" fill="' . $node . '"/>'
+         . '<defs>'
+         .   '<linearGradient id="' . $gradId . '" x1="50%" y1="0%" x2="50%" y2="100%">'
+         .     '<stop offset="0%" stop-color="' . $ringColor . '"/>'
+         .     '<stop offset="100%" stop-color="#14B8A6"/>'
+         .   '</linearGradient>'
+         . '</defs>'
+         // Outer O ring
+         . '<circle cx="32" cy="32" r="22" stroke="' . $ringColor . '" stroke-width="5" fill="none"/>'
+         // Inner V with vertical gradient
+         . '<path d="M 22 22 L 32 50 L 42 22" '
+         .   'stroke="url(#' . $gradId . ')" stroke-width="6" '
+         .   'stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
+         // Upper-right outer node + connector
+         . '<line x1="42" y1="22" x2="50" y2="14" stroke="' . $nodeColor . '" stroke-width="1.6" stroke-linecap="round"/>'
+         . '<circle cx="50" cy="14" r="3.5" fill="' . $nodeColor . '"/>'
+         // Lower-left outer node + connector
+         . '<line x1="22" y1="22" x2="14" y2="50" stroke="' . $nodeColor . '" stroke-width="1.6" stroke-linecap="round"/>'
+         . '<circle cx="14" cy="50" r="3.5" fill="' . $nodeColor . '"/>'
+         // Inner node beside the V
+         . '<line x1="32" y1="35" x2="38" y2="32" stroke="' . $nodeColor . '" stroke-width="1.6" stroke-linecap="round"/>'
+         . '<circle cx="38" cy="32" r="2.5" fill="' . $nodeColor . '"/>'
          . '</svg>';
 }
 
 /**
- * OpsOne wordmark — "OpsOne" with split typography.
+ * Brand wordmark — split typography derived from $brand['product_name'].
  *
- * "Ops" inherits text color (the operational weight); "One" renders in cyan
- * (the unifying accent). Loaded weight is 800 (premium), tracking -0.02em.
+ * Splits the brand name at the second uppercase letter (e.g. "OpsVelo"
+ * → "Ops" + "Velo", "OpsOne" → "Ops" + "One"). Primary chunk renders in
+ * the page text color; accent chunk in the cyan accent. Weight 800,
+ * tracking -0.02em.
  *
  * $size: 'sm' (14px) | 'md' (18px) | 'lg' (26px) | 'xl' (40px).
- *
- * Spec: docs/opsone-brand-direction.md §2.
  */
 function opsoneWordmark(string $size = 'md'): string {
+    static $cachedName = null;
+    if ($cachedName === null) {
+        $brand = file_exists(CONFIG_PATH . '/branding.php')
+            ? require CONFIG_PATH . '/branding.php'
+            : ['product_name' => 'Opsvelo'];
+        $cachedName = $brand['product_name'] ?? 'Opsvelo';
+    }
     $sizes = ['sm' => 14, 'md' => 18, 'lg' => 26, 'xl' => 40];
     $px = $sizes[$size] ?? 18;
+    // Split at the second uppercase letter. Falls back to the whole
+    // string in primary if there isn't one (e.g. all-lowercase brands).
+    if (preg_match('/^([A-Z][a-z0-9]*)([A-Z].*)$/', $cachedName, $m)) {
+        $primary = $m[1];
+        $accent  = $m[2];
+    } else {
+        $primary = $cachedName;
+        $accent  = '';
+    }
     return '<span class="opsvelo-word" style="font-weight:800;letter-spacing:-0.02em;font-size:' . $px . 'px;line-height:1;">'
-         . '<span style="color:var(--text-primary);">Ops</span>'
-         . '<span style="color:var(--accent-cyan,#06b6d4);">Velo</span>'
+         . '<span style="color:var(--text-primary);">' . e($primary) . '</span>'
+         . ($accent !== '' ? '<span style="color:var(--accent-cyan,#06b6d4);">' . e($accent) . '</span>' : '')
          . '</span>';
 }
 

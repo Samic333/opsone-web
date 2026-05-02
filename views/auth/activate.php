@@ -1,13 +1,15 @@
 <?php
 $pageTitle = 'Activate Account';
 $hideSidebar = true;
+$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsVelo'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e($pageTitle) ?> — OpsOne</title>
+    <title><?= e($pageTitle) ?> — <?= e($brand['product_name']) ?></title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="stylesheet" href="/css/app.css">
     <style>
         body {

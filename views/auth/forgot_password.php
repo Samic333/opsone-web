@@ -1,5 +1,5 @@
 <?php
-$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsOne'];
+$brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/branding.php' : ['product_name' => 'OpsVelo'];
 ?>
 <!DOCTYPE html>
 <html lang="en">

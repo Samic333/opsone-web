@@ -31,7 +31,7 @@
         <div class="alert alert-info" style="font-size: 13px;">
             <strong style="display: block; margin-bottom: 5px;">How capability overrides work</strong>
             The <strong>checked</strong> boxes on the right are the permissions this role currently has in your airline.
-            Ticks marked <em>(default)</em> come from the OpsOne template. Unticking a default or ticking an un-default
+            Ticks marked <em>(default)</em> come from the OpsVelo template. Unticking a default or ticking an un-default
             capability stores a per-airline <strong>override</strong>. Per-user overrides are still editable under
             <em>User Edit → Capabilities</em>.
         </div>

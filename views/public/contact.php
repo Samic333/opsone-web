@@ -7,7 +7,7 @@ $val = static fn(string $key, $default = ''): string => htmlspecialchars((string
 <div class="info-page">
     <div class="info-page-inner" style="max-width: 1100px;">
         <div class="section-label">Request a Demo</div>
-        <h1>See OpsOne With Your Airline's Workflows</h1>
+        <h1>See OpsVelo With Your Airline's Workflows</h1>
         <p class="lead">
             Tell us about your operation and we'll book a 30-minute walkthrough with your team.
             Web dashboard, iPad crew app, multi-tenant model — all explained against your fleet,

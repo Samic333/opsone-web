@@ -1,6 +1,6 @@
 <div class="card" style="max-width:820px;">
-    <h3 style="margin-top:0;">Getting started with OpsOne</h3>
-    <p>OpsOne is your airline's operational control hub. Your view is tailored to your role — everyone sees a different dashboard.</p>
+    <h3 style="margin-top:0;">Getting started with OpsVelo</h3>
+    <p>OpsVelo is your airline's operational control hub. Your view is tailored to your role — everyone sees a different dashboard.</p>
 
     <h4>Your dashboard</h4>
     <ul>

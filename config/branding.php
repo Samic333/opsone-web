@@ -6,7 +6,7 @@
  */
 
 return [
-    'product_name'     => 'Opsvelo',
+    'product_name'     => 'OpsVelo',
     'product_tagline'  => 'One Platform for Airline Operations, Crew, Safety & iPad Workflows',
     'company_name'     => 'Opsvelo Aviation Systems',
     'support_email'    => 'support@opsvelo.com',

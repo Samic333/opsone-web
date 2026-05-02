@@ -1,6 +1,6 @@
 <div class="card" style="max-width:820px;">
     <h3 style="margin-top:0;">Notifications</h3>
-    <p>OpsOne surfaces important events across modules in one inbox. The <strong>🔔 bell</strong> in the top bar shows unread counts. Click it to open the inbox.</p>
+    <p>OpsVelo surfaces important events across modules in one inbox. The <strong>🔔 bell</strong> in the top bar shows unread counts. Click it to open the inbox.</p>
     <h4>Priority levels</h4>
     <ul>
         <li><strong>Critical</strong> — safety-related or operational emergencies (red). Push + email if available.</li>

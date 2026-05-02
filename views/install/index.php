@@ -43,7 +43,7 @@
                 <div style="margin-bottom: 16px;">
                     <a href="itms-services://?action=download-manifest&url=<?= urlencode(config('app.url') . '/install/manifest') ?>"
                        class="pub-btn pub-btn-primary pub-btn-large">
-                        📲 Install OpsOne v<?= e($latestBuild['version']) ?>
+                        📲 Install OpsVelo v<?= e($latestBuild['version']) ?>
                     </a>
                 </div>
                 

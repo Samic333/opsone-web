@@ -97,7 +97,7 @@
             <span>Require platform biometric confirmation (Face ID / Touch ID)</span>
         </label>
         <p class="text-xs text-muted" style="margin:4px 0 0 24px;">
-            Uses the device's built-in biometric prompt only. No biometric data is stored by OpsOne.
+            Uses the device's built-in biometric prompt only. No biometric data is stored by OpsVelo.
         </p>
     </div>
 

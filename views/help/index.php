@@ -15,5 +15,5 @@
 
 <div class="card" style="margin-top:18px; padding:14px;">
     <h4 style="margin-top:0;">Support</h4>
-    <p class="text-sm">Need help not covered above? Contact your airline admin or OpsOne support at <strong>support@opsone.example</strong>.</p>
+    <p class="text-sm">Need help not covered above? Contact your airline admin or OpsVelo support at <strong>support@opsvelo.com</strong>.</p>
 </div>

@@ -13,8 +13,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= e($brand['product_name']) ?> — <?= e($brand['product_tagline']) ?>. Role-based crew management, safety, rostering, and document distribution in one platform.">
     <title><?= e($pageTitle ?? $brand['product_name']) ?></title>
-    <link rel="icon" type="image/png" href="/images/brand/opsvelo-icon.png">
-    <link rel="apple-touch-icon" href="/images/brand/opsvelo-icon.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="stylesheet" href="/css/public.css?v=<?= @filemtime(BASE_PATH . '/public/css/public.css') ?: time() ?>">
 </head>
 <body>
@@ -23,7 +23,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <nav class="pub-nav" id="pubNav">
     <div class="pub-nav-inner">
         <a href="/home" class="pub-nav-brand" aria-label="<?= e($brand['product_name']) ?> home">
-            <img src="/images/brand/opsvelo-icon.png" alt="" class="brand-icon" aria-hidden="true">
+            <?= opsoneLogoMark(36) ?>
             <?= opsoneWordmark('lg') ?>
         </a>
         <button class="pub-nav-toggle" id="pubNavToggle" aria-label="Toggle menu">
@@ -54,7 +54,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <div class="pub-footer-grid">
             <div class="pub-footer-brand">
                 <div class="pub-footer-logo">
-                    <img src="/images/brand/opsvelo-icon.png" alt="" class="brand-icon" aria-hidden="true">
+                    <?= opsoneLogoMark(28) ?>
                     <?= opsoneWordmark('md') ?>
                 </div>
                 <p><?= e($brand['product_tagline']) ?></p>

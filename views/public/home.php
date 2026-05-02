@@ -58,7 +58,7 @@
                     <aside class="dash-mock-side">
                         <div class="dash-mock-brand">
                             <?= opsoneLogoMark(16) ?>
-                            <span>OpsOne</span>
+                            <span>OpsVelo</span>
                         </div>
                         <div class="dash-mock-grp">Main</div>
                         <div class="dash-mock-link is-active"><?= sidebarIcon('squares', 11) ?> Dashboard</div>
@@ -96,7 +96,7 @@
             <div class="ipad-frame ipad-frame--hero">
                 <div class="ipad-screen">
                     <img src="/images/screenshots/ipad-home.png"
-                         alt="OpsOne CrewAssist on iPad — pilot home view"
+                         alt="OpsVelo CrewAssist on iPad — pilot home view"
                          loading="eager" decoding="async">
                 </div>
                 <div class="ipad-home-indicator"></div>
@@ -210,7 +210,7 @@
                         <aside class="dash-mock-side">
                             <div class="dash-mock-brand">
                                 <?= opsoneLogoMark(16) ?>
-                                <span>OpsOne</span>
+                                <span>OpsVelo</span>
                             </div>
                             <div class="dash-mock-grp">Main</div>
                             <div class="dash-mock-link is-active"><?= sidebarIcon('squares', 11) ?> Dashboard</div>
@@ -329,7 +329,7 @@
 <section class="cta-section">
     <div class="cta-inner">
         <div class="section-label">Get Started</div>
-        <h2 class="section-title">Ready to See OpsOne With Your Airline's Data?</h2>
+        <h2 class="section-title">Ready to See OpsVelo With Your Airline's Data?</h2>
         <p class="section-desc" style="margin: 0 auto;">
             Tell us about your operation. We'll book a 30-minute demo with your team and walk
             through the platform with workflows shaped to your fleet, your bases, and your roles.

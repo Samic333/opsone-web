@@ -151,12 +151,9 @@ a:hover { color: var(--accent-cyan); }
     position: relative; overflow: hidden;
     padding: 64px 32px 80px;
 }
-.pub-nav-brand img.brand-icon {
-    height: 44px !important; width: 44px !important; display: block !important; flex-shrink: 0;
-}
-.pub-footer-logo img.brand-icon {
-    height: 32px !important; width: 32px !important; display: block !important; flex-shrink: 0;
-}
+/* .brand-icon was used for the legacy PNG nav/footer img; the SVG mark
+   is now rendered inline by opsoneLogoMark() and sized via its own
+   width/height attrs, so no override needed here. */
 .hero::before {
     content: ''; position: absolute; inset: 0;
     background:
