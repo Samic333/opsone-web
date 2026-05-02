@@ -79,6 +79,8 @@ return [
                  'match' => '/platform/modules',       'roles' => ['super_admin']],
                 ['label' => 'Feature Flags',   'href' => '/platform/feature-flags', 'icon' => 'flag',
                  'match' => '/platform/feature-flags', 'roles' => ['super_admin']],
+                ['label' => 'Branding',        'href' => '/platform/branding',      'icon' => 'photo',
+                 'match' => '/platform/branding',      'roles' => ['super_admin']],
             ],
         ],
 

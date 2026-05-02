@@ -409,6 +409,10 @@ return [
     'GET /platform/feature-flags'              => ['FeatureFlagController', 'index'],
     'POST /platform/feature-flags/toggle/{id}' => ['FeatureFlagController', 'toggle'],
 
+    // ─── Platform: Branding ─────────────
+    'GET /platform/branding'         => ['PlatformBrandingController', 'index'],
+    'POST /platform/branding/upload' => ['PlatformBrandingController', 'upload'],
+
     // ─── Audit Log ──────────────────────
     'GET /audit-log'         => ['AuditLogController', 'index'],
     'GET /audit-log/logins'  => ['AuditLogController', 'loginActivity'],
