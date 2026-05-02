@@ -53,21 +53,42 @@ class AppraisalApiController {
         $me       = (int) apiUser()['user_id'];
 
         $body    = json_decode(file_get_contents('php://input'), true) ?? $_POST;
-        $subject = (int)($body['subject_id'] ?? 0);
-        if ($subject === 0 || $subject === $me) {
-            jsonResponse(['error' => 'subject_id required and must differ from caller'], 422);
-        }
+        $kind    = (string)($body['kind'] ?? 'peer');
+        $kind    = $kind === 'self' ? 'self' : 'peer';
 
-        // Validate subject is in same tenant
-        $ok = Database::fetch(
-            "SELECT id FROM users WHERE id = ? AND tenant_id = ? AND status = 'active'",
-            [$subject, $tenantId]
-        );
-        if (!$ok) jsonResponse(['error' => 'Subject not found in this airline'], 422);
+        // Self appraisal: subject is always the caller, regardless of payload.
+        // Peer appraisal: subject must be a different user in the same tenant
+        // and the caller must hold an appraiser-capable role.
+        $subject = $kind === 'self' ? $me : (int)($body['subject_id'] ?? 0);
+
+        if ($kind === 'peer') {
+            if ($subject === 0 || $subject === $me) {
+                jsonResponse(['error' => 'subject_id required and must differ from caller'], 422);
+            }
+            $ok = Database::fetch(
+                "SELECT id FROM users WHERE id = ? AND tenant_id = ? AND status = 'active'",
+                [$subject, $tenantId]
+            );
+            if (!$ok) jsonResponse(['error' => 'Subject not found in this airline'], 422);
+
+            // Capability gate — mirrors AppraisalController::APPRAISER_ROLES.
+            // Without this, a normal pilot could POST a peer appraisal even
+            // though the web UI would block them.
+            $myRoles = array_column(UserModel::getRoles($me), 'slug');
+            $appraiserRoles = ['super_admin','airline_admin','hr','chief_pilot',
+                               'head_cabin_crew','training_admin','base_manager',
+                               'engineering_manager','director'];
+            if (!array_intersect($myRoles, $appraiserRoles)) {
+                jsonResponse(['error' => 'You are not authorised to file a peer appraisal in this airline.'], 403);
+            }
+        }
 
         // Per-dimension ratings stored as JSON. Caller may send an associative
         // array of competency → score, e.g.:
-        //   {"communication":4,"teamwork":5,"punctuality":3}
+        //   {"communication":4,"professionalism":5,"team_spirit":3}
+        // Web peer-appraisal form uses the same five-attribute keys defined in
+        // AppraisalController::COMPETENCY_ATTRIBUTES; the iPad app currently
+        // sends a free-form map. Both shapes are accepted.
         $ratingsJson = null;
         if (isset($body['ratings']) && is_array($body['ratings']) && !empty($body['ratings'])) {
             $ratingsJson = json_encode($body['ratings']);

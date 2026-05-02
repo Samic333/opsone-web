@@ -236,6 +236,9 @@ return [
     'POST /appraisals/store'           => ['AppraisalController', 'store'],
     'POST /appraisals/{id}/accept'     => ['AppraisalController', 'accept'],
 
+    // ─── Competency Records ─────────────────────
+    'GET /competency'                  => ['CompetencyController', 'index'],
+
     // ─── Training (Phase 12) ─────────────────────
     'GET /training'                    => ['TrainingController', 'dashboard'],
     'POST /training/types/add'         => ['TrainingController', 'addType'],

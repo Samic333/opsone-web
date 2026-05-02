@@ -229,6 +229,25 @@ class NavigationService {
             [$tid, $uid]
         );
 
+        // Appraisals badge: drafts I haven't submitted + (for HR/leadership)
+        // submitted appraisals waiting on review. Acts as the "Action required"
+        // counter referenced from the Performance sidebar entry.
+        $appraisalAction = $cnt(
+            "SELECT COUNT(*) c FROM appraisals
+              WHERE tenant_id = ? AND appraiser_id = ? AND status = 'draft'",
+            [$tid, $uid]
+        );
+        if (function_exists('hasAnyRole') && hasAnyRole(
+                ['super_admin','airline_admin','hr','chief_pilot','head_cabin_crew']
+        )) {
+            $appraisalAction += $cnt(
+                "SELECT COUNT(*) c FROM appraisals
+                  WHERE tenant_id = ? AND status = 'submitted'",
+                [$tid]
+            );
+        }
+        $b['appraisals_action_required'] = $appraisalAction;
+
         $b['roster_draft_revisions'] = $cnt(
             "SELECT COUNT(*) c FROM roster_revisions
               WHERE tenant_id = ? AND status = 'draft'",

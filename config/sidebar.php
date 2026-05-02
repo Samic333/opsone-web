@@ -216,10 +216,10 @@ return [
             ],
         ],
 
-        // ── 5. PERFORMANCE (logbook / training / FDM / appraisals) ─
-        // Personal performance and continuing-airworthiness records.
-        // Logbook + FDM are pilot-only; cabin/engineer see only Training
-        // and Appraisals.
+        // ── 5. PERFORMANCE (appraisals / training / competency / logbook / FDM) ─
+        // Personal performance and continuing-airworthiness records. The three
+        // primary entries (Appraisals, Training Records, Competency Records)
+        // are visible to every crew role; Logbook + FDM are pilot-only.
         [
             'title'   => 'Performance',
             'airline' => true,
@@ -227,17 +227,21 @@ return [
                           'chief_pilot','head_cabin_crew','base_manager'],
             'items'   => [
                 ['label' => 'Appraisals', 'href' => '/appraisals', 'icon' => 'star',
-                 'match' => '/appraisals',
+                 'match' => '/appraisals', 'badge' => 'appraisals_action_required',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'Training Records', 'href' => '/my-training', 'icon' => 'academic-cap',
+                 'match' => '/my-training',
+                 'module' => 'training',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'Competency Records', 'href' => '/competency', 'icon' => 'check-badge',
+                 'match' => '/competency',
                  'roles' => ['pilot','cabin_crew','engineer',
                              'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'Logbook', 'href' => '/my-logbook', 'icon' => 'book-open',
                  'match' => '/my-logbook',
                  'roles' => ['pilot']],
-                ['label' => 'Training', 'href' => '/my-training', 'icon' => 'academic-cap',
-                 'match' => '/my-training',
-                 'module' => 'training',
-                 'roles' => ['pilot','cabin_crew','engineer',
-                             'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'FDM Events', 'href' => '/my-fdm', 'icon' => 'trending-up',
                  'match' => '/my-fdm', 'badge' => 'my_fdm_pending',
                  'module' => 'fdm',

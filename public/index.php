@@ -234,6 +234,9 @@ if ($isApi) {
             'CrewDocumentController',
             'ChangeRequestController',
             'EligibilityController',
+            // Performance section (tenant-scoped reads/writes)
+            'AppraisalController',
+            'CompetencyController',
             // Airline-scoped views that crash with NULL tenant_id when accessed
             // by platform-only users — must use Controlled Access first.
             'CrewProfileController',
