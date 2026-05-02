@@ -179,6 +179,12 @@ class PersonnelApiController {
             'approved_at'       => $d['approved_at'] ?? null,
             'rejection_reason'  => $d['rejection_reason'] ?? null,
             'has_file'          => !empty($d['file_path']),
+            // Phase 22 — surface lock state from migration 051 so the iPad
+            // can render lock badges and gate edit/delete buttons.
+            'is_locked'         => isset($d['is_locked']) ? (bool) $d['is_locked'] : null,
+            'locked_at'         => $d['locked_at']      ?? null,
+            'unlocked_until'    => $d['unlocked_until'] ?? null,
+            'unlocked_reason'   => $d['unlocked_reason']?? null,
         ];
     }
 
