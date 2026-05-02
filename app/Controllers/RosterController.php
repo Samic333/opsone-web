@@ -1121,7 +1121,7 @@ class RosterController {
             if (isset($statusCounts[$r['status']]))    $statusCounts[$r['status']]++;
         }
 
-        $pageTitle    = 'All Requests';
+        $pageTitle    = 'Change Requests';
         $pageSubtitle = 'Leave, corrections, swaps and comments — all in one feed.';
 
         ob_start();

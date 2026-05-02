@@ -143,7 +143,7 @@ return [
                           'chief_pilot','head_cabin_crew','base_manager'],
             'items'   => [
                 ['label' => 'Roster', 'href' => '/my-roster', 'icon' => 'calendar',
-                 'match' => '/my-roster',
+                 'match' => '/my-roster', 'match_exact' => true,
                  'roles' => ['pilot','cabin_crew','engineer',
                              'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'Duty Time', 'href' => '/my-duty', 'icon' => 'paper-airplane',
@@ -160,14 +160,14 @@ return [
                  'match' => '/roster/corrections',
                  'roles' => ['pilot','cabin_crew','engineer',
                              'chief_pilot','head_cabin_crew','base_manager']],
-                ['label' => 'All Requests', 'href' => '/my-roster/requests', 'icon' => 'clipboard-list',
+                ['label' => 'Change Requests', 'href' => '/my-roster/requests', 'icon' => 'clipboard-list',
                  'match' => '/my-roster/requests',
+                 'match_prefixes' => ['/my-profile/change-requests'],
                  'roles' => ['pilot','cabin_crew','engineer',
                              'chief_pilot','head_cabin_crew','base_manager']],
-                ['label' => 'Profile Changes', 'href' => '/my-profile/change-requests', 'icon' => 'document-text',
-                 'match' => '/my-profile/change-requests',
-                 'roles' => ['pilot','cabin_crew','engineer',
-                             'chief_pilot','head_cabin_crew','base_manager']],
+                // Profile-compliance change requests are reachable from the Profile
+                // page; they share the broader "Change Requests" sidebar slot above
+                // so the active state lights up either way.
             ],
         ],
 
@@ -181,7 +181,7 @@ return [
             'roles'   => ['pilot','cabin_crew','engineer',
                           'chief_pilot','head_cabin_crew','base_manager'],
             'items'   => [
-                ['label' => 'Flights', 'href' => '/my-flights', 'icon' => 'paper-airplane',
+                ['label' => 'Assigned Flights', 'href' => '/my-flights', 'icon' => 'paper-airplane',
                  'match' => '/my-flights',
                  'roles' => ['pilot','cabin_crew','engineer']],
                 ['label' => 'Documents', 'href' => '/my-files', 'icon' => 'folder-open',
@@ -251,10 +251,11 @@ return [
             ],
         ],
 
-        // ── 6. PROFILE (personal record + per-diem) ──────────────
+        // ── 6. PROFILE (personal record + per-diem + account settings) ─
         // Sidebar Profile entry mirrors the avatar-dropdown link. Per-diem
         // is a personal claim queue, not an operational surface, so it
-        // lives here rather than under Operations or Schedule.
+        // lives here rather than under Operations or Schedule. Settings
+        // points at the account-level preferences page.
         [
             'title'   => 'Profile',
             'airline' => true,
@@ -267,6 +268,10 @@ return [
                              'chief_pilot','head_cabin_crew','base_manager']],
                 ['label' => 'Per Diem', 'href' => '/my-per-diem', 'icon' => 'currency-dollar',
                  'match' => '/my-per-diem',
+                 'roles' => ['pilot','cabin_crew','engineer',
+                             'chief_pilot','head_cabin_crew','base_manager']],
+                ['label' => 'Settings', 'href' => '/account/settings', 'icon' => 'cog',
+                 'match' => '/account/settings',
                  'roles' => ['pilot','cabin_crew','engineer',
                              'chief_pilot','head_cabin_crew','base_manager']],
             ],
