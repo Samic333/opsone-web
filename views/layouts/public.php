@@ -23,8 +23,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <nav class="pub-nav" id="pubNav">
     <div class="pub-nav-inner">
         <a href="/home" class="pub-nav-brand" aria-label="<?= e($brand['product_name']) ?> home">
-            <img src="/images/brand/opsvelo-icon.png" alt="" class="brand-icon" aria-hidden="true">
-            <?= opsoneWordmark('lg') ?>
+            <img src="/images/brand/opsvelo-icon.png" alt="<?= e($brand['product_name']) ?>" class="brand-icon">
         </a>
         <button class="pub-nav-toggle" id="pubNavToggle" aria-label="Toggle menu">
             <span></span><span></span><span></span>
@@ -54,8 +53,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <div class="pub-footer-grid">
             <div class="pub-footer-brand">
                 <div class="pub-footer-logo">
-                    <img src="/images/brand/opsvelo-icon.png" alt="" class="brand-icon" aria-hidden="true">
-                    <?= opsoneWordmark('md') ?>
+                    <img src="/images/brand/opsvelo-icon.png" alt="<?= e($brand['product_name']) ?>" class="brand-icon">
                 </div>
                 <p><?= e($brand['product_tagline']) ?></p>
                 <p class="pub-footer-copy">© <?= e($brand['copyright_year']) ?> <?= e($brand['company_name']) ?>. All rights reserved.</p>

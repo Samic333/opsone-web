@@ -152,10 +152,10 @@ a:hover { color: var(--accent-cyan); }
     padding: 64px 32px 80px;
 }
 .pub-nav-brand img.brand-icon {
-    height: 32px !important; width: 32px !important; display: block !important; flex-shrink: 0;
+    height: 44px !important; width: 44px !important; display: block !important; flex-shrink: 0;
 }
 .pub-footer-logo img.brand-icon {
-    height: 24px !important; width: 24px !important; display: block !important; flex-shrink: 0;
+    height: 32px !important; width: 32px !important; display: block !important; flex-shrink: 0;
 }
 .hero::before {
     content: ''; position: absolute; inset: 0;
