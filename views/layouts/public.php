@@ -13,7 +13,8 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="<?= e($brand['product_name']) ?> — <?= e($brand['product_tagline']) ?>. Role-based crew management, safety, rostering, and document distribution in one platform.">
     <title><?= e($pageTitle ?? $brand['product_name']) ?></title>
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/png" href="/images/brand/opsvelo-icon.png">
+    <link rel="apple-touch-icon" href="/images/brand/opsvelo-icon.png">
     <link rel="stylesheet" href="/css/public.css">
 </head>
 <body>
@@ -22,18 +23,16 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 <nav class="pub-nav" id="pubNav">
     <div class="pub-nav-inner">
         <a href="/home" class="pub-nav-brand" aria-label="<?= e($brand['product_name']) ?> home">
-            <?= opsoneLogoMark(28) ?>
-            <?= opsoneWordmark('lg') ?>
+            <img src="/images/brand/opsvelo-logo.png" alt="<?= e($brand['product_name']) ?>" class="brand-mark">
         </a>
         <button class="pub-nav-toggle" id="pubNavToggle" aria-label="Toggle menu">
             <span></span><span></span><span></span>
         </button>
         <div class="pub-nav-links" id="pubNavLinks">
-            <!-- Public nav is intentionally minimal so a casual visitor can't
-                 map the platform's surface from the marketing site. Features,
-                 How It Works, Pricing, FAQ, and Support routes still exist
-                 (linked from the footer) but aren't promoted in the top nav. -->
             <a href="/features" class="<?= $currentPath === '/features' ? 'active' : '' ?>">Platform</a>
+            <a href="/how-it-works" class="<?= $currentPath === '/how-it-works' ? 'active' : '' ?>">How It Works</a>
+            <a href="/pricing" class="<?= $currentPath === '/pricing' ? 'active' : '' ?>">Pricing</a>
+            <a href="/faq" class="<?= $currentPath === '/faq' ? 'active' : '' ?>">FAQ</a>
             <a href="/contact" class="<?= $currentPath === '/contact' ? 'active' : '' ?>">Contact</a>
         </div>
         <div class="pub-nav-actions">
@@ -54,8 +53,7 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         <div class="pub-footer-grid">
             <div class="pub-footer-brand">
                 <div class="pub-footer-logo">
-                    <?= opsoneLogoMark(24) ?>
-                    <?= opsoneWordmark('md') ?>
+                    <img src="/images/brand/opsvelo-logo.png" alt="<?= e($brand['product_name']) ?>" class="brand-mark">
                 </div>
                 <p><?= e($brand['product_tagline']) ?></p>
                 <p class="pub-footer-copy">© <?= e($brand['copyright_year']) ?> <?= e($brand['company_name']) ?>. All rights reserved.</p>
