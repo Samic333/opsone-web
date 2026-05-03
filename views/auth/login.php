@@ -122,17 +122,25 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
 
         <?php
         // SECURITY: demo-account quick-picker + password display is a public-takeover vector in prod.
-        // Only render when APP_ENV is 'development' or 'local' AND APP_DEBUG is true.
-        $__env   = env('APP_ENV', 'production');
-        $__debug = env('APP_DEBUG', 'false') === 'true';
-        $showDemoBlock = in_array($__env, ['development','local','dev'], true) && $__debug;
+        //
+        // QA-PHASE TOGGLE (temporary — May 2026): the captain wants every
+        // demo role one-tap-accessible across the live site for rapid
+        // dashboard checks. The gate is overridable via an `OPSVELO_DEMO_PICKER`
+        // env flag so we can flip it back OFF the moment QA is signed off,
+        // without another deploy. To turn off: set `OPSVELO_DEMO_PICKER=false`
+        // in `.env`. To force show: omit it or set `=true`.
+        $__env       = env('APP_ENV', 'production');
+        $__debug     = env('APP_DEBUG', 'false') === 'true';
+        $__qaToggle  = strtolower((string) env('OPSVELO_DEMO_PICKER', 'true'));
+        $showDemoBlock = $__qaToggle !== 'false'
+            || (in_array($__env, ['development','local','dev'], true) && $__debug);
         ?>
         <?php if ($showDemoBlock): ?>
         <div class="demo-section">
-            <div class="demo-warning-banner" role="note" aria-label="Internal demo notice">
-                <div class="demo-warning-eyebrow"><?= sidebarIcon('exclamation', 12) ?> Internal demo · Development testing only</div>
-                <p>Hidden in production. Shared seed password used for local QA only — never used by real airline accounts.</p>
-                <p>Password: <code>DemoOps2026!</code></p>
+            <div class="demo-warning-banner" role="note" aria-label="Internal QA notice">
+                <div class="demo-warning-eyebrow"><?= sidebarIcon('exclamation', 12) ?> QA quick-login · Temporary</div>
+                <p><strong>One-tap login for QA.</strong> Click any role below to sign in instantly. This panel will be removed once the upgrade pass is signed off — set <code>OPSVELO_DEMO_PICKER=false</code> in <code>.env</code> to hide immediately.</p>
+                <p style="margin-top:6px;">Demo password (read-only seed accounts): <code>DemoOps2026!</code></p>
             </div>
 
             <div class="demo-grid">
@@ -178,7 +186,7 @@ $brand = file_exists(CONFIG_PATH . '/branding.php') ? require CONFIG_PATH . '/br
                     endif;
                 ?>
                 <button type="button"
-                        onclick="document.getElementById('email').value='<?= $dEmail ?>';document.getElementById('password').value='DemoOps2026!';"
+                        onclick="(function(b){b.disabled=true;b.textContent='Signing in…';document.getElementById('email').value='<?= $dEmail ?>';document.getElementById('password').value='DemoOps2026!';document.querySelector('form[method=\'POST\']').submit();})(this)"
                         class="demo-btn">
                     <?= $dIcon ?> <?= e($dLabel) ?>
                 </button>

@@ -44,7 +44,20 @@ class FlightApiController {
             [$tenantId, $userId, $userId, $userId]
         );
 
-        jsonResponse(['flights' => array_map([self::class, 'formatFlight'], $rows)]);
+        // Phase 0 (iPad upgrade) — embed sectors per flight so the iPad can
+        // render multi-leg duty days without a second round-trip per flight.
+        $sectorsByFlight = self::loadSectorsForFlights(
+            array_column($rows, 'id'),
+            $tenantId
+        );
+
+        $flights = array_map(function ($r) use ($sectorsByFlight) {
+            $f = self::formatFlight($r);
+            $f['sectors'] = $sectorsByFlight[(int)$r['id']] ?? [];
+            return $f;
+        }, $rows);
+
+        jsonResponse(['flights' => $flights]);
     }
 
     /** GET /api/flights/{id} */
@@ -82,6 +95,7 @@ class FlightApiController {
         $flight['fo_name']         = $f['fo_name']      ?? null;
         $flight['notes']           = $f['notes']        ?? null;
         $flight['bag']             = array_map([self::class, 'formatBag'], $bag);
+        $flight['sectors']         = self::loadSectorsForFlights([(int)$f['id']], $tenantId)[(int)$f['id']] ?? [];
 
         jsonResponse(['flight' => $flight]);
     }
@@ -182,6 +196,61 @@ class FlightApiController {
             $roles,
             ['super_admin','airline_admin','scheduler','chief_pilot','base_manager']
         );
+    }
+
+    /**
+     * Phase 0 (iPad upgrade) — batch-load sectors for many flights at once
+     * to avoid N+1 queries. Returns a map of flight_id → array of formatted
+     * sector rows in `sector_index` order.
+     */
+    public static function loadSectorsForFlights(array $flightIds, int $tenantId): array {
+        $flightIds = array_values(array_filter(array_map('intval', $flightIds)));
+        if (empty($flightIds)) return [];
+
+        $placeholders = implode(',', array_fill(0, count($flightIds), '?'));
+        $rows = Database::fetchAll(
+            "SELECT s.*, a.registration AS aircraft_reg
+               FROM flight_sectors s
+               LEFT JOIN aircraft a ON s.aircraft_id = a.id
+              WHERE s.tenant_id = ? AND s.flight_id IN ($placeholders)
+              ORDER BY s.flight_id, s.sector_index",
+            array_merge([$tenantId], $flightIds)
+        );
+
+        $by = [];
+        foreach ($rows as $r) {
+            $fid = (int)$r['flight_id'];
+            $by[$fid] = $by[$fid] ?? [];
+            $by[$fid][] = self::formatSector($r);
+        }
+        return $by;
+    }
+
+    public static function formatSector(array $r): array {
+        return [
+            'id'                => (int)  $r['id'],
+            'flight_id'         => (int)  $r['flight_id'],
+            'sector_index'      => (int)  $r['sector_index'],
+            'departure_icao'    => $r['departure_icao'] ?? null,
+            'arrival_icao'      => $r['arrival_icao']   ?? null,
+            'departure_iata'    => $r['departure_iata'] ?? null,
+            'arrival_iata'      => $r['arrival_iata']   ?? null,
+            'std_utc'           => $r['std_utc']        ?? null,
+            'sta_utc'           => $r['sta_utc']        ?? null,
+            'etd_utc'           => $r['etd_utc']        ?? null,
+            'eta_utc'           => $r['eta_utc']        ?? null,
+            'aircraft_id'       => isset($r['aircraft_id']) ? (int)$r['aircraft_id'] : null,
+            'aircraft_reg'      => $r['aircraft_reg']   ?? null,
+            'block_off_utc'     => $r['block_off_utc']  ?? null,
+            'takeoff_utc'       => $r['takeoff_utc']    ?? null,
+            'landing_utc'       => $r['landing_utc']    ?? null,
+            'block_on_utc'      => $r['block_on_utc']   ?? null,
+            'fuel_uplift_kg'    => isset($r['fuel_uplift_kg'])    ? (float)$r['fuel_uplift_kg']    : null,
+            'fuel_remaining_kg' => isset($r['fuel_remaining_kg']) ? (float)$r['fuel_remaining_kg'] : null,
+            'pax_total'         => isset($r['pax_total']) ? (int)$r['pax_total'] : null,
+            'status'            => (string)($r['status'] ?? 'planned'),
+            'notes'             => $r['notes'] ?? null,
+        ];
     }
 
     private static function formatBag(array $r): array {

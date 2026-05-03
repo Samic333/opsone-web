@@ -510,6 +510,10 @@ return [
     'POST /api/flights/{id}/folder/{doc_type}/submit' => ['FlightFolderApiController', 'submit'],
     'GET /api/flights/{id}'                   => ['FlightApiController', 'show'],
 
+    // ─── API: Flight sectors (multi-leg duty support) ────────
+    'GET /api/sectors/{id}'                   => ['SectorApiController', 'show'],
+    'PUT /api/sectors/{id}'                   => ['SectorApiController', 'update'],
+
     // ─── API: FDM (pilot inbox) ──────────────────────────────
     'GET /api/fdm/mine'                       => ['FdmApiController', 'mine'],
     'POST /api/fdm/event/{id}/ack'            => ['FdmApiController', 'ack'],
@@ -519,6 +523,7 @@ return [
     'GET /api/per-diem/mine'                  => ['PerDiemApiController', 'mine'],
     'GET /api/per-diem/rates'                 => ['PerDiemApiController', 'rates'],
     'POST /api/per-diem/submit'               => ['PerDiemApiController', 'submit'],
+    'POST /api/per-diem/extension'            => ['PerDiemApiController', 'extension'],
 
     // ─── API: Training ───────────────────────────────────────
     'GET /api/training/mine'                  => ['TrainingApiController', 'mine'],

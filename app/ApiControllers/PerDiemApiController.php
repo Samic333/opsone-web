@@ -120,4 +120,50 @@ class PerDiemApiController {
             'currency' => $curr,
         ]);
     }
+
+    /**
+     * POST /api/per-diem/extension — Phase 19.
+     *
+     * Body: { claim_id, extra_days, new_period_to?, reason }.
+     * Persists to per_diem_extension_requests (migration 052) and returns
+     * the new request id. Finance approves via the web app.
+     */
+    public function extension(): void {
+        $tenantId = apiTenantId();
+        $userId   = (int) (apiUser()['user_id'] ?? 0);
+        $body     = json_decode(file_get_contents('php://input'), true) ?? [];
+
+        $claimId   = (int) ($body['claim_id'] ?? 0);
+        $extraDays = (float) ($body['extra_days'] ?? 0);
+        $reason    = trim((string)($body['reason'] ?? ''));
+        $newTo     = trim((string)($body['new_period_to'] ?? '')) ?: null;
+
+        if ($claimId   <= 0)         jsonResponse(['error' => 'claim_id required'],          422);
+        if ($extraDays <= 0)         jsonResponse(['error' => 'extra_days must be positive'], 422);
+        if (mb_strlen($reason) < 4)  jsonResponse(['error' => 'Reason is required'],         422);
+
+        $claim = Database::fetch(
+            "SELECT id, user_id, rate, currency FROM per_diem_claims
+              WHERE id = ? AND tenant_id = ?",
+            [$claimId, $tenantId]
+        );
+        if (!$claim)                            jsonResponse(['error' => 'Claim not found'], 404);
+        if ((int)$claim['user_id'] !== $userId) jsonResponse(['error' => 'Forbidden'],       403);
+
+        $extraAmount = $extraDays * (float)$claim['rate'];
+        $currency    = (string) $claim['currency'];
+        $isSqlite    = env('DB_DRIVER', 'mysql') === 'sqlite';
+
+        $id = Database::insert(
+            "INSERT INTO per_diem_extension_requests
+                (tenant_id, claim_id, user_id, extra_days, new_period_to,
+                 extra_amount, currency, reason, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', " .
+                ($isSqlite ? "datetime('now'), datetime('now')" : "NOW(), NOW()") . ")",
+            [$tenantId, $claimId, $userId, $extraDays, $newTo,
+             $extraAmount, $currency, $reason]
+        );
+
+        jsonResponse(['success' => true, 'request_id' => (int)$id]);
+    }
 }
