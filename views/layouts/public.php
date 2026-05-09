@@ -59,6 +59,9 @@ $currentPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
                 </div>
                 <p><?= e($brand['product_tagline']) ?></p>
                 <p class="pub-footer-copy">© <?= e($brand['copyright_year']) ?> <?= e($brand['company_name']) ?>. All rights reserved.</p>
+                <p class="pub-footer-attribution" style="margin-top:6px;font-size:.85em;opacity:.75;">
+                    Operated by <a href="https://samicventures.com" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Samic Ventures LLC</a>, a Wyoming, USA limited liability company.
+                </p>
             </div>
             <div class="pub-footer-col">
                 <h4>Platform</h4>
